@@ -1,6 +1,7 @@
 # ProjectCryptoGains
 
 [![Project Status: In Development](https://img.shields.io/badge/status-in%20development-yellow.svg)](https://github.com/MariusArmand/ProjectCryptoGains)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Overview
 Project Crypto Gains is designed to simplify the calculation of taxes on cryptocurrency investments.
