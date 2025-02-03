@@ -67,9 +67,18 @@ Run the tool to process transactions and calculate:
 - *Detailed installation instructions will be added here once the project is ready for public use.*
 
 ## Disclaimer
-- **Accuracy**: While efforts have been made to ensure accuracy, the correctness of the calculations should be verified by a professional accountant.
-- **Historical Price Data Timing**: Historical prices used in the tool are fetched from [CryptoCompare] using the **opening price** on the relevant date. 
-This approach limits API calls and maintains performance, with the assumption that consistently using opening prices provides a balanced representation of historical price data.
+**Accuracy**: While efforts have been made to aim for accuracy, the correctness of the calculations should be verified by a professional accountant. 
+
+**Historical Price Data Timing**: Historical prices used in the tool are fetched from [CryptoCompare] using the opening price on the relevant date. 
+This approach limits API calls and maintains performance, with the assumption that consistently using opening prices provides a balanced representation 
+of historical price data. 
+
+**General Disclaimer**: Use at your own risk. This software is provided 'as is', without warranty of any kind, either express or implied, 
+including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement. 
+
+**None of the output from this program should be considered financial advice; it is for educational purposes only.** In no event shall the author or 
+contributors be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, 
+or in connection with the software or the use or other dealings in the software.
 
 ## Contact
 For any questions or feedback, feel free to reach out via:
