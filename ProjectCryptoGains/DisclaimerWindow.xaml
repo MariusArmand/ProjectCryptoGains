@@ -1,0 +1,31 @@
+﻿<Window x:Class="ProjectCryptoGains.DisclaimerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Disclaimer" 
+        Height="200" Width="400" 
+        ResizeMode="NoResize" 
+        WindowStartupLocation="CenterScreen"
+        Background="White">
+
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="The figures provided by this application are not guaranteed to be correct and should be verified by an accountant."
+                   TextWrapping="Wrap" 
+                   TextAlignment="Center" 
+                   HorizontalAlignment="Center" 
+                   VerticalAlignment="Center"
+                   Margin="10"/>
+
+        <Button Grid.Row="1" 
+                Content="I agree" 
+                HorizontalAlignment="Center" 
+                VerticalAlignment="Center" 
+                Margin="5"
+                Padding="5"
+                Click="OnAgreeClick"/>
+    </Grid>
+</Window>

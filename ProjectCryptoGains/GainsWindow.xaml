@@ -1,0 +1,75 @@
+﻿<Window x:Class="ProjectCryptoGains.GainsWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        Title="Gains" MinWidth="768" MinHeight="768" MaxHeight="1050" Closing="Window_Closing" mc:Ignorable="d">
+    <Grid>
+        <Label x:Name="lblFromDate" Width="125" Margin="25,20,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="From" />
+        <TextBox x:Name="txtFromDate" Width="125" Margin="75,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="Gray" GotFocus="TxtFromDate_GotFocus" KeyUp="TextBoxFromDate_KeyUp" LostFocus="TxtFromDate_LostFocus" Text="YYYY-MM-DD" />
+        <Label x:Name="lblToDate" Width="125" Margin="25,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="To" />
+        <TextBox x:Name="txtToDate" Width="125" Margin="75,60,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="Gray" GotFocus="TxtToDate_GotFocus" KeyUp="TextBoxToDate_KeyUp" LostFocus="TxtToDate_LostFocus" Text="YYYY-MM-DD" />
+        <Label x:Name="lblBaseCurrency" Width="125" Margin="225,20,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Base Currency" />
+        <TextBox x:Name="txtBaseCurrency" Width="125" Margin="325,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" KeyUp="TextBoxBaseCurrency_KeyUp" />
+        <Button x:Name="btnRefresh" Width="125" Height="40" Margin="475,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonRefresh_Click" Content="Refresh" />
+        <Button x:Name="btnPrint" Width="40" Height="40" Margin="625,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonPrint_Click">
+            <Image x:Name="imgBtnPrint" Width="32" Height="32" Source="Resources/printer.png" />
+        </Button>
+        <Button x:Name="btnHelp" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Click="ButtonHelp_Click">
+            <Image x:Name="imgBtnHelp" Width="32" Height="32" Source="Resources/help.png" />
+        </Button>
+        <CheckBox x:Name="chkRefreshLedgers" Width="150" Margin="30,100,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh ledgers" />
+        <CheckBox x:Name="chkRefreshTrades" Width="150" Margin="30,120,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh trades" />
+        <DataGrid x:Name="dgGains" Height="300" Margin="25,150,25,25" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True">
+            <DataGrid.Resources>
+                <Style x:Key="CellRightAlign">
+                    <Setter Property="Control.HorizontalAlignment" Value="Right" />
+                </Style>
+            </DataGrid.Resources>
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding RowNumber}" Header="ROW__NR" />
+                <DataGridTextColumn Binding="{Binding Refid}" Header="REFID" />
+                <DataGridTextColumn Binding="{Binding Date}" Header="DATE" />
+                <DataGridTextColumn Binding="{Binding Type}" Header="TYPE" />
+                <DataGridTextColumn Binding="{Binding Base_currency}" Header="BASE__CURRENCY" />
+                <DataGridTextColumn Binding="{Binding Base_amount, StringFormat='0.0000000000'}"
+                                    ElementStyle="{StaticResource CellRightAlign}"
+                                    Header="BASE__AMOUNT" />
+                <DataGridTextColumn Binding="{Binding Quote_currency}" Header="QUOTE__CURRENCY" />
+                <DataGridTextColumn Binding="{Binding Quote_amount, StringFormat='0.0000000000'}"
+                                    ElementStyle="{StaticResource CellRightAlign}"
+                                    Header="QUOTE__AMOUNT" />
+                <DataGridTextColumn Binding="{Binding Base_unit_price_fiat, StringFormat='0.0000000000'}"
+                                    ElementStyle="{StaticResource CellRightAlign}"
+                                    Header="BASE__UNIT__PRICE__FIAT" />
+                <DataGridTextColumn Binding="{Binding Costs_proceeds, StringFormat='0.0000000000'}"
+                                    ElementStyle="{StaticResource CellRightAlign}"
+                                    Header="COSTS__PROCEEDS" />
+                <DataGridTextColumn Binding="{Binding Tx_balance_remaining, StringFormat='0.0000000000'}"
+                                    ElementStyle="{StaticResource CellRightAlign}"
+                                    Header="TX__BALANCE__REMAINING" />
+                <DataGridTextColumn Binding="{Binding Gain, StringFormat='0.00'}"
+                                    ElementStyle="{StaticResource CellRightAlign}"
+                                    Header="GAIN" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <DataGrid x:Name="dgGainsSummary" Width="800" Height="150" Margin="25,475,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True">
+            <DataGrid.Resources>
+                <Style x:Key="CellRightAlign">
+                    <Setter Property="Control.HorizontalAlignment" Value="Right" />
+                </Style>
+            </DataGrid.Resources>
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding RowNumber}" Header="ROW__NR" />
+                <DataGridTextColumn Binding="{Binding Currency}" Header="CURRENCY" />
+                <DataGridTextColumn Binding="{Binding Gain, StringFormat='0.0000000000'}"
+                                    ElementStyle="{StaticResource CellRightAlign}"
+                                    Header="GAIN" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <Button x:Name="btnPrintSummary" Width="40" Height="40" Margin="850,475,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonPrintSummary_Click">
+            <Image x:Name="imgBtnPrintSummary" Width="32" Height="32" Source="Resources/printer.png" />
+        </Button>
+        <Label x:Name="lblTotalGains" Width="140" Margin="25,640,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total gains" />
+        <Label x:Name="lblTotalGainsData" Width="125" Margin="100,640,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="0.00 FIAT" />
+    </Grid>
+</Window>
