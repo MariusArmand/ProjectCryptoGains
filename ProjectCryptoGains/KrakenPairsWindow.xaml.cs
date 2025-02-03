@@ -1,18 +1,10 @@
 ﻿using Microsoft.Data.Sqlite;
-//using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
-
-//using System.Collections.Generic;
 using System.Collections.ObjectModel;
-//using System.Data;
 using System.Data.Common;
-//using System.IO;
-//using System.Linq;
-//using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
-//using System.Windows.Controls;
 using System.Windows.Input;
 using static ProjectCryptoGains.Models;
 using static ProjectCryptoGains.Utility;
@@ -84,9 +76,9 @@ namespace ProjectCryptoGains
             }
             else
             {
+                // Save assets to db
                 await Task.Run(() =>
                 {
-                    // Proceed with saving data to the database
                     using var connection = new SqliteConnection(connectionString);
                     connection.Open();
                     using var command = connection.CreateCommand();
@@ -129,10 +121,6 @@ namespace ProjectCryptoGains
 
                 if (malfconfiguredPairs.Count > 0)
                 {
-                    /*lastError = "Malconfigured pair(s) in Kraken Pairs";
-                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Pairs] {lastError}");*/
-
                     lastError = "Malconfigured pair(s) detected";
                     MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Pairs] {lastError}");
@@ -160,8 +148,6 @@ namespace ProjectCryptoGains
 
         public void BindGrid()
         {
-            /// Fill the datagrid with data from the database
-
             // Clear existing data
             KrakenPairs?.Clear();
 
@@ -171,14 +157,13 @@ namespace ProjectCryptoGains
 
             try
             {
-                // code that may throw an exception
                 connection.Open();
             }
             catch (Exception ex)
             {
-                // code to handle the exception
                 MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 this.Cursor = Cursors.Arrow;
+
                 // Exit function early
                 return;
             }

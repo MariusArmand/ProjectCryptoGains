@@ -234,7 +234,7 @@ namespace ProjectCryptoGains
                     {
                         ledgersRefreshFailed = true;
                     }
-                    ledgersRefreshWasBusy = LedgerRefreshBusy; // Check if it was busy after the call
+                    ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy after the call
                 });
             }
 

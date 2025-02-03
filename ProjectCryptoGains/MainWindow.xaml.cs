@@ -86,13 +86,6 @@ namespace ProjectCryptoGains
                     CloseWindow(winLedgers);
                 }
 
-                /*
-                if (winLedgers?.winLedgersHelp != null)
-                {
-                    CloseWindow(winLedgers.winLedgersHelp);
-                }
-                */
-
                 if (winRewards != null)
                 {
                     CloseWindow(winRewards);

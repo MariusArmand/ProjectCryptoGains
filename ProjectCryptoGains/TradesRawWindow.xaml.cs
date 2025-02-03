@@ -47,24 +47,21 @@ namespace ProjectCryptoGains
 
         private void BindGrid()
         {
-            /// Fill the datagrid with data from the database
-
-            // Create a collection of KrakenLedgersModel objects
+            // Create a collection of TradesRawModel objects
             ObservableCollection<TradesRawModel> data = [];
 
             using SqliteConnection connection = new(connectionString);
 
             try
             {
-                // code that may throw an exception
                 connection.Open();
             }
             catch (Exception ex)
             {
-                // code to handle the exception
                 MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnRefresh.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
+
                 // Exit function early
                 return;
             }
@@ -103,8 +100,7 @@ namespace ProjectCryptoGains
                     Base_currency = reader.IsDBNull(4) ? "" : reader.GetString(4),
                     Quote_amount = ConvertStringToDecimal(reader.GetString(5)),
                     Quote_currency = reader.IsDBNull(6) ? "" : reader.GetString(6),
-                    Fee = ConvertStringToDecimal(reader.GetString(7)),
-                    //Fee_currency = reader.IsDBNull(8) ? "" : reader.GetString(8)
+                    Fee = ConvertStringToDecimal(reader.GetString(7))
                 });
             }
             reader.Close();
@@ -122,7 +118,6 @@ namespace ProjectCryptoGains
         {
             if (!IsValidDateFormat(txtFromDate.Text, "yyyy-MM-dd"))
             {
-                // code to handle the exception
                 MessageBox.Show("From date does not have a correct yyyy-MM-dd format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
@@ -131,7 +126,6 @@ namespace ProjectCryptoGains
 
             if (!IsValidDateFormat(txtToDate.Text, "yyyy-MM-dd"))
             {
-                // code to handle the exception
                 MessageBox.Show("To date does not have a correct yyyy-MM-dd format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
@@ -141,10 +135,9 @@ namespace ProjectCryptoGains
             btnRefresh.IsEnabled = false;
             this.Cursor = Cursors.Wait;
 
-            // Log
             ConsoleLog(_mainWindow.txtLog, $"[Raw Trades] Refreshing raw trades");
 
-            // Load the standard DB table with data from the kraken table
+            // Load the db table with data from the kraken trades table
             bool tradesRawRefreshWasBusy = false;
 
             await Task.Run(() =>
@@ -275,7 +268,7 @@ namespace ProjectCryptoGains
             // Create a FlowDocument
             FlowDocument flowDoc = new()
             {
-                // Set the page width of the flow document to the width of an A4 page (8.27 inches)
+                // Set the page width of the flow document to the width of an A4 page
                 PageWidth = 793,
                 ColumnWidth = 793,
 
@@ -316,7 +309,6 @@ namespace ProjectCryptoGains
                 {
                     FontWeight = FontWeights.Bold
                 };
-                //tableRow.Cells.Add(new TableCell(new Paragraph(new Run("DATE"))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("TYPE"))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("EXCHANGE"))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("BASE_AMOUNT"))));
@@ -324,11 +316,9 @@ namespace ProjectCryptoGains
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("QUOTE_AMOUNT"))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("QUOTE_CURRENCY"))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("FEE"))));
-                //tableRow.Cells.Add(new TableCell(new Paragraph(new Run("FEE_CURRENCY"))));
                 table.RowGroups[0].Rows.Add(tableRow);
 
                 tableRow = new TableRow();
-                //tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Date ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Type ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Exchange ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Base_amount.ToString() ?? ""))));
@@ -336,25 +326,7 @@ namespace ProjectCryptoGains
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Quote_amount.ToString() ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Quote_currency ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Fee.ToString() ?? ""))));
-                //tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Fee_currency ?? ""))));
                 table.RowGroups[0].Rows.Add(tableRow);
-
-                /*tableRow = new TableRow();
-                tableRow.FontWeight = FontWeights.Bold;
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("SOURCE"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("TARGET"))));
-                tableCell = new TableCell(new Paragraph(new Run("NOTES")));
-                tableCell.ColumnSpan = 2;
-                tableRow.Cells.Add(tableCell);
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.source?.NullIfEmpty() ?? "N/A"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.target?.NullIfEmpty() ?? "N/A"))));
-                tableCell = new TableCell(new Paragraph(new Run(item.notes?.NullIfEmpty() ?? "N/A")));
-                tableCell.ColumnSpan = 2;
-                tableRow.Cells.Add(tableCell);
-                table.RowGroups[0].Rows.Add(tableRow);*/
 
                 tableRow = new TableRow();
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));

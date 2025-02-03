@@ -39,8 +39,6 @@ namespace ProjectCryptoGains
 
         private void BindGrid()
         {
-            /// Fill the datagrid with data from the database
-
             // Create a collection of ManualTransactionsModel objects
             ObservableCollection<ManualTransactionsModel> data = [];
 
@@ -48,15 +46,14 @@ namespace ProjectCryptoGains
 
             try
             {
-                // code that may throw an exception
                 connection.Open();
             }
             catch (Exception ex)
             {
-                // code to handle the exception
                 MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnUpload.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
+
                 // Exit function early
                 return;
             }
@@ -94,7 +91,7 @@ namespace ProjectCryptoGains
         private void ButtonUpload_Click(object sender, RoutedEventArgs e)
         {
             string? lastError = null;
-            // Log
+
             ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Attempting to load {filePath}");
 
             btnUpload.IsEnabled = false;
@@ -112,6 +109,7 @@ namespace ProjectCryptoGains
 
                 btnUpload.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
+
                 // Exit function early
                 return;
             }
@@ -132,6 +130,7 @@ namespace ProjectCryptoGains
 
                 btnUpload.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
+
                 // Exit function early
                 return;
             }
@@ -147,7 +146,7 @@ namespace ProjectCryptoGains
                     csvLine = reader.ReadLine() ?? "";
 
                     // Add rows to the DataTable
-                    if (csvLineNumber == 0) // Add columns to the first DataTable row
+                    if (csvLineNumber == 0) // Add column headers to the DataTable
                     {
                         // Get the column names from the first line
                         string[] columnNames = Regex.Split(csvLine, pattern).Select(s => s.Trim('"')).ToArray();
@@ -161,6 +160,7 @@ namespace ProjectCryptoGains
 
                             btnUpload.IsEnabled = true;
                             this.Cursor = Cursors.Arrow;
+
                             // Exit function early
                             return;
                         }
@@ -189,11 +189,12 @@ namespace ProjectCryptoGains
 
                 btnUpload.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
+
                 // Exit function early
                 return;
             }
 
-            // Load the DB table with data from the csv
+            // Load the db table with data from the csv
             using (SqliteConnection connection = new(connectionString))
             {
                 connection.Open();
@@ -226,25 +227,25 @@ namespace ProjectCryptoGains
                         value = (string)(row.ItemArray[i] ?? "");
                         if (i != 3 && i != 7 && i != 8 && i != 9 && value == "")
                         {
-                            //throw new Exception("Insert failed: " + columnName + " cannot be null.");
                             lastError = "Insert row " + insertCounter + " failed: " + columnName + " cannot be null";
                             MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
 
                             btnUpload.IsEnabled = true;
                             this.Cursor = Cursors.Arrow;
+
                             // Exit function early
                             return;
                         }
                         if (columnName == "DATE" && !IsValidDateFormat(value, "yyyy-MM-dd HH:mm:ss"))
                         {
-                            //throw new Exception("Insert failed: " + columnName + " cannot be null.");
                             lastError = "Insert row " + insertCounter + " failed: " + columnName + " should be in yyyy-MM-dd HH:mm:ss format";
                             MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
 
                             btnUpload.IsEnabled = true;
                             this.Cursor = Cursors.Arrow;
+
                             // Exit function early
                             return;
                         }
@@ -253,10 +254,9 @@ namespace ProjectCryptoGains
 
                     commandInsert.ExecuteNonQuery();
 
-                    // Increment the insertCounter
                     insertCounter++;
 
-                    // If the insertCounter is divisible by 10, commit the transaction and start a new one
+                    // If the insertCounter is divisible by 10k, commit the transaction and start a new one
                     if (insertCounter % 10000 == 0)
                     {
                         transaction.Commit();
@@ -267,16 +267,7 @@ namespace ProjectCryptoGains
                 // Commit the transaction
                 transaction.Commit();
 
-                // Check for malconfigured assets
-                /*int malconfiguredAssetManual = MalconfiguredAssetManual(connection);
-
-                if (malconfiguredAssetManual > 0)
-                {
-                    lastError = "Malconfigured or missing asset(s) detected [Configure => Asset Catalog]";
-                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
-                }*/
-
+                // Check for missing assets
                 List<string> missingAssets = MissingAssetManual(connection);
 
                 if (missingAssets.Count > 0)
@@ -299,7 +290,6 @@ namespace ProjectCryptoGains
             btnUpload.IsEnabled = true;
             this.Cursor = Cursors.Arrow;
 
-            // Log
             if (lastError == null)
             {
                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load successful");

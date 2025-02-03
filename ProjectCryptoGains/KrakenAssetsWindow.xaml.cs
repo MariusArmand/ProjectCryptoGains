@@ -126,7 +126,7 @@ namespace ProjectCryptoGains
                     MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
 
-                    // Log each malconfigured pair
+                    // Log each malconfigured asset
                     foreach (string asset in malconfiguredAssets)
                     {
                         ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Malconfigured Asset: {asset}");

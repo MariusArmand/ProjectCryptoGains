@@ -37,8 +37,6 @@ namespace ProjectCryptoGains
             txtToDate.Text = toDate;
 
             BindGrid();
-
-            //Refresh();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -61,24 +59,22 @@ namespace ProjectCryptoGains
             dgTrades.Columns[15].Header = "BASE__UNIT__PRICE__" + fiatCurrency;
             dgTrades.Columns[17].Header = "QUOTE__UNIT__PRICE__" + fiatCurrency;
             dgTrades.Columns[18].Header = "TOTAL__FEE__" + fiatCurrency;
-            /// Fill the datagrid with data from the database
 
-            // Create a collection of KrakenLedgersModel objects
+            // Create a collection of TradesModel objects
             ObservableCollection<TradesModel> data = [];
 
             using SqliteConnection connection = new(connectionString);
 
             try
             {
-                // code that may throw an exception
                 connection.Open();
             }
             catch (Exception ex)
             {
-                // code to handle the exception
                 MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnRefresh.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
+
                 // Exit function early
                 return;
             }
@@ -156,7 +152,6 @@ namespace ProjectCryptoGains
         {
             if (!IsValidDateFormat(txtFromDate.Text, "yyyy-MM-dd"))
             {
-                // code to handle the exception
                 MessageBox.Show("From date does not have a correct yyyy-MM-dd format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
@@ -165,7 +160,6 @@ namespace ProjectCryptoGains
 
             if (!IsValidDateFormat(txtToDate.Text, "yyyy-MM-dd"))
             {
-                // code to handle the exception
                 MessageBox.Show("To date does not have a correct yyyy-MM-dd format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
@@ -191,16 +185,15 @@ namespace ProjectCryptoGains
                     {
                         ledgersRefreshFailed = true;
                     }
-                    ledgersRefreshWasBusy = LedgerRefreshBusy; // Check if it was busy after the call
+                    ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy after the call
                 });
             }
 
             if (!ledgersRefreshWasBusy && !ledgersRefreshFailed)
             {
+                // Load the db table
                 string? tradesRefreshError = null;
-                // Load the standard DB table with data from the kraken table
                 bool tradesRefreshWasBusy = false;
-
                 await Task.Run(async () =>
                 {
                     try
@@ -354,7 +347,7 @@ namespace ProjectCryptoGains
             // Create a FlowDocument
             FlowDocument flowDoc = new()
             {
-                // Set the page width of the flow document to the width of an A4 page (8.27 inches)
+                // Set the page width of the flow document to the width of an A4 page
                 PageWidth = 793,
                 ColumnWidth = 793,
 

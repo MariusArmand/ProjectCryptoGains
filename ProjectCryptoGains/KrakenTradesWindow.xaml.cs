@@ -38,24 +38,21 @@ namespace ProjectCryptoGains
 
         private void BindGrid()
         {
-            /// Fill the datagrid with data from the database
-
-            // Create a collection of KrakenLedgersModel objects
+            // Create a collection of KrakenTradesModel objects
             ObservableCollection<KrakenTradesModel> data = [];
 
             using SqliteConnection connection = new(connectionString);
 
             try
             {
-                // code that may throw an exception
                 connection.Open();
             }
             catch (Exception ex)
             {
-                // code to handle the exception
                 MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnUpload.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
+
                 // Exit function early
                 return;
             }
@@ -97,7 +94,7 @@ namespace ProjectCryptoGains
         {
             string? lastWarning = null;
             string? lastError = null;
-            // Log
+
             ConsoleLog(_mainWindow.txtLog, $"[Kraken Trades] Attempting to load {filePath}");
 
             btnUpload.IsEnabled = false;
@@ -116,6 +113,7 @@ namespace ProjectCryptoGains
 
                 btnUpload.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
+
                 // Exit function early
                 return;
             }
@@ -134,7 +132,7 @@ namespace ProjectCryptoGains
                         csvLine = reader.ReadLine() ?? "";
 
                         // Add rows to the DataTable
-                        if (csvLineNumber == 0) // Add columns to the first DataTable row
+                        if (csvLineNumber == 0) // Add column headers to the DataTable
                         {
                             // Get the column names from the first line
                             string[] columnNames = Regex.Split(csvLine, pattern).Select(s => s.Trim('"')).ToArray();
@@ -148,6 +146,7 @@ namespace ProjectCryptoGains
 
                                 btnUpload.IsEnabled = true;
                                 this.Cursor = Cursors.Arrow;
+
                                 // Exit function early
                                 return;
                             }
@@ -176,6 +175,7 @@ namespace ProjectCryptoGains
 
                     btnUpload.IsEnabled = true;
                     this.Cursor = Cursors.Arrow;
+
                     // Exit function early
                     return;
                 }
@@ -213,10 +213,9 @@ namespace ProjectCryptoGains
 
                     commandInsert.ExecuteNonQuery();
 
-                    // Increment the insertCounter
                     insertCounter++;
 
-                    // If the insertCounter is divisible by 10, commit the transaction and start a new one
+                    // If the insertCounter is divisible by 10k, commit the transaction and start a new one
                     if (insertCounter % 10000 == 0)
                     {
                         transaction.Commit();
@@ -250,7 +249,6 @@ namespace ProjectCryptoGains
             btnUpload.IsEnabled = true;
             this.Cursor = Cursors.Arrow;
 
-            // Log
             if (lastError == null)
             {
                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Trades] Load successful");

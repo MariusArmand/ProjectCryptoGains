@@ -21,6 +21,8 @@ namespace ProjectCryptoGains
 
         private SqliteConnection? connection;
 
+        private string? lastError = null;
+
         public MetricsWindow(MainWindow mainWindow)
         {
             InitializeComponent();
@@ -63,6 +65,7 @@ namespace ProjectCryptoGains
         private void BindLabels()
         {
             string? fiatCurrency = SettingFiatCurrency;
+            
             if (connection != null)
             {
                 try
@@ -94,12 +97,21 @@ namespace ProjectCryptoGains
 
                     reader = command.ExecuteReader();
 
-                    reader.Read();
-                    lblLastInvestedData.Content = reader.GetString(0);
+                    string lastInvested = "";
+                    if (reader.HasRows)
+                    {
+                        reader.Read();
+                        lastInvested = reader.GetString(0);
+                    }
+                    lblLastInvestedData.Content = lastInvested;
                     reader.Close();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    lastError = "There was a problem getting invest metrics." + Environment.NewLine + ex.Message;
+                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
+
                     // Exit function early
                     return;
                 }
@@ -110,7 +122,7 @@ namespace ProjectCryptoGains
         {
             string? fiatCurrency = SettingFiatCurrency;
             lblTotalInvestedData.Content = "0.00 " + fiatCurrency;
-            lblLastInvestedData.Content = "0.00 " + fiatCurrency;
+            lblLastInvestedData.Content = "";
         }
 
         private void BindGrid()
@@ -118,8 +130,6 @@ namespace ProjectCryptoGains
             string? fiatCurrency = SettingFiatCurrency;
             dgAvgBuyPrice.Columns[2].Header = "AMOUNT__" + fiatCurrency;
             dgRewardsSummary.Columns[3].Header = "AMOUNT__" + fiatCurrency;
-
-            /// Fill the datagrid with data from the database
 
             if (connection != null)
             {
@@ -155,6 +165,7 @@ namespace ProjectCryptoGains
                     MessageBox.Show("Is there a currency translation missing?" + Environment.NewLine, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     btnRefresh.IsEnabled = true;
                     this.Cursor = Cursors.Arrow;
+
                     // Exit function early
                     return;
                 }
@@ -163,7 +174,7 @@ namespace ProjectCryptoGains
                 dgAvgBuyPrice.ItemsSource = dataAvgBuyPrice;
 
                 //Rewards
-                // Create a collection of Model objects
+                // Create a collection of RewardsSummaryModel objects
                 ObservableCollection<RewardsSummaryModel> dataRewards = [];
 
                 command.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_REWARDS_SUMMARY_S where CAST(AMOUNT AS REAL) > 0";
@@ -195,6 +206,7 @@ namespace ProjectCryptoGains
                     MessageBox.Show("Is there a currency translation missing?" + Environment.NewLine, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     btnRefresh.IsEnabled = true;
                     this.Cursor = Cursors.Arrow;
+
                     // Exit function early
                     return;
                 }
@@ -215,6 +227,8 @@ namespace ProjectCryptoGains
         private async void Refresh()
         {
             string? fiatCurrency = SettingFiatCurrency;
+            lastError = null;
+
             btnRefresh.IsEnabled = false;
             this.Cursor = Cursors.Wait;
 
@@ -224,7 +238,6 @@ namespace ProjectCryptoGains
             bool ledgersRefreshFailed = false;
             if (chkRefreshLedgers.IsChecked == true)
             {
-                //ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refreshing ledgers");
                 await Task.Run(() =>
                 {
                     try
@@ -235,9 +248,8 @@ namespace ProjectCryptoGains
                     {
                         ledgersRefreshFailed = true;
                     }
-                    ledgersRefreshWasBusy = LedgerRefreshBusy;
+                    ledgersRefreshWasBusy = LedgersRefreshBusy;
                 });
-                //ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refreshing ledgers done");
             }
 
             string? tradesRefreshError = null;
@@ -269,7 +281,6 @@ namespace ProjectCryptoGains
                     return;
                 }
 
-                string? lastError = null;
                 if (connection != null)
                 {
                     DbCommand commandDelete = connection.CreateCommand();
@@ -384,7 +395,6 @@ namespace ProjectCryptoGains
                             lastError = ex.Message;
                         }
                     });
-
 
                     if (lastError != null)
                     {

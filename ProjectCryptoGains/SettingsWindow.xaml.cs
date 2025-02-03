@@ -17,9 +17,6 @@ namespace ProjectCryptoGains
             InitializeComponent();
             _mainWindow = mainWindow;
 
-            //txtFiatCurrency.Foreground = Brushes.Gray;
-            //txtFiatCurrency.IsReadOnly = true;
-
             Bind();
         }
 

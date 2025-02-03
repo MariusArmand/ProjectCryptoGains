@@ -21,7 +21,7 @@ namespace ProjectCryptoGains
         public static readonly string connectionString = $"Data Source={databasePath}";
 
         // Parallel run prevention //
-        public static bool LedgerRefreshBusy { get; private set; } = false;
+        public static bool LedgersRefreshBusy { get; private set; } = false;
         public static bool TradesRawRefreshBusy { get; private set; } = false;
         public static bool TradesRefreshBusy { get; private set; } = false;
 
@@ -97,7 +97,7 @@ namespace ProjectCryptoGains
                     }
                     else
                     {
-                        _settingCryptoCompareApiKey = null; // No key found in the database
+                        _settingCryptoCompareApiKey = null; // No setting found in the database
                     }
                 }
                 connection.Close();
@@ -164,7 +164,7 @@ namespace ProjectCryptoGains
             {
                 using SqliteConnection connection = new(connectionString);
                 connection.Open();
-                // CryptoCompare Api Key
+
                 DbCommand command = connection.CreateCommand();
                 command.CommandText = @"SELECT VALUE FROM TB_SETTINGS_S
 										WHERE NAME = 'FIAT_CURRENCY'";
@@ -177,14 +177,13 @@ namespace ProjectCryptoGains
                     }
                     else
                     {
-                        _settingFiatCurrency = null; // No key found in the database
+                        _settingFiatCurrency = null; // No setting found in the database
                     }
                 }
                 connection.Close();
             }
             catch (Exception ex)
             {
-                // Exit function early
                 _settingFiatCurrency = null;
                 throw new InvalidOperationException("Failed to load fiat currency from database", ex);
             }
@@ -219,11 +218,10 @@ namespace ProjectCryptoGains
         {
             lock (LedgerRefreshlock) // Only one thread can enter this block at a time
             {
-                if (LedgerRefreshBusy)
+                if (LedgersRefreshBusy)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        //MessageBox.Show("There is already a ledgers refresh in progress. Please Wait", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         string message = "There is already a ledgers refresh in progress. Please Wait";
                         MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         if (_mainWindow != null)
@@ -234,8 +232,8 @@ namespace ProjectCryptoGains
                     return; // Exit the method here if refresh is already in progress
                 }
 
-                LedgerRefreshBusy = true;
-            } // Release the lock here, allowing other threads to check ledgerRefreshBusy
+                LedgersRefreshBusy = true;
+            } // Release the lock here, allowing other threads to check ledgersRefreshBusy
 
             try
             {
@@ -278,11 +276,11 @@ namespace ProjectCryptoGains
 
                 DbCommand commandDelete = connection.CreateCommand();
 
-                // Truncate standard DB table
+                // Truncate db table
                 commandDelete.CommandText = "DELETE FROM TB_LEDGERS_S";
                 commandDelete.ExecuteNonQuery();
 
-                // Insert into standard DB table
+                // Insert into db table
                 DbCommand commandInsert = connection.CreateCommand();
 
                 commandInsert.CommandText = $@"INSERT INTO TB_LEDGERS_S
@@ -413,9 +411,9 @@ namespace ProjectCryptoGains
             }
             finally
             {
-                lock (LedgerRefreshlock) // Lock again to safely update ledgerRefreshBusy
+                lock (LedgerRefreshlock) // Lock again to safely update ledgersRefreshBusy
                 {
-                    LedgerRefreshBusy = false;
+                    LedgersRefreshBusy = false;
                 }
             }
         }
@@ -434,7 +432,7 @@ namespace ProjectCryptoGains
                 }
 
                 TradesRawRefreshBusy = true;
-            } // Release the lock here, allowing other threads to check ledgerRefreshBusy
+            } // Release the lock here, allowing other threads to check ledgersRefreshBusy
 
             try
             {
@@ -451,11 +449,11 @@ namespace ProjectCryptoGains
 
                 DbCommand commandDelete = connection.CreateCommand();
 
-                // Truncate standard DB table
+                // Truncate db table
                 commandDelete.CommandText = "DELETE FROM TB_TRADES_RAW_S";
                 commandDelete.ExecuteNonQuery();
 
-                // Insert into standard DB table
+                // Insert into db table
                 DbCommand commandInsert = connection.CreateCommand();
 
                 commandInsert.CommandText = @"INSERT INTO TB_TRADES_RAW_S 
@@ -484,7 +482,7 @@ namespace ProjectCryptoGains
             }
             finally
             {
-                lock (TradesRawRefreshlock) // Lock again to safely update ledgerRefreshBusy
+                lock (TradesRawRefreshlock) // Lock again to safely update ledgersRefreshBusy
                 {
                     TradesRawRefreshBusy = false;
                 }
@@ -510,7 +508,7 @@ namespace ProjectCryptoGains
                 }
 
                 TradesRefreshBusy = true;
-            } // Release the lock here, allowing other threads to check ledgerRefreshBusy
+            } // Release the lock here, allowing other threads to check ledgersRefreshBusy
 
             try
             {
@@ -531,11 +529,11 @@ namespace ProjectCryptoGains
 
                 DbCommand commandDelete = connection.CreateCommand();
 
-                // Truncate standard DB table
+                // Truncate db table
                 commandDelete.CommandText = "DELETE FROM TB_TRADES_S";
                 commandDelete.ExecuteNonQuery();
 
-                // Insert into standard DB table
+                // Insert into db table
                 DbCommand commandInsert = connection.CreateCommand();
 
                 commandInsert.CommandText = $@"INSERT INTO TB_TRADES_S 
@@ -835,7 +833,7 @@ namespace ProjectCryptoGains
             }
             finally
             {
-                lock (TradesRefreshlock) // Lock again to safely update ledgerRefreshBusy
+                lock (TradesRefreshlock) // Lock again to safely update tradesRefreshBusy
                 {
                     TradesRefreshBusy = false;
                 }

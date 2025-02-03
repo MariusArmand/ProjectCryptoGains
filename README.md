@@ -65,6 +65,8 @@ Run the tool to process transactions and calculate:
 
 ## Disclaimer
 - **Accuracy**: While efforts have been made to ensure accuracy, the correctness of the calculations should be verified by a professional accountant.
+- **Historical Price Data Timing**: Historical prices used in the tool are fetched from [CryptoCompare] using the **opening price** on the relevant date. 
+This approach limits API calls and maintains performance, with the assumption that consistently using opening prices provides a balanced representation of historical price data.
 
 ## Contact
 For any questions or feedback, feel free to reach out via:

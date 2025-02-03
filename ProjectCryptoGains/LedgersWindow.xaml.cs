@@ -39,19 +39,6 @@ namespace ProjectCryptoGains
             txtToDate.Text = toDate;
 
             Refresh();
-
-            /*
-            // Handle the Closing event of the main window
-            this.Closing += (sender, e) =>
-            {
-                // Close the subwindows
-
-                if (winLedgersHelp != null)
-                {
-                    CloseWindow(winLedgersHelp);
-                }
-            };
-            */
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -62,39 +49,12 @@ namespace ProjectCryptoGains
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
         {
-            /*
-            // Create window if it doesn't exist yet
-            winLedgersHelp ??= new LedgersHelpWindow();
-            ShowAndFocusSubWindow(winLedgersHelp, this.Owner);
-            */
-
-            /*
-            string helpfilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "help", "ledgers_help.html");
-
-            if (System.IO.File.Exists(helpfilePath))
-            {
-                try
-                {
-                    // Opens the file with the default application for .html files, which is usually the default web browser
-                    Process.Start(new ProcessStartInfo(helpfilePath){ UseShellExecute = true });
-                }
-                catch (System.ComponentModel.Win32Exception ex)
-                {
-                    MessageBox.Show("The help file could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
-            {
-                MessageBox.Show("The help file does not exist.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }*/
             OpenHelp("ledgers_help.html");
         }
 
         public void BindGrid()
         {
-            /// Fill the datagrid with data from the database
-
-            // Create a collection of KrakenLedgersModel objects
+            // Create a collection of LedgersModel objects
             ObservableCollection<LedgersModel> data = [];
 
             using SqliteConnection connection = new(connectionString);
@@ -110,16 +70,12 @@ namespace ProjectCryptoGains
                 MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnRefresh.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
+
                 // Exit function early
                 return;
             }
 
             DbCommand command = connection.CreateCommand();
-            /* command.CommandText = "SELECT REFID, DATE, TYPE, EXCHANGE, AMOUNT, CURRENCY, FEE, CASE WHEN REFID LIKE 'MANUAL%' THEN '' ELSE BALANCE END AS BALANCE," +
-								  " SOURCE, TARGET, NOTES FROM TB_LEDGERS_S" +
-								  " WHERE strftime('%s', DATE) BETWEEN strftime('%s', '" + fromDate + "')" +
-								  " AND strftime('%s', '" + toDate + "')" +
-								  " ORDER BY DATE ASC"; */
 
             command.CommandText = $@"SELECT 
 										REFID, 
@@ -195,10 +151,9 @@ namespace ProjectCryptoGains
             btnRefresh.IsEnabled = false;
             this.Cursor = Cursors.Wait;
 
-            // Log
             ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refreshing ledgers");
 
-            // Load the standard DB table with data from the kraken table
+            // Load the db table
             bool ledgersRefreshWasBusy = false;
             bool ledgersRefreshFailed = false;
             await Task.Run(() =>
@@ -212,14 +167,13 @@ namespace ProjectCryptoGains
                     ledgersRefreshFailed = true;
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        //MessageBox.Show("outside error " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         if (ex.InnerException != null)
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[Ledgers] " + ex.InnerException.Message);
                         }
                     });
                 }
-                ledgersRefreshWasBusy = LedgerRefreshBusy; // Check if it was busy after the call
+                ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy when called
             });
 
             if (!ledgersRefreshWasBusy && !ledgersRefreshFailed)
@@ -346,7 +300,7 @@ namespace ProjectCryptoGains
             // Create a FlowDocument
             FlowDocument flowDoc = new()
             {
-                // Set the page width of the flow document to the width of an A4 page (8.27 inches)
+                // Set the page width of the flow document to the width of an A4 page
                 PageWidth = 793,
                 ColumnWidth = 793,
 

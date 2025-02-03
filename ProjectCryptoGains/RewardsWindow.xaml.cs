@@ -26,8 +26,6 @@ namespace ProjectCryptoGains
         private string fromDate = "2009-01-03";
         private string toDate = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-        //string? lastError = null;
-
         public RewardsWindow(MainWindow mainWindow)
         {
             InitializeComponent();
@@ -52,7 +50,6 @@ namespace ProjectCryptoGains
             string? fiatCurrency = SettingFiatCurrency;
             dgRewards.Columns[7].Header = "AMOUNT__" + fiatCurrency;
             dgRewardsSummary.Columns[3].Header = "AMOUNT__" + fiatCurrency;
-            /// Fill the datagrid with data from the database
 
             // Create a collections of model objects
             ObservableCollection<RewardsModel> dataRewards = [];
@@ -69,6 +66,7 @@ namespace ProjectCryptoGains
                 MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnRefresh.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
+
                 // Exit function early
                 return;
             }
@@ -176,7 +174,6 @@ namespace ProjectCryptoGains
         {
             if (!IsValidDateFormat(txtFromDate.Text, "yyyy-MM-dd"))
             {
-                // code to handle the exception
                 MessageBox.Show("From date does not have a correct yyyy-MM-dd format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
@@ -185,7 +182,6 @@ namespace ProjectCryptoGains
 
             if (!IsValidDateFormat(txtToDate.Text, "yyyy-MM-dd"))
             {
-                // code to handle the exception
                 MessageBox.Show("To date does not have a correct yyyy-MM-dd format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
@@ -211,7 +207,7 @@ namespace ProjectCryptoGains
                     {
                         ledgersRefreshFailed = true;
                     }
-                    ledgersRefreshWasBusy = LedgerRefreshBusy; // Check if it was busy after the call
+                    ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy after the call
                 });
             }
 
@@ -247,7 +243,6 @@ namespace ProjectCryptoGains
             else
             {
                 UnbindGrid();
-                //ConsoleLog(_mainWindow.txtLog, $"[Rewards] There is already a ledgers refresh in progress. Please Wait");
                 ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh unsuccessful");
             }
 
@@ -289,14 +284,8 @@ namespace ProjectCryptoGains
                                              AND strftime('%s', DATE) BETWEEN strftime('%s', '{fromDate}')
                                              AND strftime('%s', date('{toDate}', '+1 day'))";
 
-                    // Insert into rewards DB table
-                    //lastError = null;
-                    //int errors = 0;
+                    // Insert into rewards db table
                     using DbDataReader reader = command.ExecuteReader();
-
-                    //string exchangeRate = "";
-                    //string previousSource = "API";
-
 
                     // Rate limiting mechanism //
                     DateTime lastCallTime = DateTime.MinValue;
@@ -478,7 +467,7 @@ namespace ProjectCryptoGains
             // Create a FlowDocument
             FlowDocument flowDoc = new()
             {
-                // Set the page width of the flow document to the width of an A4 page (8.27 inches)
+                // Set the page width of the flow document to the width of an A4 page
                 PageWidth = 793,
                 ColumnWidth = 793,
 
@@ -606,7 +595,7 @@ namespace ProjectCryptoGains
             // Create a FlowDocument
             FlowDocument flowDoc = new()
             {
-                // Set the page width of the flow document to the width of an A4 page (8.27 inches)
+                // Set the page width of the flow document to the width of an A4 page
                 PageWidth = 793,
                 ColumnWidth = 793,
 
