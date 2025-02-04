@@ -131,22 +131,25 @@ namespace ProjectCryptoGains
             dgAvgBuyPrice.Columns[2].Header = "AMOUNT__" + fiatCurrency;
             dgRewardsSummary.Columns[3].Header = "AMOUNT__" + fiatCurrency;
 
+            lblTotalAmountFiatData.Content = "0.00 " + fiatCurrency;
+
             if (connection != null)
             {
-                // Create a collection of Model objects
-                ObservableCollection<AvgBuyPriceModel> dataAvgBuyPrice = [];
-
-                DbCommand command = connection.CreateCommand();
-
-                //Average buy price
-                command.CommandText = "SELECT CURRENCY, COALESCE(AMOUNT_FIAT, 0.00) FROM TB_AVG_BUY_PRICE_S";
-                DbDataReader reader = command.ExecuteReader();
-
                 int dbLineNumber = 0;
-                List<decimal> values = []; //Amount of currencies (List for dynamic sizing)
                 decimal amnt_fiat;
+
+                // Average buy price
                 try
                 {
+                    // Create a collection of Model objects
+                    ObservableCollection<AvgBuyPriceModel> dataAvgBuyPrice = [];
+
+                    DbCommand command = connection.CreateCommand();
+
+                    command.CommandText = "SELECT CURRENCY, COALESCE(AMOUNT_FIAT, 0.00) FROM TB_AVG_BUY_PRICE_S";
+                    DbDataReader reader = command.ExecuteReader();
+
+                    dbLineNumber = 0;
                     while (reader.Read())
                     {
                         amnt_fiat = ConvertStringToDecimal(reader.GetString(1));
@@ -156,35 +159,40 @@ namespace ProjectCryptoGains
                             Currency = reader.IsDBNull(0) ? "" : reader.GetString(0),
                             Amount_fiat = amnt_fiat
                         });
-                        values.Add(amnt_fiat);
                         dbLineNumber++;
                     }
+
+                    reader.Close();
+
+                    dgAvgBuyPrice.ItemsSource = dataAvgBuyPrice;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    MessageBox.Show("Is there a currency translation missing?" + Environment.NewLine, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    lastError = "There was a problem getting average buy prices." + Environment.NewLine + ex.Message;
+
+                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
+
                     btnRefresh.IsEnabled = true;
                     this.Cursor = Cursors.Arrow;
 
                     // Exit function early
                     return;
                 }
-                reader.Close();
 
-                dgAvgBuyPrice.ItemsSource = dataAvgBuyPrice;
-
-                //Rewards
-                // Create a collection of RewardsSummaryModel objects
-                ObservableCollection<RewardsSummaryModel> dataRewards = [];
-
-                command.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_REWARDS_SUMMARY_S where CAST(AMOUNT AS REAL) > 0";
-                reader = command.ExecuteReader();
-
-                dbLineNumber = 0;
-                values.Clear();
-                decimal tot_amnt_fiat = 0.00m;
+                // Rewards
                 try
                 {
+                    // Create a collection of RewardsSummaryModel objects
+                    ObservableCollection<RewardsSummaryModel> dataRewards = [];
+
+                    DbCommand command = connection.CreateCommand();
+
+                    command.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_REWARDS_SUMMARY_S where CAST(AMOUNT AS REAL) > 0";
+                    DbDataReader reader = command.ExecuteReader();
+
+                    decimal tot_amnt_fiat = 0.00m;
+                    dbLineNumber = 0;
                     while (reader.Read())
                     {
                         amnt_fiat = ConvertStringToDecimal(reader.GetString(2));
@@ -196,23 +204,27 @@ namespace ProjectCryptoGains
                             Amount_fiat = amnt_fiat
                         });
                         tot_amnt_fiat += amnt_fiat;
-                        values.Add(amnt_fiat);
                         dbLineNumber++;
                     }
                     lblTotalAmountFiatData.Content = tot_amnt_fiat.ToString("F2") + " " + fiatCurrency;
+
+                    reader.Close();
+
+                    dgRewardsSummary.ItemsSource = dataRewards;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    MessageBox.Show("Is there a currency translation missing?" + Environment.NewLine, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    lastError = "There was a problem getting rewards." + Environment.NewLine + ex.Message;
+
+                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
+
                     btnRefresh.IsEnabled = true;
                     this.Cursor = Cursors.Arrow;
 
                     // Exit function early
                     return;
                 }
-                reader.Close();
-
-                dgRewardsSummary.ItemsSource = dataRewards;
             }
         }
 

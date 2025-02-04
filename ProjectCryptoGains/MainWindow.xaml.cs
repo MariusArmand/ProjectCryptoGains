@@ -111,9 +111,29 @@ namespace ProjectCryptoGains
             }
 
             ////////////////////
-            SettingFiatCurrency = "EUR";
+            // Load Settings
             ////////////////////
             string? lastError = null;
+
+            try
+            {
+                LoadSettingFiatCurrencyFromDB();
+                if (string.IsNullOrEmpty(SettingFiatCurrency))
+                {
+                    SettingFiatCurrency = "EUR";
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Settings] {lastError}");
+                MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
 
             try
             {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
 using static ProjectCryptoGains.Utility;
@@ -22,7 +23,11 @@ namespace ProjectCryptoGains
 
         private void Bind()
         {
-            txtFiatCurrency.Text = SettingFiatCurrency;
+            // Populate ComboBox with options
+            cmbFiatCurrency.ItemsSource = new List<string> { "EUR", "USD" };
+            // Set the selected item based on the current setting
+            cmbFiatCurrency.Text = SettingFiatCurrency;
+
             txtCryptoCompareApiKey.Text = SettingCryptoCompareApiKey;
         }
 
@@ -37,7 +42,8 @@ namespace ProjectCryptoGains
 
             try
             {
-                SettingFiatCurrency = txtFiatCurrency.Text;
+                //SettingFiatCurrency = txtFiatCurrency.Text;
+                SettingFiatCurrency = cmbFiatCurrency.SelectedItem as string;
                 SettingCryptoCompareApiKey = txtCryptoCompareApiKey.Text;
 
                 string message = "Settings have been saved";

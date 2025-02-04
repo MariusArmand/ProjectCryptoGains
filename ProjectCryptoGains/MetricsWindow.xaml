@@ -12,22 +12,6 @@
         <Label x:Name="lblTotalInvestedData" Width="125" Margin="125,125,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="0.00 FIAT" />
         <Label x:Name="lblLastInvested" Width="125" Margin="25,150,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Last invested" />
         <Label x:Name="lblLastInvestedData" Width="125" Margin="125,150,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="" />
-        <!--<Label x:Name="lblDate" Width="125" Margin="0,25,75,0" HorizontalAlignment="Right" VerticalAlignment="Top" Content="Date" />
-        <DatePicker x:Name="dpDate" Width="125" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top"
-                    SelectedDate="{x:Static sys:DateTime.Now}">
-            <DatePicker.Resources>
-                <Style TargetType="DatePickerTextBox">
-                    <Setter Property="Control.Template">
-                        <Setter.Value>
-                            <ControlTemplate>
-                                <TextBox x:Name="PART_TextBox" IsReadOnly="True"
-                                         Text="{Binding Path=SelectedDate, StringFormat={}{0:yyyy-MM-dd}, RelativeSource={RelativeSource AncestorType={x:Type DatePicker}}}" />
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </DatePicker.Resources>
-        </DatePicker>-->
         <Label x:Name="lblAvgBuyPrice" Width="125" Margin="25,200,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Average buy price" FontWeight="Bold" />
         <DataGrid x:Name="dgAvgBuyPrice" Width="400" Height="200" Margin="25,230,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True">
             <DataGrid.Resources>
