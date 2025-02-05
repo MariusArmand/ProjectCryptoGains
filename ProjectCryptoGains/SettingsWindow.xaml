@@ -1,0 +1,9 @@
+﻿<Window x:Class="ProjectCryptoGains.SettingsWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" Title="Settings" MinWidth="660" MaxWidth="660" MinHeight="200" MaxHeight="200" Closing="Window_Closing" mc:Ignorable="d">
+    <Grid>
+        <Label x:Name="lblFiatCurrency" Width="140" Margin="25,20,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Fiat currency" />
+        <ComboBox x:Name="cmbFiatCurrency" Width="60" Margin="200,25,25,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <Label x:Name="lblCryptoCompareApiKey" Width="140" Margin="25,50,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="CryptoCompare API key" />
+        <TextBox x:Name="txtCryptoCompareApiKey" Width="415" Margin="200,50,25,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <Button x:Name="btnSave" Width="125" Height="40" Margin="490,65,25,25" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="Save_Click" Content="Save" />
+    </Grid>
+</Window>

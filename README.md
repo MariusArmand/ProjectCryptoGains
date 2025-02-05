@@ -1,0 +1,89 @@
+# ProjectCryptoGains
+
+[![Project Status: In Development](https://img.shields.io/badge/status-in%20development-yellow.svg)](https://github.com/MariusArmand/ProjectCryptoGains)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+## Overview
+Project Crypto Gains is designed to simplify the calculation of taxes on cryptocurrency investments.
+This tool aims to provide a user-friendly solution for tracking and calculating taxes on crypto transactions.
+
+## Features
+
+### Transaction Types Supported
+- **Simple Limit/Market Buys/Sells**
+- **Rewards**
+- **Deposits**
+- **Withdraws**
+
+### CSV Import & Processing
+- Load ledger data from Kraken FX in CSV format.
+- Process manually created ledger CSV files.
+
+### Transaction Handling
+- Calculates costs and proceeds from crypto transactions.
+- Computes gains using the LIFO method.
+- Manages balance calculations.
+
+### Metrics
+- Track total invested and last invested.
+- Calculates the average buy price per asset.
+- Shows the total rewards gathered and their conversion to fiat.
+
+### Rewards
+- Calculates rewards from staking, converted to their fiat price upon time of receiving, which can be used for withholding tax preparation.
+
+### Data Storage
+- Locally stores previously looked-up price data to reduce API calls and improve performance.
+
+### Printable
+- All relevant output is printable to provide to your accountant.
+
+## Requirements
+- **API Access**: Users must have one of the [CCData/CryptoCompare](https://cryptocompare.com) API licenses tailored to their needs for real-time price data.
+- **Local Currency**: Currently tested for Euro (EUR) as the local currency, suitable for users in Belgium and other Eurozone countries.
+
+## Usage
+
+### Setup
+- Ensure you have a valid API key from CCData/CryptoCompare.
+
+### Data Import
+- Import your transaction history from Kraken FX or use the manual CSV format.
+
+### Execution
+Run the tool to process transactions and calculate:
+- Ledgers
+- Raw Trades (Kraken FX trades only)
+- Trades
+- Gains 
+- Rewards
+- Balances
+- Metrics
+
+### Review Results
+- Check all output for accuracy.
+
+## Installation
+- *Detailed installation instructions will be added here once the project is ready for public use.*
+
+## Disclaimer
+**Accuracy**: While efforts have been made to aim for accuracy, the correctness of the calculations should be verified by a professional accountant. 
+
+**Historical Price Data Timing**: Historical prices used in the tool are fetched from [CryptoCompare] using the opening price on the relevant date. 
+This approach limits API calls and maintains performance, with the assumption that consistently using opening prices provides a balanced representation 
+of historical price data. 
+
+**General Disclaimer**: Use at your own risk. This software is provided 'as is', without warranty of any kind, either express or implied, 
+including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement. 
+
+**None of the output from this program should be considered financial advice; it is for educational purposes only.** In no event shall the author or 
+contributors be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, 
+or in connection with the software or the use or other dealings in the software.
+
+## Contact
+For any questions or feedback, feel free to reach out via:
+- The **issues page** of this repository.
+- My X handle: [@ProjCryptoGains](https://x.com/ProjCryptoGains).
+
+## Note
+This README is a preliminary draft and will be updated with more detailed instructions, installation steps, and additional features as the project evolves.

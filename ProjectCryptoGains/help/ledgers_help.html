@@ -1,0 +1,135 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Crypto Gains - Help - Ledgers</title>
+    <link rel="stylesheet" href="style_help.css">
+</head>
+<body>
+    <table>
+        <tr>
+            <td valign="top" style="padding-right: 20px;">
+                REFID
+            </td>
+            <td valign="top">
+                Reference ID.</br>
+                Starts with "Q" for deposits.</br>
+                Starts with "A" or "B" for withdrawals.</br>
+                Starts with "B" for transfers to Futures wallet or when staking an asset.</br>
+                Starts with "T" for trades.</br>
+                Starts with "R" for transfers from Futures wallet, or un-staking an asset, or receiving rewards from staking.</br>
+                Starts with "S" for staking rewards.</br>
+                Starts with "MANUAL" for all manual transactions.
+            </td>
+        </tr>
+        <tr><td></td></tr>
+
+        <tr>
+            <td valign="top" style="padding-right: 20px;">
+                DATE
+            </td>
+            <td valign="top">
+                Includes both date & time (in UTC time zone).
+            </td>
+        </tr>
+        <tr><td></td></tr>
+
+        <tr>
+            <td valign="top" style="padding-right: 20px;">
+                TYPE
+            </td>
+            <td valign="top">
+                "TRADE" = non-margin exchange of one currency for another.</br>
+				"EARN" = relates to all on-chain staking and Opt-In Rewards activities, including allocation, deallocation, rewards, and other transactions. This unified service encompasses both types of staking under a single category.</br>
+                "DEPOSIT" = deposit of funds to your Kraken account (including KFEE credits), including transfers from your Kraken Futures wallet or from a credit/debit card purchase (card purchases show a 'deposit' for the full amount charged to the card, then a 'spend' for the amount spent on the asset after the transaction fee is deducted, and 'receive' for the credit of the asset bought).</br>
+                "WITHDRAWAL" = withdrawal of funds outside of your Kraken account, including transfers to your Kraken Futures wallet.</br>
+                "TRANSFER" = credit of supported airdrops and forks (e.g. BCH and XLM), and funds transferred to/from Kraken's OTC desk; does not include transfers to/from your Kraken Futures wallet.</br>
+                "STAKING" = updates to staked balances, including initial staked balances and changes due to the crediting of staking rewards.
+            </td>
+        </tr>
+        <tr><td></td></tr>
+
+        <tr>
+            <td valign="top" style="padding-right: 20px;">
+                EXCHANGE
+            </td>
+            <td valign="top">
+                Exchange involved.
+            </td>
+        </tr>
+        <tr><td></td></tr>
+
+        <tr>
+            <td valign="top" style="padding-right: 20px;">
+                CURRENCY
+            </td>
+            <td valign="top">
+                Asset Class.
+            </td>
+        </tr>
+        <tr><td></td></tr>
+
+        <tr>
+            <td valign="top" style="padding-right: 20px;">
+                AMOUNT
+            </td>
+            <td valign="top">
+                Amount debited (-) or credited (+) to that asset's balance.
+            </td>
+        </tr>
+        <tr><td></td></tr>
+
+        <tr>
+            <td valign="top" style="padding-right: 20px;">
+                FEE
+            </td>
+            <td valign="top">
+                Fee paid to Kraken (if any) in the asset.
+            </td>
+        </tr>
+        <tr><td></td></tr>
+
+        <tr>
+            <td valign="top" style="padding-right: 20px;">
+                BALANCE
+            </td>
+            <td valign="top">
+                New asset balance after debiting/crediting transaction amount and debiting fee.</br></br>
+
+                balance = old_balance +/- amount - fee</br>
+                Will be "N/A" for MANUAL transactions.
+            </td>
+        </tr>
+        <tr><td></td></tr>
+
+        <tr>
+            <td valign="top" style="padding-right: 20px;">
+                SOURCE
+            </td>
+            <td valign="top">
+                Origin of transaction.
+            </td>
+        </tr>
+        <tr><td></td></tr>
+
+        <tr>
+            <td valign="top" style="padding-right: 20px;">
+                TARGET
+            </td>
+            <td valign="top">
+                Goal of transaction.
+            </td>
+        </tr>
+        <tr><td></td></tr>
+
+        <tr>
+            <td valign="top" style="padding-right: 20px;">
+                NOTES
+            </td>
+            <td valign="top">
+                Short transaction description.
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

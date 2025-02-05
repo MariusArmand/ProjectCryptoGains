@@ -1,0 +1,40 @@
+﻿<Window x:Class="ProjectCryptoGains.BalancesWindow" 
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+        Title="Balances" MinWidth="600" MinHeight="768" MaxWidth="600" MaxHeight="768" Closing="Window_Closing" mc:Ignorable="d">
+    <Grid>
+        <Label x:Name="lblUntilDate" Width="125" Margin="25,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Until" />
+        <TextBox x:Name="txtUntilDate" Width="125" Margin="75,30,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="Gray" GotFocus="TxtUntilDate_GotFocus" KeyUp="TextBoxUntilDate_KeyUp" LostFocus="TxtUntilDate_LostFocus" Text="YYYY-MM-DD" />
+        <CheckBox x:Name="chkRefreshLedgers" Width="150" Margin="30,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh ledgers" />
+        <CheckBox x:Name="chkConvertToFiat" Width="150" Margin="30,75,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Convert to fiat" />
+        <Button x:Name="btnRefresh" Width="125" Height="40" Margin="225,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonRefresh_Click" Content="Refresh" />
+        <Button x:Name="btnPrint" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Click="ButtonPrint_Click">
+            <Image x:Name="imgBtnPrint" Width="32" Height="32" Source="Resources/printer.png" />
+        </Button>
+
+        <DataGrid x:Name="dgBalances" Width="500" Height="300" Margin="25,100,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True">
+            <DataGrid.Resources>
+                <Style x:Key="CellRightAlign">
+                    <Setter Property="Control.HorizontalAlignment" Value="Right" />
+                </Style>
+            </DataGrid.Resources>
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding RowNumber}" Header="ROW__NR" />
+                <DataGridTextColumn Binding="{Binding Currency}" Header="CURRENCY" />
+                <DataGridTextColumn Binding="{Binding Amount, StringFormat='0.0000000000'}"
+                                    ElementStyle="{StaticResource CellRightAlign}"
+                                    Header="AMOUNT" />
+                <DataGridTextColumn Binding="{Binding Amount_fiat, StringFormat='0.00'}"
+                                    ElementStyle="{StaticResource CellRightAlign}"
+                                    Header="AMOUNT__FIAT" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Label x:Name="lblTotalAmountFiat" Width="125" Margin="25,415,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total converted" />
+        <Label x:Name="lblTotalAmountFiatData" Width="125" Margin="125,415,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="0.00 FIAT" />
+        <lvc:PieChart x:Name="pcBalances" Width="500" Height="250" Margin="25,450,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" DisableAnimations="True" LegendLocation="Right" Series="{Binding SeriesCollection}" />
+    </Grid>
+</Window>

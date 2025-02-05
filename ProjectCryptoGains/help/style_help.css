@@ -1,0 +1,65 @@
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f9f9f9;
+    color: #333;
+    padding: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    vertical-align: top;
+}
+
+td:first-child {
+    font-weight: bold;
+    color: #f2a900;
+    white-space: nowrap;
+}
+
+td:last-child {
+    padding-left: 20px;
+}
+
+/* Style for the headings in the description column */
+td:last-child br {
+    display: block;
+    content: "";
+    margin-top: 5px;
+}
+
+/* Remove the extra row used for spacing */
+tr:nth-child(2n+3) td {
+    border-top: 1px solid #f2a900;
+    padding-top: 20px;
+}
+
+/* Add some hover effect for better user interaction */
+tr:hover {
+    background-color: #e6e6e6;
+}
+
+/* Make the table more compact */
+table {
+    border: 2px solid #f2a900;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Improve readability for the code-like terms */
+td:last-child code {
+    background-color: #e6e6e6;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Courier New', Courier, monospace;
+}
