@@ -260,7 +260,7 @@ namespace ProjectCryptoGains
         {
             if (!dgLedgers.HasItems)
             {
-                MessageBox.Show("Nothing to print", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 

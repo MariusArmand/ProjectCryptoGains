@@ -46,13 +46,16 @@ namespace ProjectCryptoGains
             ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Saving assets");
 
             int errors = 0;
+            string? lastInfo = null;
             string? lastError = null;
 
             if (KrakenAssets == null || KrakenAssets.Count == 0)
             {
-                lastError = "No data to save";
-                ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
-                MessageBox.Show(lastError, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                lastInfo = "No data to save";
+                ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastInfo}");
+                MessageBox.Show(lastInfo, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Exit function early
                 return;
             }
 
@@ -155,7 +158,6 @@ namespace ProjectCryptoGains
             if (KrakenAssets == null) return; // Add a null check
 
             using SqliteConnection connection = new(connectionString);
-
             try
             {
                 connection.Open();

@@ -554,7 +554,7 @@ namespace ProjectCryptoGains
         {
             if (!dgGains.HasItems)
             {
-                MessageBox.Show("Nothing to print", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -683,7 +683,7 @@ namespace ProjectCryptoGains
         {
             if (!dgGainsSummary.HasItems)
             {
-                MessageBox.Show("Nothing to print", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 

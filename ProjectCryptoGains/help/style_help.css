@@ -6,9 +6,109 @@ body {
     padding: 20px;
 }
 
+/* New styles for the help document */
+header h1 {
+    color: #f2a900;
+    text-align: center;
+}
+
+nav {
+	padding: 20px;
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+nav ul li {
+    margin-bottom: 10px;
+}
+
+nav ul li a {
+    color: #f2a900;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+}
+
+main {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+main section {
+    margin-bottom: 30px;
+}
+
+section p {
+	margin-top: 5px;
+}
+
+main h2 {
+    color: #f2a900;
+    border-bottom: 2px solid #f2a900;
+    padding-bottom: 5px;
+}
+
+main h3 {
+    color: #f2a900;
+    font-size: 1.1em; 
+    font-weight: bold;
+    margin-bottom: 10px;
+    margin-top: 20px;
+}
+
+main h4 {
+    color: #666;
+    font-size: 1em;
+    font-weight: bold;
+    margin-bottom: 5px;
+    margin-top: 15px;
+}
+
+main p, main ol, main ul {
+    margin-bottom: 15px;
+}
+
+main ol, main ul {
+    padding-left: 20px;
+}
+
+footer {
+    text-align: center;
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 20px;
+}
+
+a {
+    color: #f2a900;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+code {
+    background-color: #e6e6e6;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* Make the table more compact */
 table {
     width: 100%;
     border-collapse: collapse;
+    border: 2px solid #f2a900;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 tr:nth-child(even) {
@@ -49,17 +149,29 @@ tr:hover {
     background-color: #e6e6e6;
 }
 
-/* Make the table more compact */
-table {
-    border: 2px solid #f2a900;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
 /* Improve readability for the code-like terms */
 td:last-child code {
     background-color: #e6e6e6;
     padding: 2px 4px;
     border-radius: 3px;
     font-family: 'Courier New', Courier, monospace;
+}
+
+.csv-display {
+    font-family: monospace;
+	font-size: 110%;
+    background-color: #f2f2f2;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.csv-display div:nth-child(even) {
+    background-color: #e6e6e6;
+}
+
+.small-italic {
+    font-style: italic;
+    font-size: 1em;
+    color: #777;
+    line-height: 1.2;
 }

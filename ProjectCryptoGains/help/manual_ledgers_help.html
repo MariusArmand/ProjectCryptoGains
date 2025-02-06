@@ -1,0 +1,79 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Crypto Gains - Help - Manual Ledgers</title>
+    <link rel="stylesheet" href="style_help.css">
+</head>
+<body>
+    <header>
+        <h1>Manual Ledgers Help</h1>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#what-is">What is Manual Ledgers?</a></li>
+            <li><a href="#how-to-create">How to create Manual Ledgers</a></li>
+            <li><a href="#upload">Uploading Manual Ledgers</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="what-is">
+            <h2>What is Manual Ledgers?</h2>
+            <p>Manual Ledgers enables you to let PCG take transactions into account that were not done via Kraken.</p>
+        </section>
+
+		<section id="how-to-create">
+			<h2>How to create Manual Ledgers</h2>
+			<h3>Layout</h3>
+			<p>The manual ledgers csv should have columns seperated with a , and use . as decimal seperator.
+			<h3>Columns</h3>
+            <h4>refid</h4>
+			<p>This can be anything as long as it is unique for the transaction. All types of transactions take 1 ledger entry, except TRADE, which takes 2 ledger entries.<br>
+			The 2 ledger entries for the TRADE transaction should have the same refid.</p>
+			<h4>date</h4>
+			<p>The date of the transaction in YYYY-MM-DD HH:MI:SS format.</p>
+			<h4>type</h4>
+			<p>The transaction type. Supported types are DEPOSIT, WITHDRAWAL, TRADE, STAKING</p>			
+			<h4>exchange*</h4>
+			<p>The exchange used in the transaction if applicable</p>
+			<h4>asset</h4>
+			<p>The transaction asset. This should match with an ASSET from the Asset Catalog.
+			The Asset Catalog can be found via Configure => Asset Catalog.</p>
+			<h4>amount</h4>
+			<p>The transaction amount without the fee.</p>
+			<h4>fee</h4>
+			<p>The transaction fee.</p>
+			<h4>source*</h4>
+			<p>The source of the transaction.</p>
+			<h4>target*</h4>
+			<p>The target of the transaction.</p>
+			<h4>notes*</h4>
+			<p>Notes to give additional context to the transaction.</p>				
+			<p class="small-italic">*optional</p>
+			<h3>Example</h3>
+			<div class="csv-display">
+				<div>refid,date,type,exchange,asset,amount,fee,source,target,notes</div>
+				<div>MANUAL-0,2018-02-27 08:10:00,DEPOSIT,Coinbase,EUR,1000,0,BANK,Coinbase,From Bank to Coinbase</div>
+				<div>MANUAL-1,2018-02-27 15:19:00,TRADE,Coinbase,BTC (Bitcoin),0.1165775,0,,,</div>
+				<div>MANUAL-1,2018-02-27 15:19:00,TRADE,Coinbase,EUR,-985.32,14.68,,,</div>
+				<div>MANUAL-2,2018-03-20 10:45:00,WITHDRAWAL,Coinbase,BTC (Bitcoin),0.1165775,0.00176159,Coinbase,WALLET,From Coinbase to wallet</div>
+				<div>MANUAL-3,2024-12-31 23:59:59,STAKING,,TAO (Bittensor),0.003,0,WALLET,WALLET,TAO (Bittensor) staking reward</div>
+			</div>
+		</section>
+
+        <section id="upload">
+            <h2>Uploading Manual Ledgers</h2>
+            <ul>
+                <li>Go to Sources => Manual Ledgers</li>
+                <li>Via Browse, select the csv that contains your manual ledgers</li>
+                <li>Click on Upload</li>
+                <p><i>If you see a message that there were missing assets detected, check the log in the main window for more details on the missing assets.<br>
+				The transaction asset should match the Asset Catalog, which can be reached via Configure => Asset Catalog.<br>
+				If the asset is indeed missing in the Asset Catalog, it can be added and saved in that window.</i></p>
+            </ul>
+        </section>
+    </main>
+</body>
+</html>

@@ -41,6 +41,7 @@
     <None Remove="db\pcg.db" />
     <None Remove="help\gains_help.html" />
     <None Remove="help\ledgers_help.html" />
+    <None Remove="help\manual_ledgers_help.html" />
     <None Remove="help\style_help.css" />
     <None Remove="help\trades_help.html" />
     <None Remove="Resources\help.png" />
@@ -61,6 +62,9 @@
 
   <ItemGroup>
     <EmbeddedResource Include="db\pcg.db">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="help\manual_ledgers_help.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="help\style_help.css">

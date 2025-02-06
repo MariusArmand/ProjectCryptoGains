@@ -22,6 +22,7 @@ namespace ProjectCryptoGains
             InitializeComponent();
             _mainWindow = mainWindow;
             Assets = [];
+
             BindGrid();
         }
 
@@ -33,21 +34,24 @@ namespace ProjectCryptoGains
 
         private async void Save_Click(object sender, RoutedEventArgs e)
         {
+            ConsoleLog(_mainWindow.txtLog, $"[Assets] Saving assets");
+
+            int errors = 0;
+            string? lastInfo = null;
+            string? lastError = null;
+
             if (Assets == null || Assets.Count == 0)
             {
-                MessageBox.Show("No data to save", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                lastInfo = "No data to save";
+                ConsoleLog(_mainWindow.txtLog, $"[Assets] {lastInfo}");
+                MessageBox.Show(lastInfo, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Exit function early
                 return;
-            }
-
-            ConsoleLog(_mainWindow.txtLog, $"[Assets] Saving assets");
+            }            
 
             btnSave.IsEnabled = false;
             this.Cursor = Cursors.Wait;
-
-            int errors = 0;
-            string? lastError = null;
 
             await Task.Run(() =>
             {
@@ -62,44 +66,46 @@ namespace ProjectCryptoGains
 
             if (errors > 0)
             {
-                btnSave.IsEnabled = true;
-                this.Cursor = Cursors.Arrow;
-
                 lastError = "Code cannot be empty";
                 ConsoleLog(_mainWindow.txtLog, $"[Assets] {lastError}");
                 MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
-                // Exit function early
-                return;
             }
-
-            // Save assets to db
-            await Task.Run(() =>
+            else
             {
-                using var connection = new SqliteConnection(connectionString);
-                connection.Open();
-                using var command = connection.CreateCommand();
-                command.CommandText = "DELETE FROM TB_ASSET_CATALOG_S";
-                command.ExecuteNonQuery();
-
-                foreach (var asset in Assets)
+                // Save assets to db
+                await Task.Run(() =>
                 {
-                    command.CommandText = "INSERT INTO TB_ASSET_CATALOG_S (Code, Asset) VALUES (@Code, @Asset)";
-                    command.Parameters.Clear();
+                    using var connection = new SqliteConnection(connectionString);
+                    connection.Open();
+                    using var command = connection.CreateCommand();
+                    command.CommandText = "DELETE FROM TB_ASSET_CATALOG_S";
+                    command.ExecuteNonQuery();
 
-                    command.Parameters.AddWithValue("@Code", (object?)asset.Code ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@Asset", (object?)asset.Asset ?? DBNull.Value);
+                    foreach (var asset in Assets)
+                    {
+                        command.CommandText = "INSERT INTO TB_ASSET_CATALOG_S (Code, Asset) VALUES (@Code, @Asset)";
+                        command.Parameters.Clear();
 
-                    try
-                    {
-                        command.ExecuteNonQuery();
+                        command.Parameters.AddWithValue("@Code", (object?)asset.Code ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@Asset", (object?)asset.Asset ?? DBNull.Value);
+
+                        try
+                        {
+                            command.ExecuteNonQuery();
+                        }
+                        catch (Exception ex)
+                        {
+                            lastError = "Failed to insert data." + Environment.NewLine + ex.Message;
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        lastError = "Failed to insert data." + Environment.NewLine + ex.Message;
-                    }
+                });
+
+                if (lastError != null)
+                {
+                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ConsoleLog(_mainWindow.txtLog, $"[Assets] {lastError}");
                 }
-            });
+            }
 
             if (lastError == null)
             {
@@ -107,8 +113,6 @@ namespace ProjectCryptoGains
             }
             else
             {
-                MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                ConsoleLog(_mainWindow.txtLog, $"[Assets] {lastError}");
                 ConsoleLog(_mainWindow.txtLog, $"[Assets] Saving unsuccessful");
             }
 
@@ -118,8 +122,6 @@ namespace ProjectCryptoGains
 
         public void BindGrid()
         {
-            /// Fill the datagrid with data from the database
-
             // Clear existing data
             Assets?.Clear();
 

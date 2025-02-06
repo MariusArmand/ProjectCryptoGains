@@ -17,7 +17,6 @@ namespace ProjectCryptoGains
     /// <summary>
     /// Interaction logic for ManualLedgersWindow.xaml
     /// </summary>
-
     public partial class ManualLedgersWindow : Window
     {
         private readonly MainWindow _mainWindow;
@@ -35,6 +34,11 @@ namespace ProjectCryptoGains
         {
             e.Cancel = true;
             this.Visibility = Visibility.Hidden;
+        }
+
+        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("manual_ledgers_help.html");
         }
 
         private void BindGrid()
@@ -90,6 +94,7 @@ namespace ProjectCryptoGains
 
         private void ButtonUpload_Click(object sender, RoutedEventArgs e)
         {
+            string? lastWarning = null;
             string? lastError = null;
 
             ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Attempting to load {filePath}");
@@ -272,9 +277,9 @@ namespace ProjectCryptoGains
 
                 if (missingAssets.Count > 0)
                 {
-                    lastError = "Missing asset(s) detected." + Environment.NewLine + "[Configure => Asset Catalog]";
-                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
+                    lastWarning = "Missing asset(s) detected." + Environment.NewLine + "[Configure => Asset Catalog]";
+                    MessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastWarning}");
 
                     // Log each missing asset
                     foreach (string asset in missingAssets)
