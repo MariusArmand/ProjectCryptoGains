@@ -4,6 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Crypto Gains - Help - Manual Ledgers</title>
     <link rel="stylesheet" href="style_help.css">
+	<link rel="icon" type="image/png" href="help.png">
 </head>
 <body>
     <header>
@@ -12,16 +13,16 @@
 
     <nav>
         <ul>
-            <li><a href="#what-is">What is Manual Ledgers?</a></li>
+            <li><a href="#what-are">What are Manual Ledgers?</a></li>
             <li><a href="#how-to-create">How to create Manual Ledgers</a></li>
             <li><a href="#upload">Uploading Manual Ledgers</a></li>
         </ul>
     </nav>
 
     <main>
-        <section id="what-is">
-            <h2>What is Manual Ledgers?</h2>
-            <p>Manual Ledgers enables you to let PCG take transactions into account that were not done via Kraken.</p>
+        <section id="what-are">
+            <h2>What are Manual Ledgers?</h2>
+            <p>Manual Ledgers enable you to let PCG take transactions into account that were not done via Kraken.</p>
         </section>
 
 		<section id="how-to-create">
@@ -29,28 +30,108 @@
 			<h3>Layout</h3>
 			<p>The manual ledgers csv should have columns seperated with a , and use . as decimal seperator.
 			<h3>Columns</h3>
-            <h4>refid</h4>
-			<p>This can be anything as long as it is unique for the transaction. All types of transactions take 1 ledger entry, except TRADE, which takes 2 ledger entries.<br>
-			The 2 ledger entries for the TRADE transaction should have the same refid.</p>
-			<h4>date</h4>
-			<p>The date of the transaction in YYYY-MM-DD HH:MI:SS format.</p>
-			<h4>type</h4>
-			<p>The transaction type. Supported types are DEPOSIT, WITHDRAWAL, TRADE, STAKING</p>			
-			<h4>exchange*</h4>
-			<p>The exchange used in the transaction if applicable</p>
-			<h4>asset</h4>
-			<p>The transaction asset. This should match with an ASSET from the Asset Catalog.
-			The Asset Catalog can be found via Configure => Asset Catalog.</p>
-			<h4>amount</h4>
-			<p>The transaction amount without the fee.</p>
-			<h4>fee</h4>
-			<p>The transaction fee.</p>
-			<h4>source*</h4>
-			<p>The source of the transaction.</p>
-			<h4>target*</h4>
-			<p>The target of the transaction.</p>
-			<h4>notes*</h4>
-			<p>Notes to give additional context to the transaction.</p>				
+			<table>
+				<tr>
+					<td valign="top">
+						refid
+					</td>
+					<td valign="top">
+						<p>This can be anything as long as it is unique for the transaction. All types of transactions take 1 ledger entry, except TRADE, which takes 2 ledger entries.
+						   The 2 ledger entries for the TRADE transaction should have the same refid.</p>
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						date
+					</td>
+					<td valign="top">
+						The date of the transaction in YYYY-MM-DD HH:MI:SS format.
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						type
+					</td>
+					<td valign="top">
+						The transaction type. Supported types are DEPOSIT, WITHDRAWAL, TRADE, STAKING
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						exchange*
+					</td>
+					<td valign="top">
+						The exchange used in the transaction if applicable.
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						asset
+					</td>
+					<td valign="top">
+						<p>The transaction asset. This should match with an ASSET from the Asset Catalog.
+						   The Asset Catalog can be found via Configure => Asset Catalog.</p>
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						amount
+					</td>
+					<td valign="top">
+						The transaction amount without the fee.
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						fee
+					</td>
+					<td valign="top">
+						The transaction fee.
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						source*
+					</td>
+					<td valign="top">
+						The source of the transaction.
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						target*
+					</td>
+					<td valign="top">
+						The target of the transaction.
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						notes*
+					</td>
+					<td valign="top">
+						Notes to give additional context to the transaction.
+					</td>
+				</tr>
+			</table>		
 			<p class="small-italic">*optional</p>
 			<h3>Example</h3>
 			<div class="csv-display">
@@ -63,17 +144,17 @@
 			</div>
 		</section>
 
-        <section id="upload">
-            <h2>Uploading Manual Ledgers</h2>
-            <ul>
-                <li>Go to Sources => Manual Ledgers</li>
-                <li>Via Browse, select the csv that contains your manual ledgers</li>
-                <li>Click on Upload</li>
-                <p><i>If you see a message that there were missing assets detected, check the log in the main window for more details on the missing assets.<br>
-				The transaction asset should match the Asset Catalog, which can be reached via Configure => Asset Catalog.<br>
-				If the asset is indeed missing in the Asset Catalog, it can be added and saved in that window.</i></p>
-            </ul>
-        </section>
+		<section id="upload">
+			<h2>Uploading Manual Ledgers</h2>
+			<ul>
+				<li>Go to Sources => Manual Ledgers</li>
+				<li>Via Browse, select the csv that contains your manual ledgers</li>
+				<li>Click on Upload</li>
+			</ul>
+			<p><i>If you see a message showing there were missing assets detected, check the log in the main window for more details on the missing assets.
+				  The transaction asset should match the Asset Catalog, which can be reached via Configure => Asset Catalog.
+				  If the asset is indeed missing in the Asset Catalog, it can be added and saved in that window.</i></p>
+		</section>
     </main>
 </body>
 </html>

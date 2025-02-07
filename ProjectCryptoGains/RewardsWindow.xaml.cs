@@ -263,7 +263,7 @@ namespace ProjectCryptoGains
                 commandDelete.CommandText = "DELETE FROM TB_REWARDS_S";
                 commandDelete.ExecuteNonQuery();
 
-                // Read rewards from kraken ledgers and manual ledgers
+                // Read rewards from Kraken ledgers and manual ledgers
                 using (DbCommand command = connection.CreateCommand())
                 {
                     command.CommandText = $@"SELECT

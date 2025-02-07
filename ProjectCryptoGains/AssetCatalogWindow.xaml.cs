@@ -32,6 +32,11 @@ namespace ProjectCryptoGains
             this.Visibility = Visibility.Hidden;
         }
 
+        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("asset_catalog_help.html");
+        }
+
         private async void Save_Click(object sender, RoutedEventArgs e)
         {
             ConsoleLog(_mainWindow.txtLog, $"[Assets] Saving assets");
@@ -48,7 +53,7 @@ namespace ProjectCryptoGains
 
                 // Exit function early
                 return;
-            }            
+            }
 
             btnSave.IsEnabled = false;
             this.Cursor = Cursors.Wait;
@@ -57,7 +62,7 @@ namespace ProjectCryptoGains
             {
                 foreach (var asset in Assets)
                 {
-                    if (string.IsNullOrWhiteSpace(asset.Code))
+                    if (string.IsNullOrWhiteSpace(asset.Code) || string.IsNullOrWhiteSpace(asset.Asset))
                     {
                         errors += 1;
                     }
@@ -66,7 +71,7 @@ namespace ProjectCryptoGains
 
             if (errors > 0)
             {
-                lastError = "Code cannot be empty";
+                lastError = "Code and Asset cannot be empty";
                 ConsoleLog(_mainWindow.txtLog, $"[Assets] {lastError}");
                 MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
@@ -95,7 +100,14 @@ namespace ProjectCryptoGains
                         }
                         catch (Exception ex)
                         {
-                            lastError = "Failed to insert data." + Environment.NewLine + ex.Message;
+                            if (ex.Message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase))
+                            {
+                                lastError = "Failed to insert data." + Environment.NewLine + "ASSET and CODE must be unique.";
+                            }
+                            else
+                            {
+                                lastError = "Failed to insert data." + Environment.NewLine + ex.Message;
+                            }
                         }
                     }
                 });

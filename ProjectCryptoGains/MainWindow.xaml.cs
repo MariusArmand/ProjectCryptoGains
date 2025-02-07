@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows;
 using static ProjectCryptoGains.Utility;
 
@@ -33,74 +34,21 @@ namespace ProjectCryptoGains
             ConsoleLog(txtLog, $"[Main] {TestDatabaseConnection()}");
 
             // Handle the Closing event of the main window
-            this.Closing += (sender, e) =>
+            this.Closing += async (sender, e) =>
             {
                 // Close the subwindows
-                if (winAssetCatalog != null)
+                foreach (var window in new Window?[] {
+                    winAssetCatalog, winKrakenAssets, winKrakenPairs, winKrakenTrades,
+                    winKrakenLedgers, winManualLedgers, winTradesRaw, winTrades,
+                    winGains, winLedgers, winRewards, winMetrics, winBalances
+                })
                 {
-                    CloseWindow(winAssetCatalog);
+                    if (window != null)
+                    {
+                        CloseWindow(window);
+                    }
                 }
-
-                if (winKrakenAssets != null)
-                {
-                    CloseWindow(winKrakenAssets);
-                }
-
-                if (winKrakenPairs != null)
-                {
-                    CloseWindow(winKrakenPairs);
-                }
-
-                if (winKrakenTrades != null)
-                {
-                    CloseWindow(winKrakenTrades);
-                }
-
-                if (winKrakenLedgers != null)
-                {
-                    CloseWindow(winKrakenLedgers);
-                }
-
-                if (winManualLedgers != null)
-                {
-                    CloseWindow(winManualLedgers);
-                }
-
-                if (winTradesRaw != null)
-                {
-                    CloseWindow(winTradesRaw);
-                }
-
-                if (winTrades != null)
-                {
-                    CloseWindow(winTrades);
-                }
-
-                if (winGains != null)
-                {
-                    CloseWindow(winGains);
-                }
-
-                if (winLedgers != null)
-                {
-                    CloseWindow(winLedgers);
-                }
-
-                if (winRewards != null)
-                {
-                    CloseWindow(winRewards);
-                }
-
-                if (winMetrics != null)
-                {
-                    CloseWindow(winMetrics);
-                }
-
-                if (winBalances != null)
-                {
-                    CloseWindow(winBalances);
-                }
-
+                await Task.Delay(100);
                 Application.Current.Shutdown();
             };
 

@@ -36,6 +36,11 @@ namespace ProjectCryptoGains
             this.Visibility = Visibility.Hidden;
         }
 
+        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("kraken_ledgers_help.html");
+        }
+
         private void BindGrid()
         {
             // Create a collection of KrakenLedgersModel objects
@@ -229,14 +234,14 @@ namespace ProjectCryptoGains
 
                 if (missingAssets.Count > 0)
                 {
-                    lastWarning = "There are new kraken assets to be refreshed." + Environment.NewLine + "[Configure => Kraken Assets]";
+                    lastWarning = "There are new Kraken assets to be refreshed." + Environment.NewLine + "[Configure => Kraken Assets]";
                     MessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastWarning}");
 
                     // Log each missing asset
-                    foreach (string asset in missingAssets)
+                    foreach (string code in missingAssets)
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Missing asset: {asset}");
+                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Missing asset for code: {code}");
                     }
                 }
 

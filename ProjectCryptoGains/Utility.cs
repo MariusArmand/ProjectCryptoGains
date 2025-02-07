@@ -333,7 +333,7 @@ namespace ProjectCryptoGains
                                                 WHEN TYPE = 'earn' AND SUBTYPE = 'deallocation' THEN 'Deallocation ' || WALLET
                                                 WHEN TYPE = 'earn' AND SUBTYPE = 'migration' THEN 'Migration ' || WALLET
                                                 WHEN TYPE = 'deposit' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'From Bank to Kraken'
-                                                WHEN TYPE = 'deposit' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From wallet to kraken'
+                                                WHEN TYPE = 'deposit' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From wallet to Kraken'
                                                 WHEN TYPE = 'withdrawal' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From Kraken to wallet'
                                                 WHEN SUBTYPE = 'spottofutures' THEN 'Start Kraken spot to Kraken futures'
                                                 WHEN SUBTYPE = 'futuresfromspot' THEN 'Completed Kraken spot to Kraken futures'

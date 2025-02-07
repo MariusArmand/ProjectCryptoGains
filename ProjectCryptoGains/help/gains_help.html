@@ -4,120 +4,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Crypto Gains - Help - Gains</title>
     <link rel="stylesheet" href="style_help.css">
+	<link rel="icon" type="image/png" href="help.png">
 </head>
 <body>
-    <table>
-        <tr>
-            <td valign="top" style="padding-right: 20px;">
-				REFID
-            </td>
-            <td valign="top">
-                Reference ID.</br>
-                Starts with "T" for trades.</br>
-                Starts with "MANUAL" for all manual trades.
-            </td>
-        </tr>
-        <tr><td></td></tr>
+    <header>
+        <h1>Gains Help</h1>
+    </header>
 
-        <tr>
-            <td valign="top" style="padding-right: 20px;">
-                DATE
-            </td>
-            <td valign="top">
-                Includes both date & time (in UTC time zone).
-            </td>
-        </tr>
-        <tr><td></td></tr>
+    <main>
+        <table>
+            <tr>
+                <td valign="top">
+				    REFID
+                </td>
+                <td valign="top">
+                    <p>Reference ID.
+                       Starts with "T" for trades.
+                       Starts with "MANUAL" for all manual trades.</p>
+                </td>
+            </tr>
+            <tr><td></td></tr>
 
-        <tr>
-            <td valign="top" style="padding-right: 20px;">
-                TYPE
-            </td>
-            <td valign="top">
-                Can be "BUY" or "SELL"
-            </td>
-        </tr>
-        <tr><td></td></tr>
+            <tr>
+                <td valign="top">
+                    DATE
+                </td>
+                <td valign="top">
+                    Includes both date & time (in UTC time zone).
+                </td>
+            </tr>
+            <tr><td></td></tr>
 
-        <tr>
-            <td valign="top" style="padding-right: 20px;">
-                BASE_CURRENCY
-            </td>
-            <td valign="top">
-                Base asset Class.
-            </td>
-        </tr>
-        <tr><td></td></tr>
+            <tr>
+                <td valign="top">
+                    TYPE
+                </td>
+                <td valign="top">
+                    Can be "BUY" or "SELL"
+                </td>
+            </tr>
+            <tr><td></td></tr>
 
-        <tr>
-            <td valign="top" style="padding-right: 20px;">
-                BASE_AMOUNT
-            </td>
-            <td valign="top">
-                Amount debited or credited to the base asset's balance.
-            </td>
-        </tr>
-        <tr><td></td></tr>
+            <tr>
+                <td valign="top">
+                    BASE_CURRENCY
+                </td>
+                <td valign="top">
+                    Base asset Class.
+                </td>
+            </tr>
+            <tr><td></td></tr>
+
+            <tr>
+                <td valign="top">
+                    BASE_AMOUNT
+                </td>
+                <td valign="top">
+                    Amount debited or credited to the base asset's balance.
+                </td>
+            </tr>
+            <tr><td></td></tr>
 		
-        <tr>
-            <td valign="top" style="padding-right: 20px;">
-                QUOTE_CURRENCY
-            </td>
-            <td valign="top">
-                Quote asset Class.
-            </td>
-        </tr>
-        <tr><td></td></tr>
+            <tr>
+                <td valign="top">
+                    QUOTE_CURRENCY
+                </td>
+                <td valign="top">
+                    Quote asset Class.
+                </td>
+            </tr>
+            <tr><td></td></tr>
 
-        <tr>
-            <td valign="top" style="padding-right: 20px;">
-                QUOTE_AMOUNT
-            </td>
-            <td valign="top">
-                Amount debited or credited to the quote asset's balance.
-            </td>
-        </tr>
-        <tr><td></td></tr>
+            <tr>
+                <td valign="top">
+                    QUOTE_AMOUNT
+                </td>
+                <td valign="top">
+                    Amount debited or credited to the quote asset's balance.
+                </td>
+            </tr>
+            <tr><td></td></tr>
 
-        <tr>
-            <td valign="top" style="padding-right: 20px;">
-                BASE_UNIT_PRICE_FIAT
-            </td>
-            <td valign="top">
-                The cost of one unit of the base asset in terms of the quote asset, converted to FIAT.</br>
-            </td>
-        </tr>
-        <tr><td></td></tr>
+            <tr>
+                <td valign="top">
+                    BASE_UNIT_PRICE_FIAT
+                </td>
+                <td valign="top">
+                    The cost of one unit of the base asset in terms of the quote asset, converted to FIAT.
+                </td>
+            </tr>
+            <tr><td></td></tr>
 		
-        <tr>
-            <td valign="top" style="padding-right: 20px;">
-                COSTS_PROCEEDS
-            </td>
-            <td valign="top">
-                The costs (in case of "BUY") or proceeds (in case of "SELL").</br>
-            </td>
-        </tr>
-        <tr><td></td></tr>
+            <tr>
+                <td valign="top">
+                    COSTS_PROCEEDS
+                </td>
+                <td valign="top">
+                    The costs (in case of "BUY") or proceeds (in case of "SELL").
+                </td>
+            </tr>
+            <tr><td></td></tr>
 		
-        <tr>
-            <td valign="top" style="padding-right: 20px;">
-                TX_BALANCE_REMAINING
-            </td>
-            <td valign="top">
-                The buy transaction's base asset balance remaining after the LIFO processing.</br>
-            </td>
-        </tr>
-        <tr><td></td></tr>
+            <tr>
+                <td valign="top">
+                    TX_BALANCE_REMAINING
+                </td>
+                <td valign="top">
+                    The buy transaction's base asset balance remaining after the LIFO processing.
+                </td>
+            </tr>
+            <tr><td></td></tr>
 
-        <tr>
-            <td valign="top" style="padding-right: 20px;">
-                GAIN
-            </td>
-            <td valign="top">
-                The gain of the sell transaction calculated via the LIFO method.</br>
-				Calculation (simplified): sell.PROCEEDS - (sell.AMOUNT * previous buy.BASE_UNIT_PRICE_FIAT)
-            </td>
-        </tr>
-    </table>
+            <tr>
+                <td valign="top">
+                    GAIN
+                </td>
+                <td valign="top">
+                    <p>The gain of the sell transaction calculated via the LIFO method.
+                       Calculation (simplified): sell.PROCEEDS - (sell.AMOUNT * previous buy.BASE_UNIT_PRICE_FIAT)</p>
+                </td>
+            </tr>
+        </table>
+    </main>
 </body>
 </html>

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data.Common;
 using System.Threading.Tasks;
@@ -65,7 +64,7 @@ namespace ProjectCryptoGains
         private void BindLabels()
         {
             string? fiatCurrency = SettingFiatCurrency;
-            
+
             if (connection != null)
             {
                 try

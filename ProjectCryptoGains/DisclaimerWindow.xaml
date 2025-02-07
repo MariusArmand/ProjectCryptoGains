@@ -18,27 +18,24 @@
            HorizontalAlignment="Center" 
            VerticalAlignment="Center"
            Margin="10">
-                <Run FontWeight="Bold">Accuracy:</Run> While efforts have been made to aim for accuracy, the correctness of the calculations should be verified by a professional accountant.
+                <Run FontWeight="Bold">Accuracy:</Run> While efforts have been made to aim for accuracy, the correctness of the calculations should<LineBreak/>
+                be verified by a professional accountant.
                 <LineBreak/>
                 <LineBreak/>
-                <Run FontWeight="Bold">Historical Price Data Timing:</Run> Historical prices used in the tool are fetched from [CryptoCompare] 
-                <LineBreak/>
-                using the opening price on the relevant date.
-                <LineBreak/>
+                <Run FontWeight="Bold">Historical Price Data Timing:</Run> Historical prices used in the tool are fetched from [CryptoCompare]<LineBreak/>                
+                using the opening price on the relevant date.<LineBreak/>                
                 This approach limits API calls and maintains performance, with the assumption that consistently using opening prices provides a balanced representation of historical price data.
                 <LineBreak/>
                 <LineBreak/>
                 <Run FontWeight="Bold">General Disclaimer:</Run> Use at your own risk. This software is provided 'as is', without warranty of any kind, either express or implied, 
-                including but not limited to the warranties of merchantability, fitness 
-                <LineBreak/>
+                including but not limited to the warranties of merchantability, fitness<LineBreak/>                
                 for a particular purpose, and non-infringement.
                 <LineBreak/>
                 <LineBreak/>
                 <Run FontWeight="Bold">None of the output from this program should be considered financial advice; it is for educational purposes only.</Run>
-                <LineBreak/>
-                In no event shall the author or contributors be liable for any claim, damages, or other liability, whether 
-                <LineBreak/>
-                in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
+                In no event shall the author or contributors be liable for any claim, damages, or other<LineBreak/>                
+                liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with<LineBreak/>
+                the software or the use or other dealings in the software.
         </TextBlock>
 
         <Button Grid.Row="1" 

@@ -1,3 +1,4 @@
+/* Global styles */
 body {
     font-family: Arial, sans-serif;
     line-height: 1.6;
@@ -6,14 +7,37 @@ body {
     padding: 20px;
 }
 
-/* New styles for the help document */
+/* Typography */
+p {
+    white-space: pre-line;
+}
+
+code {
+    background-color: #e6e6e6;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* Links */
+a {
+    color: #f2a900;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Header styles */
 header h1 {
     color: #f2a900;
     text-align: center;
 }
 
+/* Navigation styles */
 nav {
-	padding: 20px;
+    padding: 20px;
 }
 
 nav ul {
@@ -34,6 +58,7 @@ nav ul li a:hover {
     text-decoration: underline;
 }
 
+/* Main content */
 main {
     background: white;
     padding: 20px;
@@ -46,7 +71,7 @@ main section {
 }
 
 section p {
-	margin-top: 5px;
+    margin-top: 5px;
 }
 
 main h2 {
@@ -79,29 +104,7 @@ main ol, main ul {
     padding-left: 20px;
 }
 
-footer {
-    text-align: center;
-    color: #666;
-    font-size: 0.9em;
-    margin-top: 20px;
-}
-
-a {
-    color: #f2a900;
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-code {
-    background-color: #e6e6e6;
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-family: 'Courier New', Courier, monospace;
-}
-
+/* Table styles */
 /* Make the table more compact */
 table {
     width: 100%;
@@ -124,14 +127,23 @@ td {
 td:first-child {
     font-weight: bold;
     color: #f2a900;
+    padding-right: 20px;
     white-space: nowrap;
 }
 
+section td:first-child {
+    font-weight: bold;
+    color: #666;
+    padding-left: 0px; 
+    padding-right: 20px;
+    white-space: nowrap;
+}
+
+/* Style for the headings in the description column */
 td:last-child {
     padding-left: 20px;
 }
 
-/* Style for the headings in the description column */
 td:last-child br {
     display: block;
     content: "";
@@ -157,9 +169,10 @@ td:last-child code {
     font-family: 'Courier New', Courier, monospace;
 }
 
+/* Additional utility classes */
 .csv-display {
     font-family: monospace;
-	font-size: 110%;
+    font-size: 110%;
     background-color: #f2f2f2;
     border-radius: 4px;
     overflow-x: auto;
@@ -174,4 +187,12 @@ td:last-child code {
     font-size: 1em;
     color: #777;
     line-height: 1.2;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 20px;
 }

@@ -137,7 +137,7 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Raw Trades] Refreshing raw trades");
 
-            // Load the db table with data from the kraken trades table
+            // Load the db table with data from the Kraken trades table
             bool tradesRawRefreshWasBusy = false;
 
             await Task.Run(() =>

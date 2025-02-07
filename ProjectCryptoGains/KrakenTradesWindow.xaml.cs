@@ -36,6 +36,11 @@ namespace ProjectCryptoGains
             this.Visibility = Visibility.Hidden;
         }
 
+        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("kraken_trades_help.html");
+        }
+
         private void BindGrid()
         {
             // Create a collection of KrakenTradesModel objects
@@ -231,7 +236,7 @@ namespace ProjectCryptoGains
 
                 if (missingPairs.Count > 0)
                 {
-                    lastWarning = "There are new kraken pair codes to be refreshed." + Environment.NewLine + "[Configure => Kraken Pairs]";
+                    lastWarning = "There are new Kraken pair codes to be refreshed." + Environment.NewLine + "[Configure => Kraken Pairs]";
                     MessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Trades] {lastWarning}");
 
