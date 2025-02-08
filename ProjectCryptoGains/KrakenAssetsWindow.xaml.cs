@@ -34,6 +34,11 @@ namespace ProjectCryptoGains
             this.Visibility = Visibility.Hidden;
         }
 
+        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("kraken_assets_help.html");
+        }
+
         private void RefreshFromSource_Click(object sender, RoutedEventArgs e)
         {
             ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Refreshing from source");
@@ -121,7 +126,7 @@ namespace ProjectCryptoGains
             {
                 connection.Open();
 
-                List<string> malconfiguredAssets = MalconfiguredAsset(connection);
+                List<string> malconfiguredAssets = MalconfiguredAssets(connection);
 
                 if (malconfiguredAssets.Count > 0)
                 {
@@ -130,9 +135,9 @@ namespace ProjectCryptoGains
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
 
                     // Log each malconfigured asset
-                    foreach (string asset in malconfiguredAssets)
+                    foreach (string code in malconfiguredAssets)
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Malconfigured Asset: {asset}");
+                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Malconfigured asset for code: {code}");
                     }
                 }
             }

@@ -232,7 +232,7 @@ namespace ProjectCryptoGains
                 transaction.Commit();
 
                 // Check for missing pairs
-                List<string> missingPairs = MissingPair(connection);
+                List<string> missingPairs = MissingPairs(connection);
 
                 if (missingPairs.Count > 0)
                 {

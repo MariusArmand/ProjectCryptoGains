@@ -253,21 +253,21 @@ namespace ProjectCryptoGains
                 connection.Open();
 
                 // Prerequisite validations //
-                List<string> missingAssetsManual = MissingAssetManual(connection);
+                List<string> missingAssetsManual = MissingAssetsManual(connection);
                 if (missingAssetsManual.Count > 0)
                 {
                     throw new ValidationException("Manual ledger asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Asset Catalog]");
                 }
 
-                List<string> missingPairs = MissingPair(connection);
-                List<string> malconfiguredPairs = MalconfiguredPair(connection);
+                List<string> missingPairs = MissingPairs(connection);
+                List<string> malconfiguredPairs = MalconfiguredPairs(connection);
                 if (missingPairs.Count > 0 || malconfiguredPairs.Count > 0)
                 {
                     throw new ValidationException("Kraken pair asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Kraken Pairs]");
                 }
 
-                List<string> missingAssets = MissingAsset(connection);
-                List<string> malconfiguredAssets = MalconfiguredAsset(connection);
+                List<string> missingAssets = MissingAssets(connection);
+                List<string> malconfiguredAssets = MalconfiguredAssets(connection);
                 if (missingAssets.Count > 0 || malconfiguredAssets.Count > 0)
                 {
                     throw new ValidationException("Kraken asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Kraken Assets]");
@@ -551,7 +551,7 @@ namespace ProjectCryptoGains
 												    END AS BASE_FEE_FIAT,
 												    QUOTE_CURRENCY, 
 												    ABS(QUOTE_AMOUNT) AS QUOTE_AMOUNT, 
-												    QUOTE_AMOUNT_FIAT,
+												    ABS(QUOTE_AMOUNT_FIAT) AS QUOTE_AMOUNT_FIAT,
 												    QUOTE_FEE,
 												    CASE 
 													    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
@@ -605,7 +605,7 @@ namespace ProjectCryptoGains
 														    QUOTE_AMOUNT,
 														    CASE 
 															    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-															    ELSE printf('%.10f', 1)
+															    ELSE QUOTE_AMOUNT
 														    END AS QUOTE_AMOUNT_FIAT,												
 														    QUOTE_FEE,
 														    printf('%.10f', ABS(QUOTE_AMOUNT / BASE_AMOUNT)) AS BASE_UNIT_PRICE,
@@ -722,28 +722,34 @@ namespace ProjectCryptoGains
 
                             DateTime datetime = DateTime.ParseExact(date, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                             // Calculate base_fee_fiat
-                            var (base_unit_price_fiat, _) = ConvertXToFiat(base_code, 1m, datetime.Date, connection);
+                            var (base_unit_price_fiat, baseConversionSource) = ConvertXToFiat(base_code, 1m, datetime.Date, connection);
                             string base_fee_fiat = (ConvertStringToDecimal(base_unit_price_fiat) * ConvertStringToDecimal(base_fee)).ToString("F10");
 
                             // Rate limiting mechanism //
-                            if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                            if (baseConversionSource == "API")
                             {
-                                // Calculate delay to ensure at least 1 seconds have passed
-                                int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
-                                await Task.Delay(delay);
+                                if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                                {
+                                    // Calculate delay to ensure at least 1 seconds have passed
+                                    int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
+                                    await Task.Delay(delay);
+                                }
                             }
                             lastCallTime = DateTime.Now;
                             /////////////////////////////
 
-                            var (quote_unit_price_fiat, _) = ConvertXToFiat(quote_code, 1m, datetime.Date, connection);
+                            var (quote_unit_price_fiat, quoteConversionSource) = ConvertXToFiat(quote_code, 1m, datetime.Date, connection);
                             string quote_fee_fiat = (ConvertStringToDecimal(quote_unit_price_fiat) * ConvertStringToDecimal(quote_fee)).ToString("F10");
 
                             // Rate limiting mechanism //
-                            if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                            if (quoteConversionSource == "API")
                             {
-                                // Calculate delay to ensure at least 1 seconds have passed
-                                int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
-                                await Task.Delay(delay);
+                                if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                                {
+                                    // Calculate delay to ensure at least 1 seconds have passed
+                                    int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
+                                    await Task.Delay(delay);
+                                }
                             }
                             lastCallTime = DateTime.Now;
                             /////////////////////////////
@@ -1047,7 +1053,7 @@ namespace ProjectCryptoGains
             return output;
         }
 
-        public static List<string> MissingPair(SqliteConnection connection)
+        public static List<string> MissingPairs(SqliteConnection connection)
         {
             List<string> missingPairs = [];
 
@@ -1073,23 +1079,24 @@ namespace ProjectCryptoGains
             return missingPairs;
         }
 
-        public static List<string> MalconfiguredPair(SqliteConnection connection)
+        public static List<string> MalconfiguredPairs(SqliteConnection connection)
         {
             List<string> malfconfiguredPair = [];
 
             DbCommand command = connection.CreateCommand();
-            command.CommandText = @"SELECT pairs_kraken.code FROM
+            command.CommandText = @"SELECT DISTINCT(CODE) FROM
+                                    (SELECT pairs_kraken.code AS CODE FROM
 									TB_PAIR_CODES_KRAKEN_S pairs_kraken
 									LEFT OUTER JOIN
 									TB_ASSET_CATALOG_S catalog
 									ON pairs_kraken.ASSET_LEFT = catalog.ASSET
 									WHERE catalog.CODE IS NULL
 									UNION ALL
-									SELECT pairs_kraken.code FROM TB_PAIR_CODES_KRAKEN_S pairs_kraken
+									SELECT pairs_kraken.code AS CODE FROM TB_PAIR_CODES_KRAKEN_S pairs_kraken
 									LEFT OUTER JOIN
 									TB_ASSET_CATALOG_S catalog
 									ON pairs_kraken.ASSET_RIGHT = catalog.ASSET
-									WHERE catalog.CODE IS NULL";
+									WHERE catalog.CODE IS NULL)";
 
             using (DbDataReader reader = command.ExecuteReader())
             {
@@ -1105,7 +1112,7 @@ namespace ProjectCryptoGains
             return malfconfiguredPair;
         }
 
-        public static List<string> MissingAsset(SqliteConnection connection)
+        public static List<string> MissingAssets(SqliteConnection connection)
         {
             List<string> missingAssets = [];
 
@@ -1131,7 +1138,7 @@ namespace ProjectCryptoGains
             return missingAssets;
         }
 
-        public static List<string> MalconfiguredAsset(SqliteConnection connection)
+        public static List<string> MalconfiguredAssets(SqliteConnection connection)
         {
             List<string> malfconfiguredAsset = [];
 
@@ -1157,7 +1164,7 @@ namespace ProjectCryptoGains
             return malfconfiguredAsset;
         }
 
-        public static List<string> MissingAssetManual(SqliteConnection connection)
+        public static List<string> MissingAssetsManual(SqliteConnection connection)
         {
             List<string> missingAssets = [];
 

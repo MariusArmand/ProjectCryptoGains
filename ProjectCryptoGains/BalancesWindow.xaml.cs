@@ -22,7 +22,6 @@ namespace ProjectCryptoGains
     /// <summary>
     /// Interaction logic for BalancesWindow.xaml
     /// </summary>
-
     public partial class BalancesWindow : Window
     {
         private readonly MainWindow _mainWindow;
@@ -297,16 +296,21 @@ namespace ProjectCryptoGains
                                 commandInsert.CommandText = CreateFiatBalancesInsert(asset, untilDate);
                             }
                             else
-                            {
-                                commandInsert.CommandText = CreateCryptoBalancesInsert(asset, code, untilDate, convertToFiat, connection);
+                            {                                
+                                var (sqlCommand, conversionSource) = CreateCryptoBalancesInsert(asset, code, untilDate, convertToFiat, connection);
+                                commandInsert.CommandText = sqlCommand;
+
                                 // Rate limiting mechanism //
-                                if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                                if (conversionSource == "API")
                                 {
-                                    // Calculate delay to ensure at least 1 seconds have passed
-                                    int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
-                                    await Task.Delay(delay);
+                                    if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                                    {
+                                        // Calculate delay to ensure at least 1 seconds have passed
+                                        int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
+                                        await Task.Delay(delay);
+                                    }
+                                    lastCallTime = DateTime.Now;
                                 }
-                                lastCallTime = DateTime.Now;
                                 /////////////////////////////
                             }
                             commandInsert.ExecuteNonQuery();
@@ -494,40 +498,44 @@ namespace ProjectCryptoGains
             return flowDoc;
         }
 
-        private static string CreateCryptoBalancesInsert(string currency, string currency_code, string untilDate, bool? convertToFiat, SqliteConnection connection)
+        private static (string sqlCommand, string conversionSource) CreateCryptoBalancesInsert(string currency, string currency_code, string untilDate, bool? convertToFiat, SqliteConnection connection)
         {
             try
             {
                 string xInFiat = "0.00";
+                string conversionSource = "";
 
                 if (convertToFiat == true)
                 {
-                    var (fiatAmount, _) = ConvertXToFiat(currency_code, 1m, DateTime.ParseExact(untilDate, "yyyy-MM-dd", CultureInfo.InvariantCulture), connection);
+                    var (fiatAmount, source) = ConvertXToFiat(currency_code, 1m, DateTime.ParseExact(untilDate, "yyyy-MM-dd", CultureInfo.InvariantCulture), connection);
                     xInFiat = fiatAmount;
+                    conversionSource = source;
                 }
 
-                return $@"INSERT INTO TB_BALANCES_S
-						  SELECT CURRENCY, AMOUNT, AMOUNT_FIAT 
-						  FROM
-						  (
-						  SELECT 
-							  '{currency}' AS CURRENCY, 
-							  printf(' %.10f', SUM(AMNT)) AS AMOUNT,
-							  ROUND({xInFiat} * SUM(AMNT), 2) AS AMOUNT_FIAT 
-						  FROM (
-							    SELECT SUM(AMOUNT) AS AMNT 
-							    FROM TB_LEDGERS_S
-							    WHERE CURRENCY = '{currency}'
-				                AND TYPE NOT IN ('WITHDRAWAL', 'DEPOSIT')
-							    AND strftime('%s', DATE) < strftime('%s', date('{untilDate}', '+1 day'))
-							    UNION ALL
-							    SELECT -SUM(FEE) AS AMNT 
-							    FROM TB_LEDGERS_S
-							    WHERE CURRENCY = '{currency}'
-							    AND strftime('%s', DATE) < strftime('%s', date('{untilDate}', '+1 day'))
-							   )
-						  )
-						  WHERE CAST(AMOUNT AS REAL) > 0";
+                string sqlCommand = $@"INSERT INTO TB_BALANCES_S
+						                  SELECT CURRENCY, AMOUNT, AMOUNT_FIAT 
+						                  FROM
+						                  (
+						                  SELECT 
+							                  '{currency}' AS CURRENCY, 
+							                  printf(' %.10f', SUM(AMNT)) AS AMOUNT,
+							                  ROUND({xInFiat} * SUM(AMNT), 2) AS AMOUNT_FIAT 
+						                  FROM (
+							                    SELECT SUM(AMOUNT) AS AMNT 
+							                    FROM TB_LEDGERS_S
+							                    WHERE CURRENCY = '{currency}'
+				                                AND TYPE NOT IN ('WITHDRAWAL', 'DEPOSIT')
+							                    AND strftime('%s', DATE) < strftime('%s', date('{untilDate}', '+1 day'))
+							                    UNION ALL
+							                    SELECT -SUM(FEE) AS AMNT 
+							                    FROM TB_LEDGERS_S
+							                    WHERE CURRENCY = '{currency}'
+							                    AND strftime('%s', DATE) < strftime('%s', date('{untilDate}', '+1 day'))
+							                   )
+						                  )
+						                  WHERE CAST(AMOUNT AS REAL) > 0";
+
+                return (sqlCommand, conversionSource);
             }
             catch (Exception ex)
             {

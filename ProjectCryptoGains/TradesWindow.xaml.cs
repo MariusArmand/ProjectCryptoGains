@@ -368,7 +368,7 @@ namespace ProjectCryptoGains
                 FontSize = 16
             })
             {
-                ColumnSpan = 9,
+                ColumnSpan = 8,
                 TextAlignment = TextAlignment.Center
             };
             tableRow.Cells.Add(tableCell);
@@ -395,8 +395,7 @@ namespace ProjectCryptoGains
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("BASE_CURRENCY"))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("QUOTE_AMOUNT"))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("QUOTE_CURRENCY"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("TOTAL_FEE_" + fiatCurrency))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("COSTS_PROCEEDS"))));
+                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("QUOTE_AMOUNT_" + fiatCurrency))));
                 table.RowGroups[0].Rows.Add(tableRow);
 
                 tableRow = new TableRow();
@@ -407,6 +406,18 @@ namespace ProjectCryptoGains
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Base_currency ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Quote_amount,10:F10}" ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Quote_currency ?? ""))));
+                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Quote_amount_fiat,2:F2}" ?? ""))));
+                table.RowGroups[0].Rows.Add(tableRow);
+
+                tableRow = new TableRow
+                {
+                    FontWeight = FontWeights.Bold
+                };
+                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("TOTAL_FEE_" + fiatCurrency))));
+                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("COSTS_PROCEEDS"))));
+                table.RowGroups[0].Rows.Add(tableRow);
+
+                tableRow = new TableRow();
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Total_fee_fiat,2:F2}" ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Costs_proceeds,2:F2}" ?? ""))));
                 table.RowGroups[0].Rows.Add(tableRow);

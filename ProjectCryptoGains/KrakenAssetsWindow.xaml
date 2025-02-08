@@ -8,7 +8,10 @@
         Closing="Window_Closing"
         Title="Kraken Assets" Height="600" Width="800">
     <Grid>
-        <DataGrid x:Name="dgKrakenAssets" Margin="25,25,25,80" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False">
+        <Button x:Name="btnHelp" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Click="ButtonHelp_Click">
+            <Image x:Name="imgBtnHelp" Width="32" Height="32" Source="Resources/help.png" />
+        </Button>
+        <DataGrid x:Name="dgKrakenAssets" Margin="25,75,25,80" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="CODE" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"/>
                 <DataGridTextColumn Header="ASSET" Binding="{Binding Asset, UpdateSourceTrigger=PropertyChanged}" />

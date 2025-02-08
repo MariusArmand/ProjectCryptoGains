@@ -230,7 +230,7 @@ namespace ProjectCryptoGains
                 transaction.Commit();
 
                 // Check for missing assets
-                List<string> missingAssets = MissingAsset(connection);
+                List<string> missingAssets = MissingAssets(connection);
 
                 if (missingAssets.Count > 0)
                 {

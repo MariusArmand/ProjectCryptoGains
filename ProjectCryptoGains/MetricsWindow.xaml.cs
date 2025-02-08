@@ -2,6 +2,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Data.Common;
+using System.Data.SqlClient;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -374,6 +375,9 @@ namespace ProjectCryptoGains
                                                     ON catalog.ASSET = ledgers.CURRENCY
                                                     ORDER BY CODE, ASSET";
                             using DbDataReader reader = command.ExecuteReader();
+
+                            // For each asset, create rewards summary insert
+
                             // Rate limiting mechanism //
                             DateTime lastCallTime = DateTime.MinValue;
                             /////////////////////////////
@@ -384,13 +388,18 @@ namespace ProjectCryptoGains
 
                                 using DbCommand commandIns = connection.CreateCommand();
 
-                                commandIns.CommandText = CreateRewardsSummaryInsert(asset, code, date, connection);
+                                var (sqlCommand, conversionSource) = CreateRewardsSummaryInsert(asset, code, date, connection);
+                                commandIns.CommandText = sqlCommand;
+
                                 // Rate limiting mechanism //
-                                if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                                if (conversionSource == "API")
                                 {
-                                    // Calculate delay to ensure at least 1 seconds have passed
-                                    int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
-                                    await Task.Delay(delay);
+                                    if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                                    {
+                                        // Calculate delay to ensure at least 1 seconds have passed
+                                        int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
+                                        await Task.Delay(delay);
+                                    }
                                 }
                                 lastCallTime = DateTime.Now;
                                 /////////////////////////////
@@ -470,24 +479,27 @@ namespace ProjectCryptoGains
 					  WHERE AMOUNT_FIAT != ''";
         }
 
-        private static string CreateRewardsSummaryInsert(string currency, string currency_code, DateTime date, SqliteConnection connection)
+        private static (string sqlCommand, string conversionSource) CreateRewardsSummaryInsert(string currency, string currency_code, DateTime date, SqliteConnection connection)
         {
             try
             {
                 var (fiatAmount, source) = ConvertXToFiat(currency_code, 1m, date.Date, connection);
                 string xInFiat = fiatAmount;
+                string conversionSource = source;
 
-                return $@"WITH cas AS (
-						 SELECT printf('%.10f', SUM(CAST(AMOUNT AS NUMERIC)) - SUM(CAST(FEE AS NUMERIC))) AS REWARD_SUM
-						 FROM TB_LEDGERS_S
-						 WHERE TYPE IN ('EARN', 'STAKING') AND CURRENCY IN ('{currency}')
-					     )
-					     INSERT INTO TB_REWARDS_SUMMARY_S
-					     SELECT 
-						     '{currency_code}' AS CURRENCY,
-						     IFNULL(cas.REWARD_SUM, 0.00) AS AMOUNT,
-						     IFNULL({xInFiat} * cas.REWARD_SUM, 0.00) AS AMOUNT_FIAT
-					     FROM cas";
+                string sqlCommand = $@"WITH cas AS (
+						                 SELECT printf('%.10f', SUM(CAST(AMOUNT AS NUMERIC)) - SUM(CAST(FEE AS NUMERIC))) AS REWARD_SUM
+						                 FROM TB_LEDGERS_S
+						                 WHERE TYPE IN ('EARN', 'STAKING') AND CURRENCY IN ('{currency}')
+					                     )
+					                     INSERT INTO TB_REWARDS_SUMMARY_S
+					                     SELECT 
+						                     '{currency_code}' AS CURRENCY,
+						                     IFNULL(cas.REWARD_SUM, 0.00) AS AMOUNT,
+						                     IFNULL({xInFiat} * cas.REWARD_SUM, 0.00) AS AMOUNT_FIAT
+					                     FROM cas";
+
+                return (sqlCommand, conversionSource);
             }
             catch (Exception ex)
             {

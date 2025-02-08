@@ -1,0 +1,54 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Crypto Gains - Help - Kraken Assets</title>
+    <link rel="stylesheet" href="style_help.css">
+	<link rel="icon" type="image/png" href="help.png">
+</head>
+<body>
+    <header>
+        <h1>Kraken Assets Help</h1>
+    </header>
+    <main>
+		<section>
+			<h2>What is Kraken Assets?</h2>
+            <p>Kraken Assets contains the assets (CODE) that are uploaded by Kraken Ledgers.</p>
+		</section>
+
+        <section>
+            <h2>How to maintain the Asset Catalog</h2>
+            <h3>Columns</h3>
+            <table>
+                <tr>
+                    <td valign="top">
+                        CODE
+                    </td>
+                    <td valign="top">
+                        Code for asset (e.g. BTC)
+                        <p><i>It's possible to have similar CODEs (e.g. BTC, BTC.M) where BTC.M is the rewards code for BTC.
+                              In that case, you should set the same ASSET for both CODEs (e.g. BTC (Bitcoin)).</i></p>
+                    </td>
+                </tr>
+                <tr><td></td></tr>
+
+                <tr>
+                    <td valign="top">
+                        ASSET
+                    </td>
+                    <td valign="top">
+                        <p>More descriptive name for the asset (e.g. BTC (Bitcoin)).
+                           This should match with ASSET in Asset Catalog.</p>
+                    </td>
+                </tr>
+            </table>
+        </section>
+		<section>
+			<h2>Troubleshooting</h2>
+			<p><i>Upon saving, if you see a message showing there were malconfigured asset(s) detected, check the log in the main window for more details on the malconfigured asset(s).
+				  Doublecheck that ASSET matches their corresponding ASSET in the Asset Catalog, which can be reached via Configure => Asset Catalog.
+                  If there is no typo and there is no corresponding ASSET in the Asset Catalog, you need to add the ASSET in the Asset Catalog.</i></p>
+		</section>
+    </main>
+</body>
+</html>

@@ -32,6 +32,11 @@ namespace ProjectCryptoGains
             this.Visibility = Visibility.Hidden;
         }
 
+        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("kraken_pairs_help.html");
+        }
+
         private void RefreshFromSource_Click(object sender, RoutedEventArgs e)
         {
             ConsoleLog(_mainWindow.txtLog, $"[Kraken Pairs] Refreshing from source");
@@ -120,7 +125,7 @@ namespace ProjectCryptoGains
             {
                 connection.Open();
 
-                List<string> malfconfiguredPairs = MalconfiguredPair(connection);
+                List<string> malfconfiguredPairs = MalconfiguredPairs(connection);
 
                 if (malfconfiguredPairs.Count > 0)
                 {
