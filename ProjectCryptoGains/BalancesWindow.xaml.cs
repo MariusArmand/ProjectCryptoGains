@@ -296,7 +296,7 @@ namespace ProjectCryptoGains
                                 commandInsert.CommandText = CreateFiatBalancesInsert(asset, untilDate);
                             }
                             else
-                            {                                
+                            {
                                 var (sqlCommand, conversionSource) = CreateCryptoBalancesInsert(asset, code, untilDate, convertToFiat, connection);
                                 commandInsert.CommandText = sqlCommand;
 

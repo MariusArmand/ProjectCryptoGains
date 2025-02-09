@@ -2,7 +2,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Data.Common;
-using System.Data.SqlClient;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
