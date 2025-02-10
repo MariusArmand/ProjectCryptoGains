@@ -41,6 +41,7 @@
     <None Remove="db\pcg.db" />
     <None Remove="help\asset_catalog_help.html" />
     <None Remove="help\gains_help.html" />
+    <None Remove="help\getting_started_help.html" />
     <None Remove="help\help.png" />
     <None Remove="help\kraken_assets_help.html" />
     <None Remove="help\kraken_ledgers_help.html" />
@@ -61,6 +62,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="help\gains_help.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="help\getting_started_help.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="help\help.png">

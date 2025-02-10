@@ -233,7 +233,7 @@ namespace ProjectCryptoGains
                 }
 
                 LedgersRefreshBusy = true;
-            } // Release the lock here, allowing other threads to check ledgersRefreshBusy
+            } // Release the lock here, allowing other threads to check LedgersRefreshBusy
 
             try
             {
@@ -259,12 +259,15 @@ namespace ProjectCryptoGains
                     throw new ValidationException("Manual ledger asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Asset Catalog]");
                 }
 
+                /*
+                // OBSOLETE CHECKS
                 List<string> missingPairs = MissingPairs(connection);
                 List<string> malconfiguredPairs = MalconfiguredPairs(connection);
                 if (missingPairs.Count > 0 || malconfiguredPairs.Count > 0)
                 {
                     throw new ValidationException("Kraken pair asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Kraken Pairs]");
                 }
+                */
 
                 List<string> missingAssets = MissingAssets(connection);
                 List<string> malconfiguredAssets = MalconfiguredAssets(connection);
@@ -411,14 +414,14 @@ namespace ProjectCryptoGains
             }
             finally
             {
-                lock (LedgerRefreshlock) // Lock again to safely update ledgersRefreshBusy
+                lock (LedgerRefreshlock) // Lock again to safely update LedgersRefreshBusy
                 {
                     LedgersRefreshBusy = false;
                 }
             }
         }
 
-        public static void RefreshTradesRaw(MainWindow? _mainWindow = null, string caller = "")
+        public static void RefreshTradesRaw(MainWindow? _mainWindow = null, string caller = "") // OBSOLETE METHOD
         {
             lock (TradesRawRefreshlock) // Only one thread can enter this block at a time
             {
@@ -432,7 +435,7 @@ namespace ProjectCryptoGains
                 }
 
                 TradesRawRefreshBusy = true;
-            } // Release the lock here, allowing other threads to check ledgersRefreshBusy
+            } // Release the lock here, allowing other threads to check TradesRawRefreshBusy
 
             try
             {
@@ -482,7 +485,7 @@ namespace ProjectCryptoGains
             }
             finally
             {
-                lock (TradesRawRefreshlock) // Lock again to safely update ledgersRefreshBusy
+                lock (TradesRawRefreshlock) // Lock again to safely update TradesRawRefreshBusy
                 {
                     TradesRawRefreshBusy = false;
                 }
@@ -508,7 +511,7 @@ namespace ProjectCryptoGains
                 }
 
                 TradesRefreshBusy = true;
-            } // Release the lock here, allowing other threads to check ledgersRefreshBusy
+            } // Release the lock here, allowing other threads to check TradesRefreshBusy
 
             try
             {
@@ -839,7 +842,7 @@ namespace ProjectCryptoGains
             }
             finally
             {
-                lock (TradesRefreshlock) // Lock again to safely update tradesRefreshBusy
+                lock (TradesRefreshlock) // Lock again to safely update TradesRefreshBusy
                 {
                     TradesRefreshBusy = false;
                 }
@@ -1053,7 +1056,7 @@ namespace ProjectCryptoGains
             return output;
         }
 
-        public static List<string> MissingPairs(SqliteConnection connection)
+        public static List<string> MissingPairs(SqliteConnection connection) // OBSOLETE METHOD
         {
             List<string> missingPairs = [];
 
@@ -1079,7 +1082,7 @@ namespace ProjectCryptoGains
             return missingPairs;
         }
 
-        public static List<string> MalconfiguredPairs(SqliteConnection connection)
+        public static List<string> MalconfiguredPairs(SqliteConnection connection) // OBSOLETE METHOD
         {
             List<string> malfconfiguredPair = [];
 

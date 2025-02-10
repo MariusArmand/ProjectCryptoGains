@@ -201,5 +201,10 @@ namespace ProjectCryptoGains
             winMetrics ??= new MetricsWindow(this);
             ShowAndFocusSubWindow(winMetrics, this);
         }
+
+        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("getting_started_help.html");
+        }
     }
 }

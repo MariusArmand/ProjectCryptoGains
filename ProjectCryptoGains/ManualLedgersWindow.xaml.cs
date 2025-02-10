@@ -43,8 +43,8 @@ namespace ProjectCryptoGains
 
         private void BindGrid()
         {
-            // Create a collection of ManualTransactionsModel objects
-            ObservableCollection<ManualTransactionsModel> data = [];
+            // Create a collection of ManualLedgersModel objects
+            ObservableCollection<ManualLedgersModel> data = [];
 
             using SqliteConnection connection = new(connectionString);
 
@@ -71,7 +71,7 @@ namespace ProjectCryptoGains
             {
                 dbLineNumber++;
 
-                data.Add(new ManualTransactionsModel
+                data.Add(new ManualLedgersModel
                 {
                     RowNumber = dbLineNumber,
                     Refid = reader.IsDBNull(0) ? "" : reader.GetString(0),

@@ -11,6 +11,8 @@ using static ProjectCryptoGains.Utility;
 
 namespace ProjectCryptoGains
 {
+    // OBSOLETE WINDOW
+
     /// <summary>
     /// Interaction logic for KrakenPairsWindow.xaml
     /// </summary>

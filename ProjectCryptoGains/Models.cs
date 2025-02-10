@@ -82,7 +82,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        public partial class KrakenPairsModel : INotifyPropertyChanged
+        public partial class KrakenPairsModel : INotifyPropertyChanged // OBSOLETE MODEL
         {
             private string? _code;
             private string? _asset_left;
@@ -135,7 +135,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        public class ManualTransactionsModel
+        public class ManualLedgersModel
         {
             public int RowNumber { get; set; }
             public string? Refid { get; set; }
@@ -166,7 +166,7 @@ namespace ProjectCryptoGains
             public decimal? Balance { get; set; }
         }
 
-        public class KrakenTradesModel
+        public class KrakenTradesModel // OBSOLETE MODEL
         {
             public int RowNumber { get; set; }
             public string? Txid { get; set; }
@@ -217,7 +217,7 @@ namespace ProjectCryptoGains
             public string? Notes { get; set; }
         }
 
-        public class TradesRawModel
+        public class TradesRawModel // OBSOLETE MODEL
         {
             public int RowNumber { get; set; }
             public string? Date { get; set; }

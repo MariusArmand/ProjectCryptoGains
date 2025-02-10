@@ -34,7 +34,7 @@
                 <DataGridTextColumn Binding="{Binding Fee, StringFormat='0.0000000000'}"
                                     ElementStyle="{StaticResource CellRightAlign}"
                                     Header="FEE" />
-                <!--<DataGridTextColumn Binding="{Binding Fee_currency}" Header="FEE__CURRENCY" />!-->
+                <!--<DataGridTextColumn Binding="{Binding Fee_currency}" Header="FEE__CURRENCY" />-->
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

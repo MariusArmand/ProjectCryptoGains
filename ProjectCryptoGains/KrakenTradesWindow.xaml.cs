@@ -14,8 +14,10 @@ using static ProjectCryptoGains.Utility;
 
 namespace ProjectCryptoGains
 {
+    // OBSOLETE WINDOW
+
     /// <summary>
-    /// Interaction logic for TransferWindow.xaml
+    /// Interaction logic for KrakenTradesWindow.xaml
     /// </summary>
     public partial class KrakenTradesWindow : Window
     {

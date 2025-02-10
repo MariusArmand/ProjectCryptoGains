@@ -1,0 +1,57 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Crypto Gains - Help - Getting Started</title>
+    <link rel="stylesheet" href="style_help.css">
+	<link rel="icon" type="image/png" href="help.png">
+</head>
+<body>
+    <header>
+        <h1>Getting Started</h1>
+    </header>
+
+    <main>
+	    <section>
+            <h2>1. Configure Settings</h2>
+			Go to Configure => Settings
+			<h3>Fiat currency</h3>
+			<p>Select the fiat currency you wish to use for conversions in Project Crypto Gains (PCG).</p>
+			<h3>CryptoCompare API key</h3>
+			<p>PCG uses the CCData/CryptoCompare API for conversions to fiat. Go to the CCData website to sign up for an API key that suits your needs.</p>
+        </section>
+		
+        <section>
+            <h2>2. Import source data</h2>
+			Go to 
+			<ul>
+				<li>Sources => Manual Ledgers*</li>
+				<li>Sources => Kraken Ledgers</li>
+				<!-- OBSOLETE HELP
+				<li>Sources => Kraken Trades*</li>
+				-->
+			</ul>
+			<p class="small-italic">*optional</p>
+			<p><i>Each import window has its own help section. Assets unknown to PCG will need to be configured via</i></p>		
+			<ul>
+				<li><i>Configure => Asset Catalog</i></li>
+				<li><i>Configure => Kraken Assets</i></li>
+				<!-- OBSOLETE HELP
+				<li><i>Configure => Kraken Pairs</i></li>
+				-->
+			</ul>			
+        </section>
+		
+        <section>
+            <h2>3. Process</h2>
+			<h3>3.1 Refresh Ledgers</h3>			
+			<p>Go to Process => Ledgers to refresh PCG ledgers.</p>
+			<h3>3.2 Refresh Trades</h3>			
+			<p>Go to Process => Trades to refresh PCG trades.</p>
+			<p><i>PCG uses ledgers and trades as input for generating other reports (e.g., Gains, Rewards, etc.).
+			      After importing new source data, always refresh the PCG ledgers and trades (in that order),
+				  before refreshing any other reports..</i></p>			
+        </section>
+    </main>
+</body>
+</html>

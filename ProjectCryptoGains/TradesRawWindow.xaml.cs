@@ -16,6 +16,8 @@ using static ProjectCryptoGains.Utility;
 
 namespace ProjectCryptoGains
 {
+    // OBSOLETE WINDOW
+
     /// <summary>
     /// Interaction logic for TradesRawWindow.xaml
     /// </summary>
