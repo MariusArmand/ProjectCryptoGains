@@ -52,6 +52,11 @@ namespace ProjectCryptoGains
             this.Visibility = Visibility.Hidden;
         }
 
+        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("balances_help.html");
+        }
+
         private void ButtonRefresh_Click(object sender, RoutedEventArgs e)
         {
             Refresh();

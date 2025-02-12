@@ -45,9 +45,16 @@ namespace ProjectCryptoGains
             this.Visibility = Visibility.Hidden;
         }
 
+        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("rewards_help.html");
+        }
+
         private void BindGrid()
         {
             string? fiatCurrency = SettingFiatCurrency;
+            decimal rewardsTaxPercentage = SettingRewardsTaxPercentage;
+
             dgRewards.Columns[7].Header = "AMOUNT__" + fiatCurrency;
             dgRewardsSummary.Columns[3].Header = "AMOUNT__" + fiatCurrency;
 
@@ -83,8 +90,7 @@ namespace ProjectCryptoGains
                                      TAX,
                                      UNIT_PRICE,
                                      UNIT_PRICE_BREAK_EVEN,
-                                     AMOUNT_SELL_BREAK_EVEN,
-									 NOTES 
+                                     AMOUNT_SELL_BREAK_EVEN
 									 FROM TB_REWARDS_S
 									 ORDER BY DATE ASC";
 
@@ -108,8 +114,7 @@ namespace ProjectCryptoGains
                     Tax = reader.IsDBNull(7) ? 0.00m : ConvertStringToDecimal(reader.GetString(7)),
                     Unit_price = reader.IsDBNull(8) ? 0.00m : ConvertStringToDecimal(reader.GetString(8)),
                     Unit_price_break_even = reader.IsDBNull(9) ? 0.00m : ConvertStringToDecimal(reader.GetString(9)),
-                    Amount_sell_break_even = reader.IsDBNull(10) ? 0.0000000000m : ConvertStringToDecimal(reader.GetString(10)),
-                    Notes = reader.IsDBNull(11) ? "" : reader.GetString(11)
+                    Amount_sell_break_even = reader.IsDBNull(10) ? 0.0000000000m : ConvertStringToDecimal(reader.GetString(10))
                 });
             }
             reader.Close();
@@ -254,6 +259,8 @@ namespace ProjectCryptoGains
         {
             try
             {
+                decimal rewardsTaxPercentage = SettingRewardsTaxPercentage;
+
                 using SqliteConnection connection = new(connectionString);
                 connection.Open();
 
@@ -272,12 +279,7 @@ namespace ProjectCryptoGains
                                              ledgers.TYPE,
                                              ledgers.EXCHANGE,
                                              catalog.CODE AS CURRENCY,
-                                             printf('%.10f', ledgers.AMOUNT - ledgers.FEE) AS AMOUNT,
-                                             CASE
-                                                WHEN ledgers.TYPE = 'STAKING' THEN ledgers.CURRENCY || ' staking reward'
-                                                WHEN ledgers.TYPE = 'EARN' THEN ledgers.CURRENCY || ' staking reward'
-                                                ELSE ''
-                                             END AS NOTES
+                                             printf('%.10f', ledgers.AMOUNT - ledgers.FEE) AS AMOUNT
                                              FROM TB_LEDGERS_S ledgers
 										     INNER JOIN TB_ASSET_CATALOG_S catalog ON ledgers.CURRENCY = catalog.ASSET
                                              WHERE ledgers.TYPE IN('EARN','STAKING')
@@ -298,7 +300,6 @@ namespace ProjectCryptoGains
                         string exchange = reader.GetString(3);
                         string currency = reader.GetString(4);
                         string amount = reader.GetString(5);
-                        string notes = reader.GetString(6);
                         DateTime datetime = DateTime.ParseExact(date, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                         string formattedDateTime = datetime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
 
@@ -319,9 +320,9 @@ namespace ProjectCryptoGains
                         /////////////////////////////
 
                         string amount_fiat = (ConvertStringToDecimal(exchangeRate) * ConvertStringToDecimal(amount)).ToString();
-                        string tax = (ConvertStringToDecimal(amount_fiat) * 0.30m).ToString("F10");
-                        string unit_price_break_even = (ConvertStringToDecimal(exchangeRate) + (ConvertStringToDecimal(exchangeRate) * 0.30m)).ToString("F10");
-                        string amount_sell_break_even = (ConvertStringToDecimal(amount) * 0.23m).ToString("F10");
+                        string tax = (ConvertStringToDecimal(amount_fiat) * (rewardsTaxPercentage / 100m)).ToString("F10");
+                        string unit_price_break_even = (ConvertStringToDecimal(exchangeRate) * (1 + (rewardsTaxPercentage / 100m))).ToString("F10");
+                        string amount_sell_break_even = (ConvertStringToDecimal(tax) / ConvertStringToDecimal(unit_price_break_even)).ToString("F10");
 
                         using DbCommand commandIns = connection.CreateCommand();
                         commandIns.CommandText = $@"INSERT INTO TB_REWARDS_S
@@ -335,8 +336,7 @@ namespace ProjectCryptoGains
                                                     TAX,
                                                     UNIT_PRICE,
                                                     UNIT_PRICE_BREAK_EVEN,
-                                                    AMOUNT_SELL_BREAK_EVEN,
-	                                                NOTES)
+                                                    AMOUNT_SELL_BREAK_EVEN)
                                                     VALUES
                                                     ('{refid}',
                                                     '{formattedDateTime}',
@@ -348,8 +348,7 @@ namespace ProjectCryptoGains
                                                     '{tax}',
                                                     '{exchangeRate}',
                                                     '{unit_price_break_even}',
-                                                    '{amount_sell_break_even}',
-                                                    '{notes}')";
+                                                    '{amount_sell_break_even}')";
                         commandIns.ExecuteNonQuery();
                     }
                 }
@@ -488,7 +487,7 @@ namespace ProjectCryptoGains
                 FontSize = 16
             })
             {
-                ColumnSpan = 7,
+                ColumnSpan = 6,
                 TextAlignment = TextAlignment.Center
             };
             tableRow.Cells.Add(tableCell);
@@ -523,25 +522,6 @@ namespace ProjectCryptoGains
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Currency ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Amount.ToString() ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Amount_fiat.ToString() ?? ""))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow
-                {
-                    FontWeight = FontWeights.Bold
-                };
-                tableCell = new TableCell(new Paragraph(new Run("NOTES")))
-                {
-                    ColumnSpan = 2
-                };
-                tableRow.Cells.Add(tableCell);
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableCell = new TableCell(new Paragraph(new Run(item.Notes?.NullIfEmpty() ?? "N/A")))
-                {
-                    ColumnSpan = 2
-                };
-                tableRow.Cells.Add(tableCell);
                 table.RowGroups[0].Rows.Add(tableRow);
 
                 tableRow = new TableRow();

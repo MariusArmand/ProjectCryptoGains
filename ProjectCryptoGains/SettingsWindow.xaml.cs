@@ -18,15 +18,18 @@ namespace ProjectCryptoGains
             InitializeComponent();
             _mainWindow = mainWindow;
 
+            // Populate ComboBox with options
+            cmbFiatCurrency.ItemsSource = new List<string> { "EUR", "USD" };
+
             Bind();
         }
 
         private void Bind()
         {
-            // Populate ComboBox with options
-            cmbFiatCurrency.ItemsSource = new List<string> { "EUR", "USD" };
             // Set the selected item based on the current setting
             cmbFiatCurrency.Text = SettingFiatCurrency;
+
+            txtRewardsTaxPercentage.Text = SettingRewardsTaxPercentage.ToString();
 
             txtCryptoCompareApiKey.Text = SettingCryptoCompareApiKey;
         }
@@ -42,8 +45,18 @@ namespace ProjectCryptoGains
 
             try
             {
-                //SettingFiatCurrency = txtFiatCurrency.Text;
                 SettingFiatCurrency = cmbFiatCurrency.SelectedItem as string;
+
+                if (decimal.TryParse(txtRewardsTaxPercentage.Text, out decimal tryParsedAmount))
+                {
+                    SettingRewardsTaxPercentage = tryParsedAmount;
+                }
+                else
+                {
+                    txtRewardsTaxPercentage.Text = "0";
+                    SettingRewardsTaxPercentage = 0m;
+                }
+
                 SettingCryptoCompareApiKey = txtCryptoCompareApiKey.Text;
 
                 string message = "Settings have been saved";
@@ -73,6 +86,8 @@ namespace ProjectCryptoGains
 
             btnSave.IsEnabled = true;
             this.Cursor = Cursors.Arrow;
+
+            Bind();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

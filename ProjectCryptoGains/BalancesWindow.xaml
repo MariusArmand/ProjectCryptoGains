@@ -11,10 +11,12 @@
         <CheckBox x:Name="chkRefreshLedgers" Width="150" Margin="30,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh ledgers" />
         <CheckBox x:Name="chkConvertToFiat" Width="150" Margin="30,75,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Convert to fiat" />
         <Button x:Name="btnRefresh" Width="125" Height="40" Margin="225,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonRefresh_Click" Content="Refresh" />
-        <Button x:Name="btnPrint" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Click="ButtonPrint_Click">
+        <Button x:Name="btnPrint" Width="40" Height="40" Margin="375,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonPrint_Click">
             <Image x:Name="imgBtnPrint" Width="32" Height="32" Source="Resources/printer.png" />
         </Button>
-
+        <Button x:Name="btnHelp" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Click="ButtonHelp_Click">
+            <Image x:Name="imgBtnHelp" Width="32" Height="32" Source="Resources/help.png" />
+        </Button>
         <DataGrid x:Name="dgBalances" Width="500" Height="300" Margin="25,100,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True">
             <DataGrid.Resources>
                 <Style x:Key="CellRightAlign">

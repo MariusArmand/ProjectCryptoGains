@@ -194,7 +194,6 @@ namespace ProjectCryptoGains
             public decimal? Amount { get; set; }
             public string? Currency { get; set; }
             public decimal? Fee { get; set; }
-            public string? Balance { get; set; }
             public string? Source { get; set; }
             public string? Target { get; set; }
             public string? Notes { get; set; }
@@ -214,7 +213,6 @@ namespace ProjectCryptoGains
             public decimal? Unit_price { get; set; }
             public decimal? Unit_price_break_even { get; set; }
             public decimal? Amount_sell_break_even { get; set; }
-            public string? Notes { get; set; }
         }
 
         public class TradesRawModel // OBSOLETE MODEL
@@ -228,7 +226,6 @@ namespace ProjectCryptoGains
             public decimal? Quote_amount { get; set; }
             public string? Quote_currency { get; set; }
             public decimal? Fee { get; set; }
-            //public string? Fee_currency { get; set; }
         }
 
         public class TradesModel

@@ -85,6 +85,22 @@ namespace ProjectCryptoGains
 
             try
             {
+                LoadSettingRewardsTaxPercentageFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Settings] {lastError}");
+                MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            try
+            {
                 LoadSettingCryptoCompareApiKeyFromDB();
             }
             catch (InvalidOperationException ex)

@@ -61,6 +61,11 @@ namespace ProjectCryptoGains
             this.Visibility = Visibility.Hidden;
         }
 
+        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("metrics_help.html");
+        }
+
         private void BindLabels()
         {
             string? fiatCurrency = SettingFiatCurrency;

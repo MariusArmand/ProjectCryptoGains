@@ -1,0 +1,85 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCG - Help - Gains</title>
+    <link rel="stylesheet" href="style_help.css">
+	<link rel="icon" type="image/png" href="help.png">
+</head>
+<body>
+    <header>
+        <h1>Metrics Help</h1>
+    </header>
+
+    <main>
+		<section>
+			Metrics are generated using the data generated in Process => Ledgers and Process => Trades
+			<ul>
+				<li>Total invested represents the sum of all fiat currency deposits recorded in the ledgers</li>
+				<li>Last invested refers to the most recent date on which a fiat currency deposit was recorded in the ledgers</li>
+				<li>Total rewards converted represents the sum of the AMOUNT_FIAT column in the Total Rewards table</li>
+			</ul>
+		</section>
+		
+		<section>
+			<h2>Average buy price</h2>
+			<table>
+				<tr>
+					<td valign="top">
+						CURRENCY
+					</td>
+					<td valign="top">
+						Asset
+					</td>
+				</tr>
+				<tr><td></td></tr>
+			
+				<tr>
+					<td valign="top">
+						AMOUNT_FIAT
+					</td>
+					<td valign="top">
+						Average fiat buy price of asset
+					</td>
+				</tr>
+				<tr><td></td></tr>
+				
+			</table>
+		</section>
+		
+		<section>
+			<h2>Total rewards</h2>
+			<table>
+				<tr>
+					<td valign="top">
+						CURRENCY
+					</td>
+					<td valign="top">
+						Asset
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						AMOUNT
+					</td>
+					<td valign="top">
+						Total rewards amount
+					</td>
+				</tr>
+				<tr><td></td></tr>
+			
+				<tr>
+					<td valign="top">
+						AMOUNT_FIAT
+					</td>
+					<td valign="top">
+						Total rewards amount converted to fiat (at the opening price of current date UTC)
+					</td>
+				</tr>
+			</table>
+		</section>
+    </main>
+</body>
+</html>

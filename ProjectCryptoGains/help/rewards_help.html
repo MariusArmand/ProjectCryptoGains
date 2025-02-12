@@ -2,18 +2,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PCG - Help - Trades</title>
+    <title>PCG - Help - Gains</title>
     <link rel="stylesheet" href="style_help.css">
 	<link rel="icon" type="image/png" href="help.png">
 </head>
 <body>
     <header>
-        <h1>Trades Help</h1>
+        <h1>Rewards Help</h1>
     </header>
 
     <main>
 		<section>
-			Trades are generated using the data generated in Process => Ledgers
+			Rewards are generated using the data generated in Process => Ledgers
 		</section>
 		
 		<section>
@@ -43,11 +43,11 @@
 						TYPE
 					</td>
 					<td valign="top">
-						Can be "BUY" or "SELL"
+						Can be "EARN" or "STAKING"
 					</td>
 				</tr>
 				<tr><td></td></tr>
-
+				
 				<tr>
 					<td valign="top">
 						EXCHANGE
@@ -60,148 +60,153 @@
 
 				<tr>
 					<td valign="top">
-						BASE_CURRENCY
+						CURRENCY
 					</td>
 					<td valign="top">
-						Base asset Class
-					</td>
-				</tr>
-				<tr><td></td></tr>
-
-				<tr>
-					<td valign="top">
-						BASE_AMOUNT
-					</td>
-					<td valign="top">
-						Amount of base asset
+						Currency code
 					</td>
 				</tr>
 				<tr><td></td></tr>
 
 				<tr>
 					<td valign="top">
-						BASE_FEE
+						AMOUNT
 					</td>
 					<td valign="top">
-						Fee paid (if any) in the base asset
-					</td>
-				</tr>
-				<tr><td></td></tr>
-
-				<tr>
-					<td valign="top">
-						BASE_FEE_FIAT
-					</td>
-					<td valign="top">
-						BASE_FEE converted to fiat
+						Reward amount
 					</td>
 				</tr>
 				<tr><td></td></tr>
 			
 				<tr>
 					<td valign="top">
-						QUOTE_CURRENCY
+						AMOUNT_FIAT
 					</td>
 					<td valign="top">
-						Quote asset Class
+						<p>Reward amount converted to fiat
+						   Calculation: AMOUNT * UNIT_PRICE</p>
 					</td>
 				</tr>
 				<tr><td></td></tr>
 
 				<tr>
 					<td valign="top">
-						QUOTE_AMOUNT
+						TAX
 					</td>
 					<td valign="top">
-						Amount of quote asset
+						<p>Tax calculated using Rewards Tax Percentage, which can be set at Configure => Settings
+						   Calculation: AMOUNT_FIAT * Rewards Tax Percentage</p>
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						UNIT_PRICE
+					</td>
+					<td valign="top">
+						The fiat price of one unit of the asset
 					</td>
 				</tr>
 				<tr><td></td></tr>
 			
 				<tr>
 					<td valign="top">
-						QUOTE_AMOUNT_FIAT
+						UNIT_PRICE_BREAK_EVEN
 					</td>
 					<td valign="top">
-						QUOTE_AMOUNT converted to fiat
-					</td>
-				</tr>
-				<tr><td></td></tr>
-
-				<tr>
-					<td valign="top">
-						QUOTE_FEE
-					</td>
-					<td valign="top">
-						Fee paid (if any) in the quote asset
-					</td>
-				</tr>
-				<tr><td></td></tr>
-
-				<tr>
-					<td valign="top">
-						QUOTE_FEE_FIAT
-					</td>
-					<td valign="top">
-						QUOTE_FEE converted to fiat
+						<p>The approximate price per unit at which selling the asset would cover the tax cost while maintaining the value of the original reward amount in fiat
+						Calculation: UNIT_PRICE + (UNIT_PRICE * TAX)</p>
 					</td>
 				</tr>
 				<tr><td></td></tr>
 			
 				<tr>
 					<td valign="top">
-						BASE_UNIT_PRICE
+						AMOUNT_SELL_BREAK_EVEN
 					</td>
 					<td valign="top">
-						<p>The cost of one unit of the base asset in terms of the quote asset
-						Calculation: QUOTE_AMOUNT / BASE_AMOUNT</p>
-					</td>
-				</tr>
-				<tr><td></td></tr>
-
-				<tr>
-					<td valign="top">
-						BASE_UNIT_PRICE_FIAT
-					</td>
-					<td valign="top">
-						BASE_UNIT_PRICE converted to fiat
-					</td>
-				</tr>
-				<tr><td></td></tr>
-
-				<tr>
-					<td valign="top">
-						QUOTE_UNIT_PRICE
-					</td>
-					<td valign="top">
-						<p>The cost of one unit of the quote asset in terms of the base asset
-						Calculation: BASE_AMOUNT / QUOTE_AMOUNT</p>
-					</td>
-				</tr>
-				<tr><td></td></tr>
-
-				<tr>
-					<td valign="top">
-						QUOTE_UNIT_PRICE_FIAT
-					</td>
-					<td valign="top">
-						QUOTE_UNIT_PRICE converted to fiat
-					</td>
-				</tr>
-				<tr><td></td></tr>
-
-				<tr>
-					<td valign="top">
-						COSTS_PROCEEDS
-					</td>
-					<td valign="top">
-						<p>The costs (in case of "BUY") or proceeds (in case of "SELL")
-						Calculation:
-						-COSTS: ABS(QUOTE_AMOUNT) + BASE_FEE_FIAT + QUOTE_FEE_FIAT
-						-PROCEEDS: ABS(QUOTE_AMOUNT) - BASE_FEE_FIAT - QUOTE_FEE_FIAT</p>
+						<p>The amount of asset units to sell at the UNIT_PRICE_BREAK_EVEN to approximately cover the tax obligation, 
+						   with the goal of the remaining amount retaining the original reward's value in fiat
+						   Calculation: TAX / UNIT_PRICE_BREAK_EVEN</p>
 					</td>
 				</tr>
 			</table>
+		</section>
+		
+		<section>
+			<h2>Summary</h2>
+			<table>
+				<tr>
+					<td valign="top">
+						CURRENCY
+					</td>
+					<td valign="top">
+						Currency code
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						AMOUNT
+					</td>
+					<td valign="top">
+						Reward amount
+					</td>
+				</tr>
+				<tr><td></td></tr>
+			
+				<tr>
+					<td valign="top">
+						AMOUNT_FIAT
+					</td>
+					<td valign="top">
+						Sum of AMOUNT_FIAT
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						TAX
+					</td>
+					<td valign="top">
+						Sum of TAX
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						UNIT_PRICE*
+					</td>
+					<td valign="top">
+						Average UNIT_PRICE
+					</td>
+				</tr>
+				<tr><td></td></tr>
+			
+				<tr>
+					<td valign="top">
+						UNIT_PRICE_BREAK_EVEN*
+					</td>
+					<td valign="top">
+						Average UNIT_PRICE_BREAK_EVEN
+					</td>
+				</tr>
+				<tr><td></td></tr>
+			
+				<tr>
+					<td valign="top">
+						AMOUNT_SELL_BREAK_EVEN*
+					</td>
+					<td valign="top">
+						Sum of AMOUNT_SELL_BREAK_EVEN
+					</td>
+				</tr>
+			</table>
+			<p class="small-italic">*Rough estimates based on averages and sums, not exact figures</p>
 		</section>
     </main>
 </body>

@@ -30,9 +30,6 @@
                 <DataGridTextColumn Binding="{Binding Fee, StringFormat='0.0000000000'}"
                                     ElementStyle="{StaticResource CellRightAlign}"
                                     Header="FEE" />
-                <DataGridTextColumn Binding="{Binding Balance, StringFormat='0.0000000000'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="BALANCE" />
                 <DataGridTextColumn Binding="{Binding Source}" Header="SOURCE" />
                 <DataGridTextColumn Binding="{Binding Target}" Header="TARGET" />
                 <DataGridTextColumn Binding="{Binding Notes}" Header="NOTES" />

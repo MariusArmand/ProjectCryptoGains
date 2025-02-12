@@ -84,8 +84,7 @@ namespace ProjectCryptoGains
 										EXCHANGE, 
 										AMOUNT, 
 										CURRENCY, 
-										FEE, 
-										CASE WHEN REFID LIKE 'MANUAL%' THEN '' ELSE BALANCE END AS BALANCE,
+										FEE,
 										SOURCE, 
 										TARGET, 
 										NOTES 
@@ -111,10 +110,9 @@ namespace ProjectCryptoGains
                     Amount = ConvertStringToDecimal(reader.GetString(4)),
                     Currency = reader.IsDBNull(5) ? "" : reader.GetString(5),
                     Fee = ConvertStringToDecimal(reader.GetString(6)),
-                    Balance = reader.IsDBNull(7) ? "" : reader.GetString(7),
-                    Source = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                    Target = reader.IsDBNull(9) ? "" : reader.GetString(9),
-                    Notes = reader.IsDBNull(10) ? "" : reader.GetString(10)
+                    Source = reader.IsDBNull(7) ? "" : reader.GetString(7),
+                    Target = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                    Notes = reader.IsDBNull(9) ? "" : reader.GetString(9)
                 });
             }
             reader.Close();
@@ -321,7 +319,7 @@ namespace ProjectCryptoGains
                 FontSize = 16
             })
             {
-                ColumnSpan = 7,
+                ColumnSpan = 6,
                 TextAlignment = TextAlignment.Center
             };
             tableRow.Cells.Add(tableCell);
@@ -347,7 +345,6 @@ namespace ProjectCryptoGains
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("AMOUNT"))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("CURRENCY"))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run("FEE"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("BALANCE"))));
                 table.RowGroups[0].Rows.Add(tableRow);
 
                 tableRow = new TableRow();
@@ -357,7 +354,6 @@ namespace ProjectCryptoGains
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Amount.ToString() ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Currency ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Fee.ToString() ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Balance?.NullIfEmpty() ?? "N/A"))));
                 table.RowGroups[0].Rows.Add(tableRow);
 
                 tableRow = new TableRow

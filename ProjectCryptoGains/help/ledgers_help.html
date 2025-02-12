@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Crypto Gains - Help - Ledgers</title>
+    <title>PCG - Help - Ledgers</title>
     <link rel="stylesheet" href="style_help.css">
 	<link rel="icon" type="image/png" href="help.png">
 </head>
@@ -12,131 +12,112 @@
     </header>
 
     <main>
-        <table>
-            <tr>
-                <td valign="top">
-                    REFID
-                </td>
-                <td valign="top">
-                    <p>Reference ID.
-                       Starts with "Q" for deposits.
-                       Starts with "A" or "B" for withdrawals.
-                       Starts with "B" for transfers to Futures wallet or when staking an asset.
-                       Starts with "T" for trades.
-                       Starts with "R" for transfers from Futures wallet, or un-staking an asset, or receiving rewards from staking.
-                       Starts with "S" for staking rewards.
-                       Starts with "MANUAL" for all manual transactions.</p>
-                </td>
-            </tr>
-            <tr><td></td></tr>
+		<section>
+			Ledgers are generated using the data uploaded via Sources
+		</section>
+		
+		<section>
+			<table>
+				<tr>
+					<td valign="top">
+						REFID
+					</td>
+					<td valign="top">
+						Reference ID
+					</td>
+				</tr>
+				<tr><td></td></tr>
 
-            <tr>
-                <td valign="top">
-                    DATE
-                </td>
-                <td valign="top">
-                    Includes both date & time (in UTC time zone).
-                </td>
-            </tr>
-            <tr><td></td></tr>
+				<tr>
+					<td valign="top">
+						DATE
+					</td>
+					<td valign="top">
+						Date in YYYY-MM-DD HH:MI:SS format (in UTC time zone)
+					</td>
+				</tr>
+				<tr><td></td></tr>
 
-            <tr>
-                <td valign="top">
-                    TYPE
-                </td>
-                <td valign="top">
-                    <p>"TRADE" = non-margin exchange of one currency for another.
-                       "EARN" = relates to all on-chain staking and Opt-In Rewards activities, including allocation, deallocation, rewards, and other transactions. This unified service encompasses both types of staking under a single category.
-                       "DEPOSIT" = deposit of funds to your Kraken account (including KFEE credits), including transfers from your Kraken Futures wallet or from a credit/debit card purchase (card purchases show a 'deposit' for the full amount charged to the card, then a 'spend' for the amount spent on the asset after the transaction fee is deducted, and 'receive' for the credit of the asset bought).
-                       "WITHDRAWAL" = withdrawal of funds outside of your Kraken account, including transfers to your Kraken Futures wallet.
-                       "TRANSFER" = credit of supported airdrops and forks (e.g. BCH and XLM), and funds transferred to/from Kraken's OTC desk; does not include transfers to/from your Kraken Futures wallet.
-                       "STAKING" = updates to staked balances, including initial staked balances and changes due to the crediting of staking rewards.</p>
-                </td>
-            </tr>
-            <tr><td></td></tr>
+				<tr>
+					<td valign="top">
+						TYPE
+					</td>
+					<td valign="top">
+						Can be DEPOSIT, WITHDRAWAL, TRADE, EARN, STAKING
+					</td>
+				</tr>
+				<tr><td></td></tr>
 
-            <tr>
-                <td valign="top">
-                    EXCHANGE
-                </td>
-                <td valign="top">
-                    Exchange involved.
-                </td>
-            </tr>
-            <tr><td></td></tr>
+				<tr>
+					<td valign="top">
+						EXCHANGE
+					</td>
+					<td valign="top">
+						Exchange involved
+					</td>
+				</tr>
+				<tr><td></td></tr>
 
-            <tr>
-                <td valign="top">
-                    CURRENCY
-                </td>
-                <td valign="top">
-                    Asset Class.
-                </td>
-            </tr>
-            <tr><td></td></tr>
+				<tr>
+					<td valign="top">
+						CURRENCY
+					</td>
+					<td valign="top">
+						Asset
+					</td>
+				</tr>
+				<tr><td></td></tr>
 
-            <tr>
-                <td valign="top">
-                    AMOUNT
-                </td>
-                <td valign="top">
-                    Amount debited (-) or credited (+) to that asset's balance.
-                </td>
-            </tr>
-            <tr><td></td></tr>
+				<tr>
+					<td valign="top">
+						AMOUNT
+					</td>
+					<td valign="top">
+						Amount debited (-) or credited (+)
+					</td>
+				</tr>
+				<tr><td></td></tr>
 
-            <tr>
-                <td valign="top">
-                    FEE
-                </td>
-                <td valign="top">
-                    Fee paid to Kraken (if any) in the asset.
-                </td>
-            </tr>
-            <tr><td></td></tr>
+				<tr>
+					<td valign="top">
+						FEE
+					</td>
+					<td valign="top">
+						Fee paid (if any) in the asset
+					</td>
+				</tr>
+				<tr><td></td></tr>
 
-            <tr>
-                <td valign="top">
-                    BALANCE
-                </td>
-                <td valign="top">
-                    <p>New asset balance after debiting/crediting transaction amount and debiting fee.
+				<tr>
+					<td valign="top">
+						SOURCE
+					</td>
+					<td valign="top">
+						Origin of transaction
+					</td>
+				</tr>
+				<tr><td></td></tr>
 
-                       balance = old_balance +/- amount - fee
-                       Will be "N/A" for MANUAL transactions.</p>
-                </td>
-            </tr>
-            <tr><td></td></tr>
+				<tr>
+					<td valign="top">
+						TARGET
+					</td>
+					<td valign="top">
+						Goal of transaction
+					</td>
+				</tr>
+				<tr><td></td></tr>
 
-            <tr>
-                <td valign="top">
-                    SOURCE
-                </td>
-                <td valign="top">
-                    Origin of transaction.
-                </td>
-            </tr>
-            <tr><td></td></tr>
-
-            <tr>
-                <td valign="top">
-                    TARGET
-                </td>
-                <td valign="top">
-                    Goal of transaction.
-                </td>
-            </tr>
-            <tr><td></td></tr>
-
-            <tr>
-                <td valign="top">
-                    NOTES
-                </td>
-                <td valign="top">
-                    Short transaction description.
-                </td>
-            </tr>
-        </table>
+				<tr>
+					<td valign="top">
+						NOTES
+					</td>
+					<td valign="top">
+						Short transaction description
+					</td>
+				</tr>
+			</table>
+		</section>
     </main>
 </body>
 </html>
