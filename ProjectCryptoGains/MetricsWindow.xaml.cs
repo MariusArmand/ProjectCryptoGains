@@ -25,6 +25,10 @@ namespace ProjectCryptoGains
         public MetricsWindow(MainWindow mainWindow)
         {
             InitializeComponent();
+
+            // Capture drag on titlebar
+            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+
             _mainWindow = mainWindow;
 
             if (!OpenDatabaseConnection())
@@ -38,6 +42,16 @@ namespace ProjectCryptoGains
             connection?.Close();
         }
 
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.MinimizeWindow(this);
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.CloseWindow(this);
+        }
+
         private bool OpenDatabaseConnection()
         {
             try
@@ -48,7 +62,7 @@ namespace ProjectCryptoGains
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnRefresh.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
                 return false;
@@ -113,7 +127,7 @@ namespace ProjectCryptoGains
                 catch (Exception ex)
                 {
                     lastError = "There was a problem getting invest metrics." + Environment.NewLine + ex.Message;
-                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
 
                     // Exit function early
@@ -174,7 +188,7 @@ namespace ProjectCryptoGains
                 {
                     lastError = "There was a problem getting average buy prices." + Environment.NewLine + ex.Message;
 
-                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
 
                     btnRefresh.IsEnabled = true;
@@ -220,7 +234,7 @@ namespace ProjectCryptoGains
                 {
                     lastError = "There was a problem getting rewards." + Environment.NewLine + ex.Message;
 
-                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
 
                     btnRefresh.IsEnabled = true;

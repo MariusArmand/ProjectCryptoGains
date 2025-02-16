@@ -6,7 +6,7 @@
             <Image x:Name="imgBtnHelp" Width="32" Height="32" Source="Resources/help.png" />
         </Button>        
         <Button x:Name="btnUpload" Width="125" Height="40" Margin="25,75,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonUpload_Click" Content="Upload" />
-        <DataGrid x:Name="dgTrades" Margin="25,125,25,25" AutoGenerateColumns="False" IsReadOnly="True">
+        <DataGrid x:Name="dgTrades" Margin="25,125,25,25" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
             <DataGrid.Resources>
                 <Style x:Key="CellRightAlign">
                     <Setter Property="Control.HorizontalAlignment" Value="Right" />

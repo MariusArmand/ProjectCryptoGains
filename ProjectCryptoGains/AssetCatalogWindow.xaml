@@ -3,20 +3,64 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ProjectCryptoGains"
-        Closing="Window_Closing"
         mc:Ignorable="d"
-        Title="Asset Catalog" Height="450" Width="800">
-    <Grid>
-        <Button x:Name="btnHelp" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Click="ButtonHelp_Click">
-            <Image x:Name="imgBtnHelp" Width="32" Height="32" Source="Resources/help.png" />
-        </Button>
-        <DataGrid x:Name="dgAssets" Margin="25,75,25,80" AutoGenerateColumns="False" CanUserAddRows="True" CanUserDeleteRows="True">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="CODE" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}" />
-                <DataGridTextColumn Header="ASSET" Binding="{Binding Asset, UpdateSourceTrigger=PropertyChanged}" />
-            </DataGrid.Columns>
-        </DataGrid>
-        <Button x:Name="btnSave" Width="125" Height="40" Margin="25,25,25,25" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="Save_Click" Content="Save" />
-    </Grid>
+        xmlns:shell="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        Title="Asset Catalog" 
+        Height="450" 
+        Width="800"
+        ResizeMode="NoResize"
+        WindowStyle="SingleBorderWindow"
+        Closing="Window_Closing">
+    
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0"/>
+    </shell:WindowChrome.WindowChrome>
+    <Border BorderBrush="#444444" BorderThickness="1" Background="#1E1E1E">
+        <Grid>
+            <!-- Title Bar -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Custom Title Bar with Window Control Buttons -->
+            <Grid x:Name="TitleBar" Background="#2B2B2B">
+                <TextBlock Text="Asset Catalog" 
+                           HorizontalAlignment="Left" 
+                           VerticalAlignment="Center" 
+                           Margin="10,0,0,0"
+                           Foreground="White"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,5,0">
+                    <Button Content="—"
+                            Width="30" Height="30" Click="Minimize_Click"/>
+                    <Button Content="X"
+                            Width="30" Height="30" Click="Close_Click"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Main Content -->
+            <Grid Grid.Row="1">    
+                <Grid>
+                    <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnHelp" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Click="ButtonHelp_Click">
+                        <Image x:Name="imgBtnHelp" Width="32" Height="32" Source="Resources/help.png" />
+                    </Button>
+                    <DataGrid x:Name="dgAssets" Margin="25,75,25,80" AutoGenerateColumns="False" CanUserAddRows="True" CanUserDeleteRows="True" CanUserReorderColumns="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="CODE" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}" >
+                                <DataGridTextColumn.EditingElementStyle>
+                                    <StaticResource ResourceKey="CustomDataGridEditingTextBoxStyle" />
+                                </DataGridTextColumn.EditingElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="ASSET" Binding="{Binding Asset, UpdateSourceTrigger=PropertyChanged}" >
+                                <DataGridTextColumn.EditingElementStyle>
+                                    <StaticResource ResourceKey="CustomDataGridEditingTextBoxStyle" />
+                                </DataGridTextColumn.EditingElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Button x:Name="btnSave" Width="125" Height="40" Margin="25,25,25,25" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="Save_Click" Content="Save" />
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
 </Window>

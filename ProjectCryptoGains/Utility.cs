@@ -10,7 +10,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 
 namespace ProjectCryptoGains
 {
@@ -314,7 +313,7 @@ namespace ProjectCryptoGains
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         string message = "There is already a ledgers refresh in progress. Please Wait";
-                        MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBoxResult result = CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         if (_mainWindow != null)
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[{caller}] {message}");
@@ -473,7 +472,7 @@ namespace ProjectCryptoGains
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxResult result = CustomMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 });
                 if (_mainWindow != null)
                 {
@@ -489,7 +488,7 @@ namespace ProjectCryptoGains
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    MessageBox.Show("Failed to refresh ledgers." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxResult result = CustomMessageBox.Show("Failed to refresh ledgers." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 });
                 if (_mainWindow != null)
                 {
@@ -518,7 +517,7 @@ namespace ProjectCryptoGains
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        MessageBox.Show("There is already a raw trades refresh in progress. Please Wait", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBoxResult result = CustomMessageBox.Show("There is already a raw trades refresh in progress. Please Wait", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     });
                     return; // Exit the method here if refresh is already in progress
                 }
@@ -590,7 +589,7 @@ namespace ProjectCryptoGains
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         string message = "There is already a trades refresh in progress. Please Wait";
-                        MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBoxResult result = CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         if (_mainWindow != null)
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[{caller}] {message}");
@@ -1065,7 +1064,7 @@ namespace ProjectCryptoGains
                         }
                         Application.Current.Dispatcher.Invoke(() =>
                         {
-                            MessageBox.Show(error_message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBoxResult result = CustomMessageBox.Show(error_message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         });
                         throw new Exception(error_message);
                     }
@@ -1135,7 +1134,7 @@ namespace ProjectCryptoGains
             return DateTime.TryParseExact(date, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
         }
 
-        public static string TextBlockContentSplit(TextBlock tbInput)
+        /*public static string TextBlockContentSplit(TextBlock tbInput)
         {
             string output = "";
             foreach (Inline inline in tbInput.Inlines)
@@ -1143,7 +1142,7 @@ namespace ProjectCryptoGains
                 output += inline.ContentStart.GetTextInRun(LogicalDirection.Forward) + "\n";
             }
             return output;
-        }
+        }*/
 
         public static List<string> MissingPairs(SqliteConnection connection) // OBSOLETE METHOD
         {
@@ -1294,12 +1293,12 @@ namespace ProjectCryptoGains
                 }
                 catch (System.ComponentModel.Win32Exception ex)
                 {
-                    MessageBox.Show("The help file could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxResult result = CustomMessageBox.Show("The help file could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
             {
-                MessageBox.Show("The help file does not exist", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("The help file does not exist", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

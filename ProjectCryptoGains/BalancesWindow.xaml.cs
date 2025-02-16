@@ -35,13 +35,27 @@ namespace ProjectCryptoGains
         public BalancesWindow(MainWindow mainWindow)
         {
             InitializeComponent();
-            txtUntilDate.Foreground = Brushes.Black;
+
+            // Capture drag on titlebar
+            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+
+            //txtUntilDate.Foreground = Brushes.Black;
             txtUntilDate.Text = untilDate;
             lblTotalAmountFiat.Visibility = Visibility.Collapsed;
             lblTotalAmountFiatData.Visibility = Visibility.Collapsed;
             _mainWindow = mainWindow;
 
             BindGrid();
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.MinimizeWindow(this);
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.CloseWindow(this);
         }
 
         public SeriesCollection? SeriesCollection { get; set; }
@@ -83,7 +97,7 @@ namespace ProjectCryptoGains
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnRefresh.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
 
@@ -149,7 +163,7 @@ namespace ProjectCryptoGains
                         {
                             // There should've been some conversions
                             string? lastError = "No " + fiatCurrency + " conversions done, check connection to cryptocompare.com";
-                            MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             ConsoleLog(_mainWindow.txtLog, $"[Balances] {lastError}");
                         }
                     }
@@ -163,7 +177,7 @@ namespace ProjectCryptoGains
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Exception whilst fetching data." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("Exception whilst fetching data." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
                 return;
@@ -199,7 +213,9 @@ namespace ProjectCryptoGains
                     Title = title,
                     Values = new ChartValues<decimal> { amounts_fiat[i] },
                     DataLabels = true,
-                    LabelPoint = chartPoint => (chartPoint.Participation * 100).ToString("F2") + "%"
+                    LabelPoint = chartPoint => (chartPoint.Participation * 100).ToString("F2") + "%",
+                    Stroke = null,
+                    StrokeThickness = 0
                 });
             }
 
@@ -213,7 +229,7 @@ namespace ProjectCryptoGains
 
             if (!IsValidDateFormat(txtUntilDate.Text, "yyyy-MM-dd"))
             {
-                MessageBox.Show("Until date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("Until date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
                 return;
@@ -254,7 +270,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     btnRefresh.IsEnabled = true;
                     this.Cursor = Cursors.Arrow;
 
@@ -361,7 +377,7 @@ namespace ProjectCryptoGains
             if (txtUntilDate.Text == "YYYY-MM-DD")
             {
                 txtUntilDate.Text = string.Empty;
-                txtUntilDate.Foreground = Brushes.Black;
+                //txtUntilDate.Foreground = Brushes.Black;
             }
         }
 
@@ -370,13 +386,14 @@ namespace ProjectCryptoGains
             if (string.IsNullOrWhiteSpace(txtUntilDate.Text))
             {
                 txtUntilDate.Text = "YYYY-MM-DD";
-                txtUntilDate.Foreground = Brushes.Gray;
+                txtUntilDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
             }
         }
 
         private void TextBoxUntilDate_KeyUp(object sender, KeyboardEventArgs e)
         {
             SetUntilDate();
+            txtUntilDate.Foreground = Brushes.White;
         }
 
         private void SetUntilDate()
@@ -388,7 +405,7 @@ namespace ProjectCryptoGains
         {
             if (!dgBalances.HasItems)
             {
-                MessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBoxResult result = CustomMessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 

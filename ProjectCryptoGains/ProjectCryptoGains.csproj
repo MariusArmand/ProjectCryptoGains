@@ -56,6 +56,7 @@
     <None Remove="help\style_help.css" />
     <None Remove="help\trades_help.html" />
     <None Remove="Resources\help.png" />
+    <None Remove="Resources\information.png" />
     <None Remove="Resources\printer.png" />
     <None Remove="Resources\printer_busy.png" />
     <None Remove="Resources\print_32.png" />
@@ -115,7 +116,7 @@
 
   <ItemGroup>
     <PackageReference Include="LiveCharts.Wpf.Core" Version="0.9.8" />
-    <PackageReference Include="Microsoft.Data.SQLite" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Data.SQLite" Version="9.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
   </ItemGroup>
@@ -124,7 +125,9 @@
     <EmbeddedResource Include="help\trades_help.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
+    <Resource Include="Resources\error.png" />
     <Resource Include="Resources\help.png" />
+    <Resource Include="Resources\information.png" />
     <Resource Include="Resources\printer.png" />
     <Resource Include="Resources\printer_busy.png" />
   </ItemGroup>
@@ -169,6 +172,10 @@
     <AssemblyAttribute Include="System.Resources.NeutralResourcesLanguageAttribute">
 	  <_Parameter1>en</_Parameter1>
 	</AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\warning.png" />
   </ItemGroup>
 
   <ItemGroup>

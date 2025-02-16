@@ -22,10 +22,24 @@ namespace ProjectCryptoGains
         public KrakenAssetsWindow(MainWindow mainWindow)
         {
             InitializeComponent();
+
+            // Capture drag on titlebar
+            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+
             _mainWindow = mainWindow;
             KrakenAssets = [];
 
             BindGrid();
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.MinimizeWindow(this);
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.CloseWindow(this);
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -58,7 +72,7 @@ namespace ProjectCryptoGains
             {
                 lastInfo = "No data to save";
                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastInfo}");
-                MessageBox.Show(lastInfo, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBoxResult result = CustomMessageBox.Show(lastInfo, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Exit function early
                 return;
@@ -82,7 +96,7 @@ namespace ProjectCryptoGains
             {
                 lastError = "CODE and ASSET cannot be empty";
                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
-                MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else
             {
@@ -116,7 +130,7 @@ namespace ProjectCryptoGains
 
                 if (lastError != null)
                 {
-                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
                 }
             }
@@ -131,7 +145,7 @@ namespace ProjectCryptoGains
                 if (malconfiguredAssets.Count > 0)
                 {
                     lastError = "Malconfigured asset(s) detected";
-                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
 
                     // Log each malconfigured asset
@@ -169,7 +183,7 @@ namespace ProjectCryptoGains
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 this.Cursor = Cursors.Arrow;
 
                 // Exit function early

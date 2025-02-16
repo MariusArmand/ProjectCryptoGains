@@ -12,7 +12,7 @@
         <Button x:Name="btnPrint" Width="40" Height="40" Margin="375,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonPrint_Click">
             <Image x:Name="imgBtnPrint" Width="32" Height="32" Source="Resources/printer.png" />
         </Button>
-        <DataGrid x:Name="dgTradesRaw" Margin="25,100,25,25" AutoGenerateColumns="False" IsReadOnly="True">
+        <DataGrid x:Name="dgTradesRaw" Margin="25,100,25,25" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
             <DataGrid.Resources>
                 <Style x:Key="CellRightAlign">
                     <Setter Property="Control.HorizontalAlignment" Value="Right" />

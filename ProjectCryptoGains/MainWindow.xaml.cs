@@ -30,6 +30,19 @@ namespace ProjectCryptoGains
         {
             InitializeComponent();
 
+            // Capture events on titlebar
+            this.TitleBar.MouseLeftButtonDown += (sender, e) =>
+            {
+                if (e.ClickCount == 2) // Detect double-click
+                {
+                    this.WindowState = (this.WindowState == WindowState.Maximized) ? WindowState.Normal : WindowState.Maximized;
+                }
+                else
+                {
+                    this.DragMove();
+                }
+            };
+
             ConsoleLog(txtLog, $"[Main] Connecting to database {databasePath}");
             ConsoleLog(txtLog, $"[Main] {TestDatabaseConnection()}");
 
@@ -80,7 +93,7 @@ namespace ProjectCryptoGains
                 }
 
                 ConsoleLog(txtLog, $"[Settings] {lastError}");
-                MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             try
@@ -96,7 +109,7 @@ namespace ProjectCryptoGains
                 }
 
                 ConsoleLog(txtLog, $"[Settings] {lastError}");
-                MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             try
@@ -112,8 +125,30 @@ namespace ProjectCryptoGains
                 }
 
                 ConsoleLog(txtLog, $"[Settings] {lastError}");
-                MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.MinimizeWindow(this);
+        }
+
+        private void Resize_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                SystemCommands.RestoreWindow(this);
+            }
+            else
+            {
+                SystemCommands.MaximizeWindow(this);
+            }
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.CloseWindow(this);
         }
 
         private void MenuSettings_Click(object sender, RoutedEventArgs e)

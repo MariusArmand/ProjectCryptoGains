@@ -31,14 +31,28 @@ namespace ProjectCryptoGains
         public LedgersWindow(MainWindow mainWindow)
         {
             InitializeComponent();
+
+            // Capture drag on titlebar
+            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+
             _mainWindow = mainWindow;
 
-            txtFromDate.Foreground = Brushes.Black;
+            //txtFromDate.Foreground = Brushes.Black;
             txtFromDate.Text = fromDate;
-            txtToDate.Foreground = Brushes.Black;
+            //txtToDate.Foreground = Brushes.Black;
             txtToDate.Text = toDate;
 
             Refresh();
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.MinimizeWindow(this);
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.CloseWindow(this);
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -67,7 +81,7 @@ namespace ProjectCryptoGains
             catch (Exception ex)
             {
                 // code to handle the exception
-                MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnRefresh.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
 
@@ -131,7 +145,7 @@ namespace ProjectCryptoGains
             if (!IsValidDateFormat(txtFromDate.Text, "yyyy-MM-dd"))
             {
                 // code to handle the exception
-                MessageBox.Show("From date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("From date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
                 return;
@@ -140,7 +154,7 @@ namespace ProjectCryptoGains
             if (!IsValidDateFormat(txtToDate.Text, "yyyy-MM-dd"))
             {
                 // code to handle the exception
-                MessageBox.Show("To date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("To date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
                 return;
@@ -198,7 +212,6 @@ namespace ProjectCryptoGains
             if (txtToDate.Text == "YYYY-MM-DD")
             {
                 txtToDate.Text = string.Empty;
-                txtToDate.Foreground = Brushes.Black;
             }
         }
 
@@ -207,13 +220,14 @@ namespace ProjectCryptoGains
             if (string.IsNullOrWhiteSpace(txtToDate.Text))
             {
                 txtToDate.Text = "YYYY-MM-DD";
-                txtToDate.Foreground = Brushes.Gray;
+                txtToDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
             }
         }
 
         private void TextBoxToDate_KeyUp(object sender, KeyboardEventArgs e)
         {
             SetToDate();
+            txtToDate.Foreground = Brushes.White;
         }
 
         private void SetToDate()
@@ -226,7 +240,7 @@ namespace ProjectCryptoGains
             if (txtFromDate.Text == "YYYY-MM-DD")
             {
                 txtFromDate.Text = string.Empty;
-                txtFromDate.Foreground = Brushes.Black;
+                //txtFromDate.Foreground = Brushes.Black;
             }
         }
 
@@ -235,13 +249,14 @@ namespace ProjectCryptoGains
             if (string.IsNullOrWhiteSpace(txtFromDate.Text))
             {
                 txtFromDate.Text = "YYYY-MM-DD";
-                txtFromDate.Foreground = Brushes.Gray;
+                txtFromDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
             }
         }
 
         private void TextBoxFromDate_KeyUp(object sender, KeyboardEventArgs e)
         {
             SetFromDate();
+            txtFromDate.Foreground = Brushes.White;
         }
 
         private void SetFromDate()
@@ -258,7 +273,7 @@ namespace ProjectCryptoGains
         {
             if (!dgLedgers.HasItems)
             {
-                MessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBoxResult result = CustomMessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 

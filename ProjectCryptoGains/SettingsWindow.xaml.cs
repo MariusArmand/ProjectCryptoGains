@@ -16,12 +16,25 @@ namespace ProjectCryptoGains
         public SettingsWindow(MainWindow mainWindow)
         {
             InitializeComponent();
+            // Capture drag on titlebar
+            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+
             _mainWindow = mainWindow;
 
             // Populate ComboBox with options
             cmbFiatCurrency.ItemsSource = new List<string> { "EUR", "USD" };
 
             Bind();
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.MinimizeWindow(this);
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.CloseWindow(this);
         }
 
         private void Bind()
@@ -61,7 +74,7 @@ namespace ProjectCryptoGains
 
                 string message = "Settings have been saved";
                 ConsoleLog(_mainWindow.txtLog, $"[Settings] {message}");
-                MessageBox.Show(message, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBoxResult result = CustomMessageBox.Show(message, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (InvalidOperationException ex)
             {
@@ -72,7 +85,7 @@ namespace ProjectCryptoGains
                 }
 
                 ConsoleLog(_mainWindow.txtLog, $"[Settings] {lastError}");
-                MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             if (lastError == null)

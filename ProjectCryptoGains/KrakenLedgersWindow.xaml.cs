@@ -26,8 +26,23 @@ namespace ProjectCryptoGains
         public KrakenLedgersWindow(MainWindow mainWindow)
         {
             InitializeComponent();
-            BindGrid();
+
+            // Capture drag on titlebar
+            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+
             _mainWindow = mainWindow;
+
+            BindGrid();
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.MinimizeWindow(this);
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.CloseWindow(this);
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -54,7 +69,7 @@ namespace ProjectCryptoGains
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnUpload.IsEnabled = true;
                 this.Cursor = Cursors.Arrow;
 
@@ -110,7 +125,7 @@ namespace ProjectCryptoGains
             if (!File.Exists(filePath))
             {
                 lastError = "The file does not exist";
-                MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Load unsuccessful");
 
@@ -144,7 +159,7 @@ namespace ProjectCryptoGains
                             if (!Enumerable.SequenceEqual(columnNames, columnNamesExpected))
                             {
                                 lastError = "Unexpected inputfile header";
-                                MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
 
                                 btnUpload.IsEnabled = true;
@@ -172,7 +187,7 @@ namespace ProjectCryptoGains
                 catch (Exception ex)
                 {
                     lastError = "File could not be parsed." + Environment.NewLine + ex.Message;
-                    MessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Load unsuccessful");
 
@@ -235,7 +250,7 @@ namespace ProjectCryptoGains
                 if (missingAssets.Count > 0)
                 {
                     lastWarning = "There are new Kraken assets to be refreshed." + Environment.NewLine + "[Configure => Kraken Assets]";
-                    MessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastWarning}");
 
                     // Log each missing asset

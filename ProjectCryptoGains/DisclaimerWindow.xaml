@@ -1,49 +1,79 @@
 ﻿<Window x:Class="ProjectCryptoGains.DisclaimerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Disclaimer" 
-        Height="380" Width="600" 
+        xmlns:shell="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        Title="Disclaimer"
+        Height="380" 
+        Width="600" 
         ResizeMode="NoResize" 
         WindowStartupLocation="CenterScreen"
-        Background="White">
+        WindowStyle="SingleBorderWindow">
 
-    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0"/>
+    </shell:WindowChrome.WindowChrome>
+    <Border BorderBrush="#444444" BorderThickness="1" Background="#1E1E1E">
+        <Grid>
+            <!-- Title Bar -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <TextBlock TextWrapping="Wrap" 
-           TextAlignment="Left" 
-           HorizontalAlignment="Center" 
-           VerticalAlignment="Center"
-           Margin="10">
-                <Run FontWeight="Bold">Accuracy:</Run> While efforts have been made to aim for accuracy, the correctness of the calculations should<LineBreak/>
-                be verified by a professional accountant.
-                <LineBreak/>
-                <LineBreak/>
-                <Run FontWeight="Bold">Historical Price Data Timing:</Run> Historical prices used in the tool are fetched from [CryptoCompare]<LineBreak/>                
-                using the opening price on the relevant date.<LineBreak/>                
-                This approach limits API calls and maintains performance, with the assumption that consistently using opening prices provides a balanced representation of historical price data.
-                <LineBreak/>
-                <LineBreak/>
-                <Run FontWeight="Bold">General Disclaimer:</Run> Use at your own risk. This software is provided 'as is', without warranty of any kind, either express or implied, 
-                including but not limited to the warranties of merchantability, fitness<LineBreak/>                
-                for a particular purpose, and non-infringement.
-                <LineBreak/>
-                <LineBreak/>
-                <Run FontWeight="Bold">None of the output from this program should be considered financial advice; it is for educational purposes only.</Run>
-                In no event shall the author or contributors be liable for any claim, damages, or other<LineBreak/>                
-                liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with<LineBreak/>
-                the software or the use or other dealings in the software.
-        </TextBlock>
+            <!-- Custom Title Bar with Window Control Buttons -->
+            <Grid x:Name="TitleBar" Background="#2B2B2B">
+                <TextBlock Text="Disclaimer" 
+                           HorizontalAlignment="Left" 
+                           VerticalAlignment="Center" 
+                           Margin="10,0,0,0"
+                           Foreground="White"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,5,0">
+                    <Button Content="X"
+                            Width="30" Height="30" Click="Close_Click"/>
+                </StackPanel>
+            </Grid>
 
-        <Button Grid.Row="1" 
-                Content="I Understand and Accept the Risks" 
-                HorizontalAlignment="Center" 
-                VerticalAlignment="Center" 
-                Margin="5"
-                Padding="5"
-                Click="OnAgreeClick"/>
-    </Grid>
+            <!-- Main Content -->
+            <Grid Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock TextWrapping="Wrap" 
+                    TextAlignment="Left" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center"
+                    Margin="10">
+                        <Run FontWeight="Bold">Accuracy:</Run> While efforts have been made to aim for accuracy, the correctness of the calculations should<LineBreak/>
+                        be verified by a professional accountant.
+                        <LineBreak/>
+                        <LineBreak/>
+                        <Run FontWeight="Bold">Historical Price Data Timing:</Run> Historical prices used in the tool are fetched from [CryptoCompare]<LineBreak/>                
+                        using the opening price on the relevant date.<LineBreak/>                
+                        This approach limits API calls and maintains performance, with the assumption that consistently using opening prices provides a balanced representation of historical price data.
+                        <LineBreak/>
+                        <LineBreak/>
+                        <Run FontWeight="Bold">General Disclaimer:</Run> Use at your own risk. This software is provided 'as is', without warranty of any kind, either express or implied, 
+                        including but not limited to the warranties of merchantability, fitness<LineBreak/>                
+                        for a particular purpose, and non-infringement.
+                        <LineBreak/>
+                        <LineBreak/>
+                        <Run FontWeight="Bold">None of the output from this program should be considered financial advice; it is for educational purposes only.</Run>
+                        In no event shall the author or contributors be liable for any claim, damages, or other<LineBreak/>                
+                        liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with<LineBreak/>
+                        the software or the use or other dealings in the software.
+                </TextBlock>
+
+                <Button 
+                        Grid.Row="1" 
+                        Content="I Understand and Accept the Risks" 
+                        HorizontalAlignment="Center" 
+                        VerticalAlignment="Center" 
+                        Click="OnAgreeClick" 
+                        Width="220"
+                        Height="40"/>
+            </Grid>
+        </Grid>
+    </Border>
 </Window>

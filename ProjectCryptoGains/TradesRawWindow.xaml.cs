@@ -33,9 +33,9 @@ namespace ProjectCryptoGains
             InitializeComponent();
             _mainWindow = mainWindow;
 
-            txtFromDate.Foreground = Brushes.Black;
+            //txtFromDate.Foreground = Brushes.Black;
             txtFromDate.Text = fromDate;
-            txtToDate.Foreground = Brushes.Black;
+            //txtToDate.Foreground = Brushes.Black;
             txtToDate.Text = toDate;
 
             Refresh();
@@ -170,7 +170,7 @@ namespace ProjectCryptoGains
             if (txtToDate.Text == "YYYY-MM-DD")
             {
                 txtToDate.Text = string.Empty;
-                txtToDate.Foreground = Brushes.Black;
+                //txtToDate.Foreground = Brushes.Black;
             }
         }
 
@@ -179,7 +179,7 @@ namespace ProjectCryptoGains
             if (string.IsNullOrWhiteSpace(txtToDate.Text))
             {
                 txtToDate.Text = "YYYY-MM-DD";
-                txtToDate.Foreground = Brushes.Gray;
+                //txtToDate.Foreground = Brushes.Gray;
             }
         }
 
@@ -198,7 +198,7 @@ namespace ProjectCryptoGains
             if (txtFromDate.Text == "YYYY-MM-DD")
             {
                 txtFromDate.Text = string.Empty;
-                txtFromDate.Foreground = Brushes.Black;
+                //txtFromDate.Foreground = Brushes.Black;
             }
         }
 
@@ -207,7 +207,7 @@ namespace ProjectCryptoGains
             if (string.IsNullOrWhiteSpace(txtFromDate.Text))
             {
                 txtFromDate.Text = "YYYY-MM-DD";
-                txtFromDate.Foreground = Brushes.Gray;
+                //txtFromDate.Foreground = Brushes.Gray;
             }
         }
 

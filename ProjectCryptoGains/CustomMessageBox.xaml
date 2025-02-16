@@ -1,0 +1,99 @@
+﻿<Window x:Class="ProjectCryptoGains.CustomMessageBox"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        xmlns:shell="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        Title="Custom Messagebox"
+        MinWidth="200"
+        MaxWidth="400"
+        MinHeight="100"
+        MaxHeight="400"
+        SizeToContent="Height" 
+        ResizeMode="NoResize" 
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="SingleBorderWindow">
+
+    <Window.Resources>
+        <BitmapImage x:Key="DesignImage" UriSource="/ProjectCryptoGains;component/Resources/information.png"/>
+    </Window.Resources>
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Border Background="#1E1E1E" BorderBrush="#444444" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <!-- Title Bar -->
+                <RowDefinition Height="30"/>
+                <!-- Main Content -->
+                <RowDefinition Height="Auto"/>
+                <!-- Bottom Buttons -->
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Custom Title Bar -->
+            <Grid Grid.Row="0" x:Name="TitleBar" Background="#2B2B2B">
+                <TextBlock Grid.Row="0" 
+                       HorizontalAlignment="Left" 
+                       VerticalAlignment="Center" 
+                       Margin="10,0,0,0"
+                       Foreground="White"
+                       Text="{Binding TitleBarCaption, FallbackValue=Caption}"/>
+                <StackPanel Grid.Row="0" 
+                        Orientation="Horizontal" 
+                        HorizontalAlignment="Right" 
+                        Margin="0,0,5,0">
+                    <Button Width="30" 
+                        Height="30" 
+                        Content="X" 
+                        Click="Close_Click"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Main Content -->
+            <Grid Grid.Row="1" Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <!-- Image Column -->
+                    <ColumnDefinition Width="Auto"/>
+                    <!-- Content Column -->
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0">
+                    <Image Source="{StaticResource DesignImage}" 
+                       Width="32" 
+                       Height="32" 
+                       Margin="10"/>
+                </Grid>
+                <Grid Grid.Column="1">
+                    <TextBlock Grid.Row="0"
+                           Text="{Binding Message, FallbackValue=Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque elementum neque nec ex faucibu Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque elementum neque nec ex faucibu Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque elementum neque nec ex faucibu}"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
+                </Grid>
+            </Grid>
+            <Grid Grid.Row="2" Margin="0,10,0,0">
+                <!-- Button Panel -->
+                <StackPanel Orientation="Horizontal" 
+                        VerticalAlignment="Bottom" 
+                        HorizontalAlignment="Right" 
+                        Margin="0,0,10,10">
+                    <Button Content="OK" 
+                        Click="OnOKClick" 
+                        Margin="0,0,5,0" 
+                        Width="40" 
+                        Height="25"/>
+                    <Button Content="Cancel" 
+                        Click="OnCancelClick" 
+                        Visibility="{Binding CancelButtonVisibility}" 
+                        Width="50" 
+                        Height="25"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

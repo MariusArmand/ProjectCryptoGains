@@ -10,6 +10,9 @@ namespace ProjectCryptoGains
         public DisclaimerWindow()
         {
             InitializeComponent();
+
+            // Capture drag on titlebar
+            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
         }
 
         private void OnAgreeClick(object sender, RoutedEventArgs e)
@@ -23,6 +26,11 @@ namespace ProjectCryptoGains
         {
             DisclaimerWindow messageBox = new();
             return messageBox.ShowDialog();
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.CloseWindow(this);
         }
     }
 }
