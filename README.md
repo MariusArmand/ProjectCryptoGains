@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Overview
-Project Crypto Gains is a tool designed to simplify tax management for cryptocurrency investments  
+Project Crypto Gains is a tool designed to simplify tax management for cryptocurrency investments;  
 It offers a user-friendly solution for tracking crypto transactions and calculating taxes using the LIFO (Last In, First Out) method
 
 ## Features
@@ -63,19 +63,21 @@ Run the tool to process transactions and calculate:
 - Check all output for accuracy
 
 ## Installation
-**Download the ProjectCryptoGains ZIP file**
+**Download the ProjectCryptoGains ZIP file**  
 Go to the Releases(https://github.com/MariusArmand/ProjectCryptoGains/releases) page and download ProjectCryptoGains.zip
-**Extract the ZIP file**
+
+**Extract the ZIP file**  
 Unzip the downloaded ProjectCryptoGains.zip to your desired location using your preferred extraction tool
-**Run the Application**
+
+**Run the Application**  
 Locate the extracted folder and double-click ProjectCryptoGains.exe to launch the application
 
 ## Disclaimer
 **Accuracy**: While efforts have been made to aim for accuracy, the correctness of the calculations should be verified by a professional accountant
 
-**Historical Price Data Timing**: Historical prices used in the tool are fetched from [CoinDesk Data] using the opening price on the relevant date  
+**Historical Price Data Timing**: Historical prices used in the tool are fetched from [CoinDesk Data] using the opening price on the relevant date;  
 This approach limits API calls and maintains performance, with the assumption that consistently using opening prices provides a balanced representation  
-of historical price data 
+of historical price data
 
 **General Disclaimer**: Use at your own risk; This software is provided 'as is', without warranty of any kind, either express or implied,  
 including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement
