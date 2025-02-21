@@ -42,12 +42,24 @@ namespace ProjectCryptoGains
             //txtToDate.Foreground = Brushes.Black;
             txtToDate.Text = toDate;
 
-            Refresh();
+            BindGrid();
         }
 
         private void Minimize_Click(object sender, RoutedEventArgs e)
         {
             SystemCommands.MinimizeWindow(this);
+        }
+
+        private void Resize_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                SystemCommands.RestoreWindow(this);
+            }
+            else
+            {
+                SystemCommands.MaximizeWindow(this);
+            }
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)
@@ -166,13 +178,15 @@ namespace ProjectCryptoGains
             ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refreshing ledgers");
 
             // Load the db table
-            bool ledgersRefreshWasBusy = false;
             bool ledgersRefreshFailed = false;
+            string? ledgersRefreshWarning = null;
+            bool ledgersRefreshWasBusy = false;
             await Task.Run(() =>
             {
                 try
                 {
-                    RefreshLedgers();
+                    ledgersRefreshWarning = RefreshLedgers(_mainWindow, "Ledgers");
+                    ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy when called
                 }
                 catch (Exception ex)
                 {
@@ -185,13 +199,20 @@ namespace ProjectCryptoGains
                         }
                     });
                 }
-                ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy when called
+
             });
 
             if (!ledgersRefreshWasBusy && !ledgersRefreshFailed)
             {
                 BindGrid();
-                ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refresh done");
+                if (ledgersRefreshWarning == null)
+                {
+                    ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refresh done");
+                }
+                else
+                {
+                    ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refresh done with warnings");
+                }
             }
             else
             {

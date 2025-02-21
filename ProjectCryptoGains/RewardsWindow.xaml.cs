@@ -26,6 +26,8 @@ namespace ProjectCryptoGains
         private string fromDate = "2009-01-03";
         private string toDate = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
+        private string? lastWarning = null;
+
         public RewardsWindow(MainWindow mainWindow)
         {
             InitializeComponent();
@@ -46,6 +48,18 @@ namespace ProjectCryptoGains
         private void Minimize_Click(object sender, RoutedEventArgs e)
         {
             SystemCommands.MinimizeWindow(this);
+        }
+
+        private void Resize_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                SystemCommands.RestoreWindow(this);
+            }
+            else
+            {
+                SystemCommands.MaximizeWindow(this);
+            }
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)
@@ -212,15 +226,16 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refreshing Rewards");
 
-            bool ledgersRefreshWasBusy = false;
             bool ledgersRefreshFailed = false;
+            string? ledgersRefreshWarning = null;
+            bool ledgersRefreshWasBusy = false;
             if (chkRefreshLedgers.IsChecked == true)
             {
                 await Task.Run(() =>
                 {
                     try
                     {
-                        RefreshLedgers(_mainWindow, "Rewards");
+                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, "Rewards");
                     }
                     catch (Exception)
                     {
@@ -250,7 +265,14 @@ namespace ProjectCryptoGains
                 if (rewardsRefreshError == null)
                 {
                     BindGrid();
-                    ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh successful");
+                    if (ledgersRefreshWarning == null && lastWarning == null)
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh done");
+                    }
+                    else
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh done with warnings");
+                    }
                 }
                 else
                 {
@@ -296,7 +318,7 @@ namespace ProjectCryptoGains
                                              printf('%.10f', ledgers.AMOUNT - ledgers.FEE) AS AMOUNT
                                              FROM TB_LEDGERS_S ledgers
 										     INNER JOIN TB_ASSET_CATALOG_S catalog ON ledgers.CURRENCY = catalog.ASSET
-                                             WHERE ledgers.TYPE IN('EARN','STAKING')
+                                             WHERE ledgers.TYPE IN('EARN','STAKING','AIRDROP')
                                              AND strftime('%s', DATE) BETWEEN strftime('%s', '{fromDate}')
                                              AND strftime('%s', date('{toDate}', '+1 day'))";
 
@@ -332,11 +354,26 @@ namespace ProjectCryptoGains
                             lastCallTime = DateTime.Now;
                         }
                         /////////////////////////////
+                        string amount_fiat = "0.00";
+                        string tax = "0.00";
+                        string unit_price_break_even = "0.00";
+                        string amount_sell_break_even = "0.00";
 
-                        string amount_fiat = (ConvertStringToDecimal(exchangeRate) * ConvertStringToDecimal(amount)).ToString();
-                        string tax = (ConvertStringToDecimal(amount_fiat) * (rewardsTaxPercentage / 100m)).ToString("F10");
-                        string unit_price_break_even = (ConvertStringToDecimal(exchangeRate) * (1 + (rewardsTaxPercentage / 100m))).ToString("F10");
-                        string amount_sell_break_even = (ConvertStringToDecimal(tax) / ConvertStringToDecimal(unit_price_break_even)).ToString("F10");
+                        if (ConvertStringToDecimal(exchangeRate) != 0m)
+                        {
+                            amount_fiat = (ConvertStringToDecimal(exchangeRate) * ConvertStringToDecimal(amount)).ToString();
+                            tax = (ConvertStringToDecimal(amount_fiat) * (rewardsTaxPercentage / 100m)).ToString("F10");
+                            unit_price_break_even = (ConvertStringToDecimal(exchangeRate) * (1 + (rewardsTaxPercentage / 100m))).ToString("F10");
+                            amount_sell_break_even = (ConvertStringToDecimal(tax) / ConvertStringToDecimal(unit_price_break_even)).ToString("F10");
+                        }
+                        else
+                        {
+                            lastWarning = $"[Rewards] Could not perform calculations for refid: {refid}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                ConsoleLog(_mainWindow.txtLog, lastWarning);
+                            });
+                        }
 
                         using DbCommand commandIns = connection.CreateCommand();
                         commandIns.CommandText = $@"INSERT INTO TB_REWARDS_S
@@ -364,6 +401,13 @@ namespace ProjectCryptoGains
                                                     '{unit_price_break_even}',
                                                     '{amount_sell_break_even}')";
                         commandIns.ExecuteNonQuery();
+                    }
+                    if (lastWarning != null)
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            MessageBoxResult result = CustomMessageBox.Show("There were issues with some calculations", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        });
                     }
                 }
                 connection.Close();
@@ -434,6 +478,7 @@ namespace ProjectCryptoGains
 
         private void ButtonRefresh_Click(object sender, RoutedEventArgs e)
         {
+            lastWarning = null;
             Refresh();
         }
 

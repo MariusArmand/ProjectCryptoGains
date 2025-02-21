@@ -48,6 +48,18 @@ namespace ProjectCryptoGains
             SystemCommands.MinimizeWindow(this);
         }
 
+        private void Resize_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                SystemCommands.RestoreWindow(this);
+            }
+            else
+            {
+                SystemCommands.MaximizeWindow(this);
+            }
+        }
+
         private void Close_Click(object sender, RoutedEventArgs e)
         {
             SystemCommands.CloseWindow(this);
@@ -185,15 +197,16 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Trades] Refreshing trades");
 
-            bool ledgersRefreshWasBusy = false;
             bool ledgersRefreshFailed = false;
+            string? ledgersRefreshWarning = null;
+            bool ledgersRefreshWasBusy = false;
             if (chkRefreshLedgers.IsChecked == true)
             {
                 await Task.Run(() =>
                 {
                     try
                     {
-                        RefreshLedgers(_mainWindow, "Trades");
+                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, "Trades");
                     }
                     catch (Exception)
                     {
@@ -207,12 +220,13 @@ namespace ProjectCryptoGains
             {
                 // Load the db table
                 string? tradesRefreshError = null;
+                string? tradesRefreshWarning = null;
                 bool tradesRefreshWasBusy = false;
                 await Task.Run(async () =>
                 {
                     try
                     {
-                        await RefreshTrades();
+                        tradesRefreshWarning = await RefreshTrades(_mainWindow, "Trades");
                         tradesRefreshWasBusy = TradesRefreshBusy;
                     }
                     catch (Exception ex)
@@ -230,7 +244,14 @@ namespace ProjectCryptoGains
                     if (tradesRefreshError == null)
                     {
                         BindGrid();
-                        ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh done");
+                        if (ledgersRefreshWarning == null && tradesRefreshWarning == null)
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh done");
+                        }
+                        else
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh done with warnings");
+                        }
                     }
                     else
                     {

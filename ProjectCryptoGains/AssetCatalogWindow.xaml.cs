@@ -35,6 +35,18 @@ namespace ProjectCryptoGains
             SystemCommands.MinimizeWindow(this);
         }
 
+        private void Resize_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                SystemCommands.RestoreWindow(this);
+            }
+            else
+            {
+                SystemCommands.MaximizeWindow(this);
+            }
+        }
+
         private void Close_Click(object sender, RoutedEventArgs e)
         {
             SystemCommands.CloseWindow(this);

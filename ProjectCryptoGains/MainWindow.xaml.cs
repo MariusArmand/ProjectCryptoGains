@@ -114,7 +114,7 @@ namespace ProjectCryptoGains
 
             try
             {
-                LoadSettingCryptoCompareApiKeyFromDB();
+                LoadSettingCoinDeskDataApiKeyFromDB();
             }
             catch (InvalidOperationException ex)
             {
@@ -255,7 +255,7 @@ namespace ProjectCryptoGains
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
         {
-            OpenHelp("getting_started_help.html");
+            OpenHelp("help.html");
         }
     }
 }

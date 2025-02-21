@@ -4,17 +4,20 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        xmlns:shell="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:ctzex="clr-namespace:ControlzEx.Behaviors;assembly=ControlzEx"
         Title="Ledgers"
-        Width="768"
-        Height="768"
-        ResizeMode="NoResize"
+        MinWidth="768"
+        MinHeight="768"
         WindowStyle="SingleBorderWindow"
         Closing="Window_Closing">
 
-    <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0"/>
-    </shell:WindowChrome.WindowChrome>
+    <i:Interaction.Behaviors>
+        <ctzex:WindowChromeBehavior ResizeBorderThickness="6" 
+                                    EnableMinimize="True" 
+                                    EnableMaxRestore="True" 
+                                    KeepBorderOnMaximize="True"/>
+    </i:Interaction.Behaviors>
     <Border BorderBrush="#444444" BorderThickness="1" Background="#1E1E1E">
         <Grid>
             <!-- Title Bar -->
@@ -33,6 +36,8 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,5,0">
                     <Button Content="—"
                             Width="30" Height="30" Click="Minimize_Click"/>
+                    <Button Content="❐"
+                            Width="30" Height="30" Click="Resize_Click"/>
                     <Button Content="X"
                             Width="30" Height="30" Click="Close_Click"/>
                 </StackPanel>

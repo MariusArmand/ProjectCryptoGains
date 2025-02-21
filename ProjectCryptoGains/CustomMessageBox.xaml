@@ -6,7 +6,7 @@
         mc:Ignorable="d"
         xmlns:shell="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         Title="Custom Messagebox"
-        MinWidth="200"
+        Width="400"
         MaxWidth="400"
         MinHeight="100"
         MaxHeight="400"
@@ -54,7 +54,7 @@
             </Grid>
 
             <!-- Main Content -->
-            <Grid Grid.Row="1" Margin="0,10,0,0">
+            <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <!-- Image Column -->
                     <ColumnDefinition Width="Auto"/>
@@ -65,15 +65,16 @@
                     <Image Source="{StaticResource DesignImage}" 
                        Width="32" 
                        Height="32" 
-                       Margin="10"/>
+                       Margin="20,20,10,0"/>
                 </Grid>
                 <Grid Grid.Column="1">
                     <TextBlock Grid.Row="0"
-                           Text="{Binding Message, FallbackValue=Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque elementum neque nec ex faucibu Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque elementum neque nec ex faucibu Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque elementum neque nec ex faucibu}"
+                           x:Name ="txtMessage"
+                           Text="{Binding Message, FallbackValue=Lorem ipsum dolor sit amet}"
                            TextWrapping="Wrap"
                            TextAlignment="Center"
                            VerticalAlignment="Center"
-                           Margin="0,0,10,0"/>
+                           Margin="0,25,25,0"/>
                 </Grid>
             </Grid>
             <Grid Grid.Row="2" Margin="0,10,0,0">

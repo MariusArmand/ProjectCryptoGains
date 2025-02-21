@@ -2,8 +2,8 @@
 body {
     font-family: Arial, sans-serif;
     line-height: 1.6;
-    background-color: #f9f9f9;
-    color: #333;
+    background-color: #333333;
+    color: #ffffff;
     padding: 20px;
 }
 
@@ -60,10 +60,8 @@ nav ul li a:hover {
 
 /* Main content */
 main {
-    background: white;
+    background: #333333;;
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 main section {
@@ -115,12 +113,12 @@ table {
 }
 
 tr:nth-child(even) {
-    background-color: #f2f2f2;
+    background-color: #333333;
 }
 
 td {
     padding: 10px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #444444;
     vertical-align: top;
 }
 
@@ -129,16 +127,17 @@ td:first-child {
     color: #f2a900;
 	width: 250px;
     max-width: 250px;
+	padding-left: 10px;
     padding-right: 20px;
     white-space: nowrap;
 }
 
 section td:first-child {
     font-weight: bold;
-    color: #666;
+    color: #ffffff;
 	width: 250px;
     max-width: 250px;
-    padding-left: 0px; 
+    padding-left: 10px; 
     padding-right: 20px;
     white-space: nowrap;
 }
@@ -162,7 +161,7 @@ tr:nth-child(2n+3) td {
 
 /* Add some hover effect for better user interaction */
 tr:hover {
-    background-color: #e6e6e6;
+    background-color: #444444;
 }
 
 /* Improve readability for the code-like terms */
@@ -177,19 +176,14 @@ td:last-child code {
 .csv-display {
     font-family: monospace;
     font-size: 110%;
-    background-color: #f2f2f2;
     border-radius: 4px;
     overflow-x: auto;
-}
-
-.csv-display div:nth-child(even) {
-    background-color: #e6e6e6;
 }
 
 .small-italic {
     font-style: italic;
     font-size: 1em;
-    color: #777;
+    color: #888888;
     line-height: 1.2;
 }
 
@@ -199,4 +193,109 @@ footer {
     color: #666;
     font-size: 0.9em;
     margin-top: 20px;
+}
+
+/* Print-specific styles */
+@media print {
+    /* Global styles */
+    body {
+        background-color: #ffffff;
+        color: #000000;
+        padding: 10px;
+    }
+
+    /* Typography */
+    code {
+        background-color: #f5f5f5;
+        color: #000000;
+    }
+
+    /* Links */
+    a {
+        color: #0000ff;
+        text-decoration: underline;
+    }
+
+    /* Header styles */
+    header h1 {
+        color: #000000;
+    }
+
+    /* Navigation styles */
+    nav {
+        padding: 10px;
+    }
+
+    nav ul li a {
+        color: #0000ff;
+    }
+
+    /* Main content */
+    main {
+        background: #ffffff;
+        padding: 10px;
+    }
+
+    main h2 {
+        color: #000000;
+        border-bottom: 1px solid #000000;
+    }
+
+    main h3 {
+        color: #000000;
+    }
+
+    main h4 {
+        color: #333333;
+    }
+
+    /* Table styles */
+    table {
+        border: 1px solid #000000;
+    }
+
+    td {
+        border-bottom: 1px solid #cccccc;
+        color: #000000;
+    }
+
+    td:first-child {
+		width: 150px;
+        color: #000000;
+    }
+
+    section td:first-child {
+		width: 150px;
+        color: #000000;
+    }
+
+    tr:nth-child(2n+3) td {
+        border-top: 1px solid #000000;
+    }
+
+    td:last-child code {
+        background-color: #f5f5f5;
+        color: #000000;
+    }
+
+    /* Utility classes */
+    .csv-display {
+        background-color: #ffffff;
+        color: #000000;
+		font-size: 0.8em;
+    }
+
+    .small-italic {
+        color: #333333;
+    }
+
+    /* Footer */
+    footer {
+        color: #333333;
+    }
+
+    /* Remove unnecessary elements for print */
+    nav, footer {
+        display: none;
+    }
 }

@@ -17,8 +17,8 @@
 			Go to Configure => Settings
 			<h3>Fiat currency</h3>
 			Select the fiat currency you wish to use for conversions in Project Crypto Gains (PCG)
-			<h3>CryptoCompare API key</h3>
-			PCG uses the CCData/CryptoCompare API for conversions to fiat; Go to the CCData website to sign up for an API key that suits your needs
+			<h3>CoinDesk Data API key</h3>
+			PCG uses the CoinDesk Data API for conversions to fiat; Go to the CoinDesk Data website to sign up for an API key that suits your needs
         </section>
 		
         <section>
@@ -53,5 +53,30 @@
 				    before refreshing any other reports..</i></p>			
         </section>
     </main>
+	
+	<header>
+		<h1>FAQ</h1>
+	</header>
+
+    <main>
+	    <section>
+			<h3>Why are my airdrops in from my Kraken ledgers csv not picked processed</h3>
+			<p>In the Kraken ledgers CSV, airdrops are identified by the type 'transfer' and subtype 'spotfromfutures',
+			   but these attributes may not unique to airdrops; Hence, PCG does not process ledger entries with the type 'transfer'
+			   For airdrops, a manual ledger entry should be made and uploaded via Sources => Manual Ledgers<p>
+        </section>
+	</main>
+		
+	<header>
+		<h1>Warnings Explained</h1>
+	</header>
+	
+    <main>
+	    <section>
+			<h3>Retrieved 0.00 exchange rate</h3>
+			<p>In rare cases, the CoinDesk Data API might return 0.00 as the exchange rate; In this case, PCG will show a warning 
+			   and log the problematic record in the main window; This will obviously impact calculation accuracy<p>
+        </section>
+	</main>	
 </body>
 </html>

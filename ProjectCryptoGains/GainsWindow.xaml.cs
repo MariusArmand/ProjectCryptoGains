@@ -52,6 +52,18 @@ namespace ProjectCryptoGains
             SystemCommands.MinimizeWindow(this);
         }
 
+        private void Resize_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                SystemCommands.RestoreWindow(this);
+            }
+            else
+            {
+                SystemCommands.MaximizeWindow(this);
+            }
+        }
+
         private void Close_Click(object sender, RoutedEventArgs e)
         {
             SystemCommands.CloseWindow(this);
@@ -214,15 +226,16 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Gains] Refreshing gains");
 
-            bool ledgersRefreshWasBusy = false;
             bool ledgersRefreshFailed = false;
+            string? ledgersRefreshWarning = null;
+            bool ledgersRefreshWasBusy = false;
             if (chkRefreshLedgers.IsChecked == true)
             {
                 await Task.Run(() =>
                 {
                     try
                     {
-                        RefreshLedgers(_mainWindow, "Gains");
+                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, "Gains");
                     }
                     catch (Exception)
                     {
@@ -233,6 +246,7 @@ namespace ProjectCryptoGains
             }
 
             string? tradesRefreshError = null;
+            string? tradesRefreshWarning = null;
             bool tradesRefreshWasBusy = false;
             if (chkRefreshTrades.IsChecked == true && !ledgersRefreshWasBusy && !ledgersRefreshFailed)
             {
@@ -240,7 +254,7 @@ namespace ProjectCryptoGains
                 {
                     try
                     {
-                        await RefreshTrades(_mainWindow, "Gains");
+                        tradesRefreshWarning = await RefreshTrades(_mainWindow, "Gains");
                         tradesRefreshWasBusy = TradesRefreshBusy;
                     }
                     catch (Exception ex)
@@ -308,7 +322,14 @@ namespace ProjectCryptoGains
                 if (errors == 0)
                 {
                     BindGrid();
-                    ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh done");
+                    if (ledgersRefreshWarning == null && tradesRefreshWarning == null)
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh done");
+                    }
+                    else
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh done with warnings");
+                    }
                 }
                 else
                 {

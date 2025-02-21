@@ -4,15 +4,22 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        xmlns:shell="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:ctzex="clr-namespace:ControlzEx.Behaviors;assembly=ControlzEx"
         Title="Rewards"
-        Width="1400" 
         Height="768"
-        Closing="Window_Closing" >
+        MinHeight="768"
+        Width="1400"
+        MinWidth="950"
+        WindowStyle="SingleBorderWindow"
+        Closing="Window_Closing">
 
-    <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0"/>
-    </shell:WindowChrome.WindowChrome>
+    <i:Interaction.Behaviors>
+        <ctzex:WindowChromeBehavior ResizeBorderThickness="6" 
+                                    EnableMinimize="True" 
+                                    EnableMaxRestore="True" 
+                                    KeepBorderOnMaximize="True"/>
+    </i:Interaction.Behaviors>
     <Border BorderBrush="#444444" BorderThickness="1" Background="#1E1E1E">
         <Grid>
             <!-- Title Bar -->
@@ -31,6 +38,8 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,5,0">
                     <Button Content="—"
                             Width="30" Height="30" Click="Minimize_Click"/>
+                    <Button Content="❐"
+                            Width="30" Height="30" Click="Resize_Click"/>
                     <Button Content="X"
                             Width="30" Height="30" Click="Close_Click"/>
                 </StackPanel>
@@ -38,7 +47,12 @@
 
             <!-- Main Content -->
             <Grid Grid.Row="1">
-                <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
                     <Label x:Name="lblFromDate" Width="125" Margin="25,20,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="From" />
                     <TextBox x:Name="txtFromDate" Width="125" Margin="75,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" GotFocus="TxtFromDate_GotFocus" KeyUp="TextBoxFromDate_KeyUp" LostFocus="TxtFromDate_LostFocus" Text="YYYY-MM-DD" />
                     <Label x:Name="lblToDate" Width="125" Margin="25,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="To" />
@@ -51,7 +65,7 @@
                         <Image x:Name="imgBtnHelp" Width="32" Height="32" Source="Resources/help.png" />
                     </Button>
                     <CheckBox x:Name="chkRefreshLedgers" Width="150" Margin="30,100,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh ledgers" />
-                    <DataGrid x:Name="dgRewards" Height="305" Margin="25,125,25,25" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
+                    <DataGrid x:Name="dgRewards" Margin="25,125,25,25" VerticalAlignment="Stretch" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
                         <DataGrid.Resources>
                             <Style x:Key="CellRightAlign">
                                 <Setter Property="Control.HorizontalAlignment" Value="Right" />
@@ -64,28 +78,20 @@
                             <DataGridTextColumn Binding="{Binding Type}" Header="TYPE" />
                             <DataGridTextColumn Binding="{Binding Exchange}" Header="EXCHANGE" />
                             <DataGridTextColumn Binding="{Binding Currency}" Header="CURRENCY" />
-                            <DataGridTextColumn Binding="{Binding Amount, StringFormat='0.0000000000'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="AMOUNT" />
-                            <DataGridTextColumn Binding="{Binding Amount_fiat, StringFormat='0.00'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="AMOUNT__FIAT" />
-                            <DataGridTextColumn Binding="{Binding Tax, StringFormat='0.00'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="TAX" />
-                            <DataGridTextColumn Binding="{Binding Unit_price, StringFormat='0.00'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="UNIT__PRICE" />
-                            <DataGridTextColumn Binding="{Binding Unit_price_break_even, StringFormat='0.00'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="UNIT__PRICE__BREAK__EVEN" />
-                            <DataGridTextColumn Binding="{Binding Amount_sell_break_even, StringFormat='0.0000000000'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="AMOUNT__SELL__BREAK__EVEN" />
+                            <DataGridTextColumn Binding="{Binding Amount, StringFormat='0.0000000000'}" ElementStyle="{StaticResource CellRightAlign}" Header="AMOUNT" />
+                            <DataGridTextColumn Binding="{Binding Amount_fiat, StringFormat='0.00'}" ElementStyle="{StaticResource CellRightAlign}" Header="AMOUNT__FIAT" />
+                            <DataGridTextColumn Binding="{Binding Tax, StringFormat='0.00'}" ElementStyle="{StaticResource CellRightAlign}" Header="TAX" />
+                            <DataGridTextColumn Binding="{Binding Unit_price, StringFormat='0.00'}" ElementStyle="{StaticResource CellRightAlign}" Header="UNIT__PRICE" />
+                            <DataGridTextColumn Binding="{Binding Unit_price_break_even, StringFormat='0.00'}" ElementStyle="{StaticResource CellRightAlign}" Header="UNIT__PRICE__BREAK__EVEN" />
+                            <DataGridTextColumn Binding="{Binding Amount_sell_break_even, StringFormat='0.0000000000'}" ElementStyle="{StaticResource CellRightAlign}" Header="AMOUNT__SELL__BREAK__EVEN" />
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Label x:Name="lblSummary" Width="125" Margin="25,455,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Summary" FontWeight="Bold" />
-                    <DataGrid x:Name="dgRewardsSummary" Width="800" Height="200" Margin="25,485,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
+                </Grid>
+
+                <!-- Second Row: Summary DataGrid -->
+                <Grid Grid.Row="1">
+                    <Label x:Name="lblSummary" Width="125" Margin="25,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Summary" FontWeight="Bold" />
+                    <DataGrid x:Name="dgRewardsSummary" Width="800" Height="200" Margin="25,30,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
                         <DataGrid.Resources>
                             <Style x:Key="CellRightAlign">
                                 <Setter Property="Control.HorizontalAlignment" Value="Right" />
@@ -94,31 +100,19 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding RowNumber}" Header="ROW__NR" />
                             <DataGridTextColumn Binding="{Binding Currency}" Header="CURRENCY" />
-                            <DataGridTextColumn Binding="{Binding Amount, StringFormat='0.0000000000'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="AMOUNT" />
-                            <DataGridTextColumn Binding="{Binding Amount_fiat, StringFormat='0.00'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="AMOUNT__FIAT" />
-                            <DataGridTextColumn Binding="{Binding Tax, StringFormat='0.00'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="TAX" />
-                            <DataGridTextColumn Binding="{Binding Unit_price, StringFormat='0.00'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="UNIT__PRICE" />
-                            <DataGridTextColumn Binding="{Binding Unit_price_break_even, StringFormat='0.00'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="UNIT__PRICE__BREAK__EVEN" />
-                            <DataGridTextColumn Binding="{Binding Amount_sell_break_even, StringFormat='0.0000000000'}"
-                                    ElementStyle="{StaticResource CellRightAlign}"
-                                    Header="AMOUNT__SELL__BREAK__EVEN" />
+                            <DataGridTextColumn Binding="{Binding Amount, StringFormat='0.0000000000'}" ElementStyle="{StaticResource CellRightAlign}" Header="AMOUNT" />
+                            <DataGridTextColumn Binding="{Binding Amount_fiat, StringFormat='0.00'}" ElementStyle="{StaticResource CellRightAlign}" Header="AMOUNT__FIAT" />
+                            <DataGridTextColumn Binding="{Binding Tax, StringFormat='0.00'}" ElementStyle="{StaticResource CellRightAlign}" Header="TAX" />
+                            <DataGridTextColumn Binding="{Binding Unit_price, StringFormat='0.00'}" ElementStyle="{StaticResource CellRightAlign}" Header="UNIT__PRICE" />
+                            <DataGridTextColumn Binding="{Binding Unit_price_break_even, StringFormat='0.00'}" ElementStyle="{StaticResource CellRightAlign}" Header="UNIT__PRICE__BREAK__EVEN" />
+                            <DataGridTextColumn Binding="{Binding Amount_sell_break_even, StringFormat='0.0000000000'}" ElementStyle="{StaticResource CellRightAlign}" Header="AMOUNT__SELL__BREAK__EVEN" />
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnPrintSummary" Width="40" Height="40" Margin="850,485,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonPrintSummary_Click">
+                    <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnPrintSummary" Width="40" Height="40" Margin="850,30,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonPrintSummary_Click">
                         <Image x:Name="imgBtnPrintSummary" Width="32" Height="32" Source="Resources/printer.png" />
                     </Button>
-                    <Label x:Name="lblTotalAmountFiat" Width="140" Margin="25,695,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total rewards converted" />
-                    <Label x:Name="lblTotalAmountFiatData" Width="125" Margin="175,695,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="0.00 FIAT" />
+                    <Label x:Name="lblTotalAmountFiat" Width="140" Margin="25,240,0,20" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total rewards converted" />
+                    <Label x:Name="lblTotalAmountFiatData" Width="125" Margin="175,240,0,20" HorizontalAlignment="Left" VerticalAlignment="Top" Content="0.00 FIAT" />
                 </Grid>
             </Grid>
         </Grid>

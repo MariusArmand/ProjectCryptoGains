@@ -32,6 +32,8 @@ namespace ProjectCryptoGains
 
         public string Amount_fiat_header { get; set; } = "AMOUNT__FIAT";
 
+        private string? lastWarning = null;
+
         public BalancesWindow(MainWindow mainWindow)
         {
             InitializeComponent();
@@ -73,6 +75,7 @@ namespace ProjectCryptoGains
 
         private void ButtonRefresh_Click(object sender, RoutedEventArgs e)
         {
+            lastWarning = null;
             Refresh();
         }
 
@@ -124,6 +127,8 @@ namespace ProjectCryptoGains
             {
                 while (reader.Read())
                 {
+                    dbLineNumber++;
+
                     curr = reader.IsDBNull(0) ? "" : reader.GetString(0);
                     amnt = ConvertStringToDecimal(reader.GetString(1));
                     amnt_fiat = reader.IsDBNull(2) ? 0.00m : ConvertStringToDecimal(reader.GetString(2));
@@ -140,33 +145,16 @@ namespace ProjectCryptoGains
 
                     currencies.Add(curr); // Add currency to list
                     amounts_fiat.Add(amnt_fiat);
-
-                    dbLineNumber++;
                 }
 
                 if (chkConvertToFiat.IsChecked == true)
                 {
                     lblTotalAmountFiatData.Content = tot_amnt_fiat + " " + fiatCurrency;
-                    if (tot_amnt_fiat > 0)
-                    {
-                        RefreshPie([.. currencies], [.. amounts_fiat]); // Spreads collection items into new arrays for method argument
-                        pcBalances.Visibility = Visibility.Visible;
-                        lblTotalAmountFiat.Visibility = Visibility.Visible;
-                        lblTotalAmountFiatData.Visibility = Visibility.Visible;
-                    }
-                    else // tot_amnt_fiat <= 0
-                    {
-                        pcBalances.Visibility = Visibility.Hidden;
-                        lblTotalAmountFiat.Visibility = Visibility.Hidden;
-                        lblTotalAmountFiatData.Visibility = Visibility.Hidden;
-                        if (dbLineNumber > 1) // If there are more currencies than fiat (e.g. EUR)
-                        {
-                            // There should've been some conversions
-                            string? lastError = "No " + fiatCurrency + " conversions done, check connection to cryptocompare.com";
-                            MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                            ConsoleLog(_mainWindow.txtLog, $"[Balances] {lastError}");
-                        }
-                    }
+
+                    RefreshPie([.. currencies], [.. amounts_fiat]); // Spreads collection items into new arrays for method argument
+                    pcBalances.Visibility = Visibility.Visible;
+                    lblTotalAmountFiat.Visibility = Visibility.Visible;
+                    lblTotalAmountFiatData.Visibility = Visibility.Visible;
                 }
                 else
                 {
@@ -206,17 +194,20 @@ namespace ProjectCryptoGains
 
             for (int i = 0; i < currencies.Length; i++)
             {
-                string title = $"{currencies[i]} [{(amounts_fiat[i] / totalValue) * 100:F2}%]";
-
-                SeriesCollection.Add(new PieSeries
+                if (amounts_fiat[i] > 0)
                 {
-                    Title = title,
-                    Values = new ChartValues<decimal> { amounts_fiat[i] },
-                    DataLabels = true,
-                    LabelPoint = chartPoint => (chartPoint.Participation * 100).ToString("F2") + "%",
-                    Stroke = null,
-                    StrokeThickness = 0
-                });
+                    string title = $"{currencies[i]} [{(amounts_fiat[i] / totalValue) * 100:F2}%]";
+
+                    SeriesCollection.Add(new PieSeries
+                    {
+                        Title = title,
+                        Values = new ChartValues<decimal> { amounts_fiat[i] },
+                        DataLabels = true,
+                        LabelPoint = chartPoint => (chartPoint.Participation * 100).ToString("F2") + "%",
+                        Stroke = null,
+                        StrokeThickness = 0
+                    });
+                }
             }
 
             DataContext = this;
@@ -240,15 +231,16 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Balances] Refreshing balances");
 
-            bool ledgersRefreshWasBusy = false;
             bool ledgersRefreshFailed = false;
+            string? ledgersRefreshWarning = null;
+            bool ledgersRefreshWasBusy = false;
             if (chkRefreshLedgers.IsChecked == true)
             {
                 await Task.Run(() =>
                 {
                     try
                     {
-                        RefreshLedgers(_mainWindow, "Balances");
+                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, "Balances");
                     }
                     catch (Exception)
                     {
@@ -318,8 +310,18 @@ namespace ProjectCryptoGains
                             }
                             else
                             {
-                                var (sqlCommand, conversionSource) = CreateCryptoBalancesInsert(asset, code, untilDate, convertToFiat, connection);
+                                var (xInFiat, sqlCommand, conversionSource) = CreateCryptoBalancesInsert(asset, code, untilDate, convertToFiat, connection);
                                 commandInsert.CommandText = sqlCommand;
+
+                                //xInFiat = "O.OO";
+                                if (ConvertStringToDecimal(xInFiat) == 0m)
+                                {
+                                    lastWarning = $"[Balances] Could not calculate balance for currency: {asset}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
+                                        ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                    });
+                                }
 
                                 // Rate limiting mechanism //
                                 if (conversionSource == "API")
@@ -335,6 +337,13 @@ namespace ProjectCryptoGains
                                 /////////////////////////////
                             }
                             commandInsert.ExecuteNonQuery();
+                        }
+                        if (lastWarning != null)
+                        {
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                MessageBoxResult result = CustomMessageBox.Show("There were issues calculating some balances", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            });
                         }
                     }
                     catch (Exception ex)
@@ -352,14 +361,21 @@ namespace ProjectCryptoGains
 
                 connection.Close();
 
-                if (lastError != null)
+                if (lastError == null)
                 {
-                    ConsoleLog(_mainWindow.txtLog, $"[Balances] " + lastError);
-                    ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh unsuccessful");
+                    if (ledgersRefreshWarning == null && lastWarning == null)
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh done");
+                    }
+                    else
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh done with warnings");
+                    }
                 }
                 else
                 {
-                    ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh done");
+                    ConsoleLog(_mainWindow.txtLog, $"[Balances] " + lastError);
+                    ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh unsuccessful");
                 }
             }
             else
@@ -520,7 +536,7 @@ namespace ProjectCryptoGains
             return flowDoc;
         }
 
-        private static (string sqlCommand, string conversionSource) CreateCryptoBalancesInsert(string currency, string currency_code, string untilDate, bool? convertToFiat, SqliteConnection connection)
+        private static (string xInFiat, string sqlCommand, string conversionSource) CreateCryptoBalancesInsert(string currency, string currency_code, string untilDate, bool? convertToFiat, SqliteConnection connection)
         {
             try
             {
@@ -557,7 +573,7 @@ namespace ProjectCryptoGains
 						                  )
 						                  WHERE CAST(AMOUNT AS REAL) > 0";
 
-                return (sqlCommand, conversionSource);
+                return (xInFiat, sqlCommand, conversionSource);
             }
             catch (Exception ex)
             {

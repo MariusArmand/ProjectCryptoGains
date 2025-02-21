@@ -22,6 +22,8 @@ namespace ProjectCryptoGains
 
         private string? lastError = null;
 
+        private string? lastWarning = null;
+
         public MetricsWindow(MainWindow mainWindow)
         {
             InitializeComponent();
@@ -170,6 +172,8 @@ namespace ProjectCryptoGains
                     dbLineNumber = 0;
                     while (reader.Read())
                     {
+                        dbLineNumber++;
+
                         amnt_fiat = ConvertStringToDecimal(reader.GetString(1));
                         dataAvgBuyPrice.Add(new AvgBuyPriceModel
                         {
@@ -177,7 +181,6 @@ namespace ProjectCryptoGains
                             Currency = reader.IsDBNull(0) ? "" : reader.GetString(0),
                             Amount_fiat = amnt_fiat
                         });
-                        dbLineNumber++;
                     }
 
                     reader.Close();
@@ -213,6 +216,8 @@ namespace ProjectCryptoGains
                     dbLineNumber = 0;
                     while (reader.Read())
                     {
+                        dbLineNumber++;
+
                         amnt_fiat = ConvertStringToDecimal(reader.GetString(2));
                         dataRewards.Add(new RewardsSummaryModel
                         {
@@ -222,7 +227,6 @@ namespace ProjectCryptoGains
                             Amount_fiat = amnt_fiat
                         });
                         tot_amnt_fiat += amnt_fiat;
-                        dbLineNumber++;
                     }
                     lblTotalAmountFiatData.Content = tot_amnt_fiat.ToString("F2") + " " + fiatCurrency;
 
@@ -264,15 +268,16 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refreshing metrics");
 
-            bool ledgersRefreshWasBusy = false;
             bool ledgersRefreshFailed = false;
+            string? ledgersRefreshWarning = null;
+            bool ledgersRefreshWasBusy = false;
             if (chkRefreshLedgers.IsChecked == true)
             {
                 await Task.Run(() =>
                 {
                     try
                     {
-                        RefreshLedgers(_mainWindow, "Metrics");
+                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, "Metrics");
                     }
                     catch (Exception)
                     {
@@ -283,6 +288,7 @@ namespace ProjectCryptoGains
             }
 
             string? tradesRefreshError = null;
+            string? tradesRefreshWarning = null;
             bool tradesRefreshWasBusy = false;
             if (chkRefreshTrades.IsChecked == true && !ledgersRefreshWasBusy && !ledgersRefreshFailed)
             {
@@ -290,7 +296,7 @@ namespace ProjectCryptoGains
                 {
                     try
                     {
-                        await RefreshTrades(_mainWindow, "Metrics");
+                        tradesRefreshWarning = await RefreshTrades(_mainWindow, "Metrics");
                         tradesRefreshWasBusy = TradesRefreshBusy;
                     }
                     catch (Exception ex)
@@ -345,7 +351,15 @@ namespace ProjectCryptoGains
 
                         commandInsert.ExecuteNonQuery();
                     });
-                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating metrics done");
+
+                    if (ledgersRefreshWarning == null)
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating metrics done");
+                    }
+                    else
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating metrics done with warnings");
+                    }
 
                     /// Average Buy Price
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating average buy price");
@@ -406,8 +420,18 @@ namespace ProjectCryptoGains
 
                                 using DbCommand commandIns = connection.CreateCommand();
 
-                                var (sqlCommand, conversionSource) = CreateRewardsSummaryInsert(asset, code, date, connection);
+                                var (xInFiat, sqlCommand, conversionSource) = CreateRewardsSummaryInsert(asset, code, date, connection);
                                 commandIns.CommandText = sqlCommand;
+
+                                //xInFiat = "O.OO";
+                                if (ConvertStringToDecimal(xInFiat) == 0m)
+                                {
+                                    lastWarning = $"[Metrics] Could not calculate AMOUNT_{fiatCurrency} for currency: {asset}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
+                                        ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                    });
+                                }
 
                                 // Rate limiting mechanism //
                                 if (conversionSource == "API")
@@ -423,6 +447,13 @@ namespace ProjectCryptoGains
                                 /////////////////////////////
                                 commandIns.ExecuteNonQuery();
                             }
+                            if (lastWarning != null)
+                            {
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    MessageBoxResult result = CustomMessageBox.Show($"There were issues calculating some reward amounts in {fiatCurrency}", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                });
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -434,14 +465,21 @@ namespace ProjectCryptoGains
                         }
                     });
 
-                    if (lastError != null)
+                    if (lastError == null)
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] " + lastError);
-                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards unsuccessful");
+                        if (ledgersRefreshWarning == null && lastWarning == null)
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards done");
+                        }
+                        else
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards done with warnings");
+                        }
                     }
                     else
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards done");
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] " + lastError);
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards unsuccessful");
                     }
                 }
 
@@ -450,15 +488,22 @@ namespace ProjectCryptoGains
 
                 connection?.Close();
 
-                if (lastError != null)
+                if (lastError == null)
+                {
+                    if (ledgersRefreshWarning == null && tradesRefreshWarning == null && lastWarning == null)
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh done");
+                    }
+                    else
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh done with warnings");
+                    }
+                }
+                else
                 {
                     UnbindLabels();
                     UnbindGrid();
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh unsuccessful");
-                }
-                else
-                {
-                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh done");
                 }
             }
             else
@@ -497,7 +542,7 @@ namespace ProjectCryptoGains
 					  WHERE AMOUNT_FIAT != ''";
         }
 
-        private static (string sqlCommand, string conversionSource) CreateRewardsSummaryInsert(string currency, string currency_code, DateTime date, SqliteConnection connection)
+        private static (string xInFiat, string sqlCommand, string conversionSource) CreateRewardsSummaryInsert(string currency, string currency_code, DateTime date, SqliteConnection connection)
         {
             try
             {
@@ -508,7 +553,7 @@ namespace ProjectCryptoGains
                 string sqlCommand = $@"WITH cas AS (
 						                 SELECT printf('%.10f', SUM(CAST(AMOUNT AS NUMERIC)) - SUM(CAST(FEE AS NUMERIC))) AS REWARD_SUM
 						                 FROM TB_LEDGERS_S
-						                 WHERE TYPE IN ('EARN', 'STAKING') AND CURRENCY IN ('{currency}')
+						                 WHERE TYPE IN ('EARN', 'STAKING', 'AIRDROP') AND CURRENCY IN ('{currency}')
 					                     )
 					                     INSERT INTO TB_REWARDS_SUMMARY_S
 					                     SELECT 
@@ -517,7 +562,7 @@ namespace ProjectCryptoGains
 						                     IFNULL({xInFiat} * cas.REWARD_SUM, 0.00) AS AMOUNT_FIAT
 					                     FROM cas";
 
-                return (sqlCommand, conversionSource);
+                return (xInFiat, sqlCommand, conversionSource);
             }
             catch (Exception ex)
             {
@@ -527,6 +572,7 @@ namespace ProjectCryptoGains
 
         private void ButtonRefresh_Click(object sender, RoutedEventArgs e)
         {
+            lastWarning = null;
             Refresh();
         }
     }

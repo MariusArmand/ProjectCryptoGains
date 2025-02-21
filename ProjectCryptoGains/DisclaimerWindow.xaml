@@ -49,7 +49,7 @@
                         be verified by a professional accountant.
                         <LineBreak/>
                         <LineBreak/>
-                        <Run FontWeight="Bold">Historical Price Data Timing:</Run> Historical prices used in the tool are fetched from [CryptoCompare]<LineBreak/>                
+                        <Run FontWeight="Bold">Historical Price Data Timing:</Run> Historical prices used in the tool are fetched from [CoinDesk Data]<LineBreak/>                
                         using the opening price on the relevant date.<LineBreak/>                
                         This approach limits API calls and maintains performance, with the assumption that consistently using opening prices provides a balanced representation of historical price data.
                         <LineBreak/>

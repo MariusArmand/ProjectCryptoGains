@@ -44,7 +44,7 @@ namespace ProjectCryptoGains
 
             txtRewardsTaxPercentage.Text = SettingRewardsTaxPercentage.ToString();
 
-            txtCryptoCompareApiKey.Text = SettingCryptoCompareApiKey;
+            txtCoinDeskDataApiKey.Text = SettingCoinDeskDataApiKey;
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -70,7 +70,7 @@ namespace ProjectCryptoGains
                     SettingRewardsTaxPercentage = 0m;
                 }
 
-                SettingCryptoCompareApiKey = txtCryptoCompareApiKey.Text;
+                SettingCoinDeskDataApiKey = txtCoinDeskDataApiKey.Text;
 
                 string message = "Settings have been saved";
                 ConsoleLog(_mainWindow.txtLog, $"[Settings] {message}");

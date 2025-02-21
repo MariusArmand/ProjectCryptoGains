@@ -45,8 +45,8 @@
                     <ComboBox x:Name="cmbFiatCurrency" Width="60" Margin="200,25,25,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                     <Label x:Name="lblRewardsTaxPercentage" Width="140" Margin="25,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Rewards tax percentage" />
                     <TextBox x:Name="txtRewardsTaxPercentage" Width="60" Margin="200,60,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" TextAlignment="Right"/>    
-                    <Label x:Name="lblCryptoCompareApiKey" Width="140" Margin="25,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="CryptoCompare API key" />
-                    <TextBox x:Name="txtCryptoCompareApiKey" Width="415" Margin="200,95,25,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                    <Label x:Name="lblCoinDeskDataApiKey" Width="140" Margin="25,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="CoinDesk Data API key" />
+                    <TextBox x:Name="txtCoinDeskDataApiKey" Width="415" Margin="200,95,25,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                     <Button x:Name="btnSave" Width="125" Height="40" Margin="490,65,25,25" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="Save_Click" Content="Save" />
                 </Grid>
             </Grid>

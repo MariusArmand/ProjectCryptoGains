@@ -29,22 +29,22 @@ namespace ProjectCryptoGains
         private static readonly object TradesRefreshlock = new();
         /////////////////////////////
 
-        private static string? _settingCryptoCompareApiKey;
+        private static string? _settingCoinDeskDataApiKey;
 
-        public static string? SettingCryptoCompareApiKey
+        public static string? SettingCoinDeskDataApiKey
         {
             get
             {
-                return _settingCryptoCompareApiKey;
+                return _settingCoinDeskDataApiKey;
             }
             set
             {
-                _settingCryptoCompareApiKey = value;
-                SaveSettingCryptoCompareApiKeyToDB(_settingCryptoCompareApiKey);
+                _settingCoinDeskDataApiKey = value;
+                SaveSettingCoinDeskDataApiKeyToDB(_settingCoinDeskDataApiKey);
             }
         }
 
-        private static void SaveSettingCryptoCompareApiKeyToDB(string? value)
+        private static void SaveSettingCoinDeskDataApiKeyToDB(string? value)
         {
             try
             {
@@ -55,7 +55,7 @@ namespace ProjectCryptoGains
                 using (var deleteCommand = connection.CreateCommand())
                 {
                     deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @Name";
-                    deleteCommand.Parameters.AddWithValue("@Name", "CRYPTOCOMPARE_API_KEY");
+                    deleteCommand.Parameters.AddWithValue("@Name", "COINDESKDATA_API_KEY");
                     deleteCommand.ExecuteNonQuery();
                 }
 
@@ -63,7 +63,7 @@ namespace ProjectCryptoGains
                 using (var insertCommand = connection.CreateCommand())
                 {
                     insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (Name, Value) VALUES (@Name, @Value)";
-                    insertCommand.Parameters.AddWithValue("@Name", "CRYPTOCOMPARE_API_KEY");
+                    insertCommand.Parameters.AddWithValue("@Name", "COINDESKDATA_API_KEY");
                     insertCommand.Parameters.AddWithValue("@Value", value);
                     insertCommand.ExecuteNonQuery();
                 }
@@ -71,11 +71,11 @@ namespace ProjectCryptoGains
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Failed to save CryptoCompare API key to database", ex);
+                throw new InvalidOperationException("Failed to save CoinDesk Data API key to database", ex);
             }
         }
 
-        public static void LoadSettingCryptoCompareApiKeyFromDB()
+        public static void LoadSettingCoinDeskDataApiKeyFromDB()
         {
             try
             {
@@ -83,25 +83,25 @@ namespace ProjectCryptoGains
                 connection.Open();
                 DbCommand command = connection.CreateCommand();
                 command.CommandText = @"SELECT VALUE FROM TB_SETTINGS_S
-										WHERE NAME = 'CRYPTOCOMPARE_API_KEY'";
+										WHERE NAME = 'COINDESKDATA_API_KEY'";
 
                 using (DbDataReader reader = command.ExecuteReader())
                 {
                     if (reader.Read())
                     {
-                        _settingCryptoCompareApiKey = reader.GetString(0);
+                        _settingCoinDeskDataApiKey = reader.GetString(0);
                     }
                     else
                     {
-                        _settingCryptoCompareApiKey = null; // No setting found in the database
+                        _settingCoinDeskDataApiKey = null; // No setting found in the database
                     }
                 }
                 connection.Close();
             }
             catch (Exception ex)
             {
-                _settingCryptoCompareApiKey = null;
-                throw new InvalidOperationException("Failed to load CryptoCompare API key from database", ex);
+                _settingCoinDeskDataApiKey = null;
+                throw new InvalidOperationException("Failed to load CoinDesk Data API key from database", ex);
             }
         }
 
@@ -304,7 +304,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        public static void RefreshLedgers(MainWindow? _mainWindow = null, string caller = "")
+        public static string? RefreshLedgers(MainWindow _mainWindow, string caller)
         {
             lock (LedgerRefreshlock) // Only one thread can enter this block at a time
             {
@@ -314,12 +314,12 @@ namespace ProjectCryptoGains
                     {
                         string message = "There is already a ledgers refresh in progress. Please Wait";
                         MessageBoxResult result = CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        if (_mainWindow != null)
+                        if (caller != "Ledgers")
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[{caller}] {message}");
                         }
                     });
-                    return; // Exit the method here if refresh is already in progress
+                    return null; // Exit the method here if refresh is already in progress
                 }
 
                 LedgersRefreshBusy = true;
@@ -327,9 +327,11 @@ namespace ProjectCryptoGains
 
             try
             {
+                string? lastWarning = null;
+
                 string? fiatCurrency = SettingFiatCurrency;
 
-                if (_mainWindow != null)
+                if (caller != "Ledgers")
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -365,6 +367,55 @@ namespace ProjectCryptoGains
                 {
                     throw new ValidationException("Kraken asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Kraken Assets]");
                 }
+
+                // Check for unsupported ledger types
+                // Manual Ledgers
+                List<(string RefId, string Type)> unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Manual);
+                if (unsupportedTypes.Count > 0)
+                {
+                    String lastWarningPrefix = $"[{caller}]";
+                    if (caller != "Ledgers")
+                    {
+                        lastWarningPrefix = $"[{caller}][Ledgers]";
+                    }
+
+                    lastWarning = "Unsupported manual ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account";
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
+                        ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} {lastWarning}");
+
+                        // Log each unsupported ledger type
+                        foreach ((string RefId, string Type) in unsupportedTypes)
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} Unsupported manual ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                        }
+                    });
+                }
+
+                // Kraken Ledgers
+                unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Kraken);
+                if (unsupportedTypes.Count > 0)
+                {
+                    String lastWarningPrefix = $"[{caller}]";
+                    if (caller != "Ledgers")
+                    {
+                        lastWarningPrefix = $"[{caller}][Ledgers]";
+                    }
+
+                    lastWarning = "Unsupported kraken ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account";
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
+                        ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} {lastWarning}");
+
+                        // Log each unsupported ledger type
+                        foreach ((string RefId, string Type) in unsupportedTypes)
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} Unsupported kraken ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                        }
+                    });
+                }
                 //////////////////////////////
 
                 DbCommand commandDelete = connection.CreateCommand();
@@ -379,7 +430,7 @@ namespace ProjectCryptoGains
                 commandInsert.CommandText = $@"INSERT INTO TB_LEDGERS_S
                                                 SELECT REFID AS REFID,
                                                 DATETIME(TIME) AS DATE,
-                                                UPPER(TYPE),
+                                                UPPER(TYPE) AS TYPE,
                                                 'Kraken' AS EXCHANGE,
                                                 printf('%.10f',AMOUNT) AS AMOUNT,
                                                 assets_kraken.ASSET CURRENCY,
@@ -391,14 +442,6 @@ namespace ProjectCryptoGains
                                                 WHEN TYPE = 'deposit' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'BANK'
                                                 WHEN TYPE = 'deposit' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
                                                 WHEN TYPE = 'withdrawal' THEN 'Kraken'
-                                                WHEN SUBTYPE = 'spottofutures' THEN 'Kraken spot'
-                                                WHEN SUBTYPE = 'futuresfromspot' THEN 'Kraken spot'
-                                                WHEN SUBTYPE = 'futurestospot' THEN 'Kraken futures'
-                                                WHEN SUBTYPE = 'spotfromfutures' THEN 'Kraken futures'
-                                                WHEN SUBTYPE = 'stakingtospot' THEN 'Kraken staking'
-                                                WHEN SUBTYPE = 'spotfromstaking' THEN 'Kraken staking'
-                                                WHEN SUBTYPE = 'spottostaking' THEN 'Kraken spot'
-                                                WHEN SUBTYPE = 'stakingfromspot' THEN 'Kraken spot'
                                                 ELSE ''
                                                 END AS SOURCE,
                                                 CASE
@@ -408,14 +451,6 @@ namespace ProjectCryptoGains
                                                 WHEN TYPE = 'deposit' THEN 'Kraken'
                                                 WHEN TYPE = 'withdrawal' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
                                                 WHEN TYPE = 'withdrawal' AND assets_kraken.ASSET = '{fiatCurrency}'THEN 'BANK'
-                                                WHEN SUBTYPE = 'spottofutures' THEN 'Kraken futures'
-                                                WHEN SUBTYPE = 'futuresfromspot' THEN 'Kraken futures'
-                                                WHEN SUBTYPE = 'futurestospot' THEN 'Kraken spot'
-                                                WHEN SUBTYPE = 'spotfromfutures' THEN 'Kraken spot'
-                                                WHEN SUBTYPE = 'stakingtospot' THEN 'Kraken spot'
-                                                WHEN SUBTYPE = 'spotfromstaking' THEN 'Kraken spot'
-                                                WHEN SUBTYPE = 'spottostaking' THEN 'Kraken staking'
-                                                WHEN SUBTYPE = 'stakingfromspot' THEN 'Kraken staking'
                                                 ELSE ''
                                                 END AS TARGET,
                                                 CASE
@@ -427,23 +462,14 @@ namespace ProjectCryptoGains
                                                 WHEN TYPE = 'deposit' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'From Bank to Kraken'
                                                 WHEN TYPE = 'deposit' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From wallet to Kraken'
                                                 WHEN TYPE = 'withdrawal' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From Kraken to wallet'
-                                                WHEN SUBTYPE = 'spottofutures' THEN 'Start Kraken spot to Kraken futures'
-                                                WHEN SUBTYPE = 'futuresfromspot' THEN 'Completed Kraken spot to Kraken futures'
-                                                WHEN SUBTYPE = 'futurestospot' THEN 'Start Kraken futures to Kraken spot'
-                                                WHEN SUBTYPE = 'spotfromfutures' THEN 'Completed Kraken futures to Kraken spot'
-                                                WHEN SUBTYPE = 'stakingtospot' THEN 'Start Kraken staking to Kraken spot'
-                                                WHEN SUBTYPE = 'spotfromstaking' THEN 'Completed Kraken staking to Kraken spot'
-                                                WHEN SUBTYPE = 'spottostaking' THEN 'Start Kraken spot to Kraken staking'
-                                                WHEN SUBTYPE = 'stakingfromspot' THEN 'Completed Kraken spot to Kraken staking'
                                                 ELSE ''
                                                 END AS NOTES
                                                 FROM TB_LEDGERS_KRAKEN_S ledgers_kraken
                                                 INNER JOIN TB_ASSET_CODES_KRAKEN_S assets_kraken
                                                 ON ledgers_kraken.ASSET = assets_kraken.CODE
                                                 WHERE REFID != ''
-                                                --added 2025/01/21
-                                                AND UPPER(SUBTYPE) NOT IN ('MIGRATION', 'ALLOCATION', 'DEALLOCATION')
-                                                --
+                                                AND NOT (UPPER(TYPE) = 'TRANSFER' AND UPPER(SUBTYPE) IN ('STAKINGFROMSPOT', 'SPOTTOSTAKING', 'SPOTFROMSTAKING', 'STAKINGTOSPOT', 'SPOTFROMFUTURES'))
+                                                AND NOT (UPPER(TYPE) = 'EARN' AND UPPER(SUBTYPE) IN ('MIGRATION', 'ALLOCATION', 'DEALLOCATION'))
                                                 UNION ALL
                                                 SELECT REFID AS REFID,
                                                 DATETIME(DATE) AS DATE,
@@ -460,13 +486,22 @@ namespace ProjectCryptoGains
                 commandInsert.ExecuteNonQuery();
 
                 connection.Close();
-                if (_mainWindow != null)
+                if (caller != "Ledgers")
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing ledgers done");
+                        if (lastWarning == null)
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing ledgers done");
+                        }
+                        else
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing ledgers done with warnings");
+                        }
                     });
                 }
+
+                return lastWarning;
             }
             catch (ValidationException ex)
             {
@@ -474,7 +509,7 @@ namespace ProjectCryptoGains
                 {
                     MessageBoxResult result = CustomMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 });
-                if (_mainWindow != null)
+                if (caller != "Ledgers")
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -490,7 +525,7 @@ namespace ProjectCryptoGains
                 {
                     MessageBoxResult result = CustomMessageBox.Show("Failed to refresh ledgers." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 });
-                if (_mainWindow != null)
+                if (caller != "Ledgers")
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -580,7 +615,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        public static async Task RefreshTrades(MainWindow? _mainWindow = null, string caller = "")
+        public static async Task<string?> RefreshTrades(MainWindow _mainWindow, string caller)
         {
             lock (TradesRefreshlock) // Only one thread can enter this block at a time
             {
@@ -590,12 +625,12 @@ namespace ProjectCryptoGains
                     {
                         string message = "There is already a trades refresh in progress. Please Wait";
                         MessageBoxResult result = CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        if (_mainWindow != null)
+                        if (caller != "Trades")
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[{caller}] {message}");
                         }
                     });
-                    return; // Exit the method here if refresh is already in progress
+                    return null; // Exit the method here if refresh is already in progress
                 }
 
                 TradesRefreshBusy = true;
@@ -603,9 +638,11 @@ namespace ProjectCryptoGains
 
             try
             {
+                string? lastWarning = null;
+
                 string? fiatCurrency = SettingFiatCurrency;
 
-                if (_mainWindow != null)
+                if (caller != "Trades")
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -814,6 +851,26 @@ namespace ProjectCryptoGains
                             DateTime datetime = DateTime.ParseExact(date, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                             // Calculate base_fee_fiat
                             var (base_unit_price_fiat, baseConversionSource) = ConvertXToFiat(base_code, 1m, datetime.Date, connection);
+                            //base_unit_price_fiat = "0.00";
+
+                            String lastWarningPrefix = $"[{caller}]";
+                            if (caller != "Trades")
+                            {
+                                lastWarningPrefix = $"[{caller}][Trades]";
+                            }
+
+                            if (ConvertStringToDecimal(base_unit_price_fiat) == 0m)
+                            {
+                                lastWarning = $"{lastWarningPrefix} Could not calculate BASE_UNIT_PRICE_{fiatCurrency} for asset: {base_code}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                //if (_mainWindow != null)
+                                //{
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                });
+                                //}
+                            }
+
                             string base_fee_fiat = (ConvertStringToDecimal(base_unit_price_fiat) * ConvertStringToDecimal(base_fee)).ToString("F10");
 
                             // Rate limiting mechanism //
@@ -830,6 +887,20 @@ namespace ProjectCryptoGains
                             /////////////////////////////
 
                             var (quote_unit_price_fiat, quoteConversionSource) = ConvertXToFiat(quote_code, 1m, datetime.Date, connection);
+                            //quote_unit_price_fiat = "0.00";
+
+                            if (ConvertStringToDecimal(quote_unit_price_fiat) == 0m)
+                            {
+                                lastWarning = $"{lastWarningPrefix} Could not calculate QUOTE_UNIT_PRICE_{fiatCurrency} for asset: {quote_code}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                //if (_mainWindow != null)
+                                //{
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                });
+                                //}
+                            }
+
                             string quote_fee_fiat = (ConvertStringToDecimal(quote_unit_price_fiat) * ConvertStringToDecimal(quote_fee)).ToString("F10");
 
                             // Rate limiting mechanism //
@@ -862,6 +933,13 @@ namespace ProjectCryptoGains
                             };
 
                             updates.Add((refid, updateData));
+                        }
+                        if (lastWarning != null)
+                        {
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                MessageBoxResult result = CustomMessageBox.Show($"There were issues calculating some unit prices in {fiatCurrency}", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            });
                         }
                     }
 
@@ -906,7 +984,7 @@ namespace ProjectCryptoGains
                 }
 
                 connection.Close();
-                if (_mainWindow != null)
+                if (caller != "Trades")
                 {
                     if (exceptionMessage != null)
                     {
@@ -916,7 +994,14 @@ namespace ProjectCryptoGains
                     {
                         Application.Current.Dispatcher.Invoke(() =>
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing trades done");
+                            if (lastWarning == null)
+                            {
+                                ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing trades done");
+                            }
+                            else
+                            {
+                                ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing trades done with warnings");
+                            }
                         });
                     }
                 }
@@ -927,6 +1012,8 @@ namespace ProjectCryptoGains
                         throw new Exception(exceptionMessage, innerExceptionMessage);
                     }
                 }
+
+                return lastWarning;
             }
             finally
             {
@@ -1043,7 +1130,7 @@ namespace ProjectCryptoGains
 
                     client.BaseAddress = new Uri("https://min-api.cryptocompare.com");
                     string? fiat_currency = SettingFiatCurrency;
-                    string? api_key = SettingCryptoCompareApiKey;
+                    string? api_key = SettingCoinDeskDataApiKey;
                     var response = client.GetAsync($"/data/v2/histoday?limit=1&fsym=" + xCurrency + "&tsym=" + fiat_currency + "&toTs=" + unixTimestamp + "&api_key={" + api_key + "}").Result;
                     var result = response.Content.ReadAsStringAsync().Result;
                     var json = JObject.Parse(result);
@@ -1056,11 +1143,11 @@ namespace ProjectCryptoGains
                         string? error_message = null;
                         if (string.IsNullOrEmpty(api_key))
                         {
-                            error_message = "CryptoCompare API call failed: API key is not set";
+                            error_message = "CoinDesk Data API call failed: API key is not set";
                         }
                         else
                         {
-                            error_message = "CryptoCompare API call failed: " + api_response_message;
+                            error_message = "CoinDesk Data API call failed: " + api_response_message;
                         }
                         Application.Current.Dispatcher.Invoke(() =>
                         {
@@ -1278,6 +1365,50 @@ namespace ProjectCryptoGains
             }
 
             return missingAssets;
+        }
+
+        public enum LedgerSource
+        {
+            Kraken,
+            Manual
+        }
+
+        public static List<(string RefId, string Type)> UnsupportedTypes(SqliteConnection connection, LedgerSource ledgerSource)
+        {
+            List<(string RefId, string Type)> unsupportedTypes = [];
+
+            DbCommand command = connection.CreateCommand();
+
+            switch (ledgerSource)
+            {
+                case LedgerSource.Kraken:
+                    command.CommandText = @"SELECT REFID, TYPE
+                                            FROM TB_LEDGERS_KRAKEN_S
+                                            WHERE UPPER(TYPE) NOT IN ('DEPOSIT', 'WITHDRAWAL', 'TRADE', 'STAKING', 'EARN', 'TRANSFER')";
+                    break;
+
+                case LedgerSource.Manual:
+                    command.CommandText = @"SELECT REFID, TYPE
+                                            FROM TB_LEDGERS_MANUAL_S
+                                            WHERE TYPE NOT IN ('DEPOSIT', 'WITHDRAWAL', 'TRADE', 'STAKING', 'AIRDROP')";
+                    break;
+
+                default:
+                    throw new ArgumentException($"Unsupported ledger source: {ledgerSource}.");
+            }
+
+            using (DbDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    if (reader[0] is string refid && reader[1] is string type)
+                    {
+                        unsupportedTypes.Add((refid, type));
+                    }
+                }
+            }
+
+            return unsupportedTypes;
         }
 
         public static void OpenHelp(string filename)

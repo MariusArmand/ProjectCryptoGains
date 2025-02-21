@@ -40,6 +40,18 @@ namespace ProjectCryptoGains
             SystemCommands.MinimizeWindow(this);
         }
 
+        private void Resize_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                SystemCommands.RestoreWindow(this);
+            }
+            else
+            {
+                SystemCommands.MaximizeWindow(this);
+            }
+        }
+
         private void Close_Click(object sender, RoutedEventArgs e)
         {
             SystemCommands.CloseWindow(this);
@@ -303,6 +315,22 @@ namespace ProjectCryptoGains
                     }
                 }
 
+                // Check for unsupported ledger types
+                List<(string RefId, string Type)> unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Manual);
+
+                if (unsupportedTypes.Count > 0)
+                {
+                    lastWarning = "Unsupported ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account";
+                    MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
+                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastWarning}");
+
+                    // Log each unsupported ledger type
+                    foreach ((string RefId, string Type) in unsupportedTypes)
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Unsupported ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                    }
+                }
+
                 connection.Close();
             }
             BindGrid();
@@ -312,7 +340,14 @@ namespace ProjectCryptoGains
 
             if (lastError == null)
             {
-                ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load successful");
+                if (lastWarning == null)
+                {
+                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load done");
+                }
+                else
+                {
+                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load done with warnings");
+                }
             }
             else
             {

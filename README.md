@@ -39,13 +39,13 @@ This tool aims to provide a user-friendly solution for tracking and calculating 
 - All relevant output is printable to provide to your accountant.
 
 ## Requirements
-- **API Access**: Users must have one of the [CCData/CryptoCompare](https://cryptocompare.com) API licenses tailored to their needs for real-time price data.
+- **API Access**: Users must have one of the [CoinDesk Data](https://developers.coindesk.com/pricing/) API licenses tailored to their needs for real-time price data.
 - **Local Currency**: Currently tested for Euro (EUR) as the local currency, suitable for users in Belgium and other Eurozone countries.
 
 ## Usage
 
 ### Setup
-- Ensure you have a valid API key from CCData/CryptoCompare.
+- Ensure you have a valid API key from CoinDesk Data.
 
 ### Data Import
 - Import your transaction history from Kraken FX or use the manual CSV format.
@@ -69,7 +69,7 @@ Run the tool to process transactions and calculate:
 ## Disclaimer
 **Accuracy**: While efforts have been made to aim for accuracy, the correctness of the calculations should be verified by a professional accountant. 
 
-**Historical Price Data Timing**: Historical prices used in the tool are fetched from [CryptoCompare] using the opening price on the relevant date. 
+**Historical Price Data Timing**: Historical prices used in the tool are fetched from [CoinDesk Data] using the opening price on the relevant date. 
 This approach limits API calls and maintains performance, with the assumption that consistently using opening prices provides a balanced representation 
 of historical price data. 
 

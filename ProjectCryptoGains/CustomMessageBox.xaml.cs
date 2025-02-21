@@ -12,7 +12,7 @@ namespace ProjectCryptoGains
         public ImageSource ImageSource { get; set; }
         public Visibility CancelButtonVisibility { get; set; }
 
-        public CustomMessageBox(string message, string caption, MessageBoxButton buttons, MessageBoxImage icon)
+        public CustomMessageBox(string message, string caption, MessageBoxButton buttons, MessageBoxImage icon, TextAlignment textAlignment = TextAlignment.Center)
         {
             InitializeComponent();
 
@@ -25,6 +25,8 @@ namespace ProjectCryptoGains
             Title = caption;
 
             ImageSource = GetIconUri(icon);
+
+            this.txtMessage.TextAlignment = textAlignment;
 
             // Set visibility of Cancel button
             if (buttons == MessageBoxButton.OKCancel)
@@ -65,9 +67,9 @@ namespace ProjectCryptoGains
             SystemCommands.CloseWindow(this);
         }
 
-        public static MessageBoxResult Show(string message, string caption, MessageBoxButton buttons, MessageBoxImage icon)
+        public static MessageBoxResult Show(string message, string caption, MessageBoxButton buttons, MessageBoxImage icon, TextAlignment textAlignment = TextAlignment.Center)
         {
-            var customMessageBox = new CustomMessageBox(message, caption, buttons, icon);
+            var customMessageBox = new CustomMessageBox(message, caption, buttons, icon, textAlignment);
             customMessageBox.ShowDialog();
 
             if (customMessageBox.DialogResult == true)
