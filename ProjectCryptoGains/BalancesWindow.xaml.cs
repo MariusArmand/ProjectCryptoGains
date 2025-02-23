@@ -15,7 +15,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Utility;
+using static ProjectCryptoGains.Common.Utility;
+using ProjectCryptoGains.Common;
 
 namespace ProjectCryptoGains
 {
@@ -39,9 +40,8 @@ namespace ProjectCryptoGains
             InitializeComponent();
 
             // Capture drag on titlebar
-            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
 
-            //txtUntilDate.Foreground = Brushes.Black;
             txtUntilDate.Text = untilDate;
             lblTotalAmountFiat.Visibility = Visibility.Collapsed;
             lblTotalAmountFiatData.Visibility = Visibility.Collapsed;
@@ -65,12 +65,32 @@ namespace ProjectCryptoGains
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
-            this.Visibility = Visibility.Hidden;
+            Visibility = Visibility.Hidden;
         }
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
         {
             OpenHelp("balances_help.html");
+        }
+
+        private void BlockUI()
+        {
+            btnRefresh.IsEnabled = false;
+
+            btnPrint.IsEnabled = false;
+            imgBtnPrint.Source = new BitmapImage(new Uri(@"Resources/printer_busy.png", UriKind.Relative));
+
+            Cursor = Cursors.Wait;
+        }
+
+        private void UnblockUI()
+        {
+            btnRefresh.IsEnabled = true;
+
+            btnPrint.IsEnabled = true;
+            imgBtnPrint.Source = new BitmapImage(new Uri(@"Resources/printer.png", UriKind.Relative));
+
+            Cursor = Cursors.Arrow;
         }
 
         private void ButtonRefresh_Click(object sender, RoutedEventArgs e)
@@ -101,8 +121,7 @@ namespace ProjectCryptoGains
             catch (Exception ex)
             {
                 MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                btnRefresh.IsEnabled = true;
-                this.Cursor = Cursors.Arrow;
+                UnblockUI();
 
                 // Exit function early
                 return;
@@ -129,9 +148,9 @@ namespace ProjectCryptoGains
                 {
                     dbLineNumber++;
 
-                    curr = reader.IsDBNull(0) ? "" : reader.GetString(0);
-                    amnt = ConvertStringToDecimal(reader.GetString(1));
-                    amnt_fiat = reader.IsDBNull(2) ? 0.00m : ConvertStringToDecimal(reader.GetString(2));
+                    curr = reader.GetStringOrEmpty(0);
+                    amnt = reader.GetDecimalOrDefault(1);
+                    amnt_fiat = reader.GetDecimalOrDefault(2, 0.00m);
 
                     data.Add(new BalancesModel
                     {
@@ -226,8 +245,7 @@ namespace ProjectCryptoGains
                 return;
             }
 
-            btnRefresh.IsEnabled = false;
-            this.Cursor = Cursors.Wait;
+            BlockUI();
 
             ConsoleLog(_mainWindow.txtLog, $"[Balances] Refreshing balances");
 
@@ -240,7 +258,7 @@ namespace ProjectCryptoGains
                 {
                     try
                     {
-                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, "Balances");
+                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Balances);
                     }
                     catch (Exception)
                     {
@@ -263,8 +281,7 @@ namespace ProjectCryptoGains
                 catch (Exception ex)
                 {
                     MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    btnRefresh.IsEnabled = true;
-                    this.Cursor = Cursors.Arrow;
+                    UnblockUI();
 
                     // Exit function early
                     return;
@@ -300,8 +317,8 @@ namespace ProjectCryptoGains
                         /////////////////////////////
                         while (reader.Read())
                         {
-                            string code = reader.GetString(0);
-                            string asset = reader.GetString(1);
+                            string code = reader.GetStringOrEmpty(0);
+                            string asset = reader.GetStringOrEmpty(1);
 
                             using DbCommand commandInsert = connection.CreateCommand();
                             if (code == fiatCurrency)
@@ -313,7 +330,6 @@ namespace ProjectCryptoGains
                                 var (xInFiat, sqlCommand, conversionSource) = CreateCryptoBalancesInsert(asset, code, untilDate, convertToFiat, connection);
                                 commandInsert.CommandText = sqlCommand;
 
-                                //xInFiat = "O.OO";
                                 if (ConvertStringToDecimal(xInFiat) == 0m)
                                 {
                                     lastWarning = $"[Balances] Could not calculate balance for currency: {asset}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
@@ -384,8 +400,7 @@ namespace ProjectCryptoGains
                 ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh unsuccessful");
             }
 
-            btnRefresh.IsEnabled = true;
-            this.Cursor = Cursors.Arrow;
+            UnblockUI();
         }
 
         private void TxtUntilDate_GotFocus(object sender, RoutedEventArgs e)
@@ -393,7 +408,6 @@ namespace ProjectCryptoGains
             if (txtUntilDate.Text == "YYYY-MM-DD")
             {
                 txtUntilDate.Text = string.Empty;
-                //txtUntilDate.Foreground = Brushes.Black;
             }
         }
 
@@ -427,9 +441,7 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Balances] Printing Balances");
 
-            btnPrint.IsEnabled = false;
-            imgBtnPrint.Source = new BitmapImage(new Uri(@"Resources/printer_busy.png", UriKind.Relative));
-            this.Cursor = Cursors.Wait;
+            BlockUI();
 
             // Create a PrintDialog
             PrintDialog printDlg = new();
@@ -447,9 +459,7 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Balances] Printing done");
 
-            btnPrint.IsEnabled = true;
-            imgBtnPrint.Source = new BitmapImage(new Uri(@"Resources/printer.png", UriKind.Relative));
-            this.Cursor = Cursors.Arrow;
+            UnblockUI();
         }
 
         /// <summary>

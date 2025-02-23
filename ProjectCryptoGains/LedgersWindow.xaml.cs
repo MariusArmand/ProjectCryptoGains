@@ -12,7 +12,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Utility;
+using static ProjectCryptoGains.Common.Utility;
+using ProjectCryptoGains.Common;
 
 namespace ProjectCryptoGains
 {
@@ -33,13 +34,11 @@ namespace ProjectCryptoGains
             InitializeComponent();
 
             // Capture drag on titlebar
-            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
 
             _mainWindow = mainWindow;
 
-            //txtFromDate.Foreground = Brushes.Black;
             txtFromDate.Text = fromDate;
-            //txtToDate.Foreground = Brushes.Black;
             txtToDate.Text = toDate;
 
             BindGrid();
@@ -52,7 +51,7 @@ namespace ProjectCryptoGains
 
         private void Resize_Click(object sender, RoutedEventArgs e)
         {
-            if (this.WindowState == WindowState.Maximized)
+            if (WindowState == WindowState.Maximized)
             {
                 SystemCommands.RestoreWindow(this);
             }
@@ -70,12 +69,32 @@ namespace ProjectCryptoGains
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
-            this.Visibility = Visibility.Hidden;
+            Visibility = Visibility.Hidden;
         }
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
         {
             OpenHelp("ledgers_help.html");
+        }
+
+        private void BlockUI()
+        {
+            btnRefresh.IsEnabled = false;
+
+            btnPrint.IsEnabled = false;
+            imgBtnPrint.Source = new BitmapImage(new Uri(@"Resources/printer_busy.png", UriKind.Relative));
+
+            Cursor = Cursors.Wait;
+        }
+
+        private void UnblockUI()
+        {
+            btnRefresh.IsEnabled = true;
+
+            btnPrint.IsEnabled = true;
+            imgBtnPrint.Source = new BitmapImage(new Uri(@"Resources/printer.png", UriKind.Relative));
+
+            Cursor = Cursors.Arrow;
         }
 
         public void BindGrid()
@@ -94,8 +113,7 @@ namespace ProjectCryptoGains
             {
                 // code to handle the exception
                 MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                btnRefresh.IsEnabled = true;
-                this.Cursor = Cursors.Arrow;
+                UnblockUI();
 
                 // Exit function early
                 return;
@@ -129,16 +147,16 @@ namespace ProjectCryptoGains
                 data.Add(new LedgersModel
                 {
                     RowNumber = dbLineNumber,
-                    Refid = reader.IsDBNull(0) ? "" : reader.GetString(0),
-                    Date = reader.IsDBNull(1) ? "" : reader.GetString(1),
-                    Type = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                    Exchange = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                    Amount = ConvertStringToDecimal(reader.GetString(4)),
-                    Currency = reader.IsDBNull(5) ? "" : reader.GetString(5),
-                    Fee = ConvertStringToDecimal(reader.GetString(6)),
-                    Source = reader.IsDBNull(7) ? "" : reader.GetString(7),
-                    Target = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                    Notes = reader.IsDBNull(9) ? "" : reader.GetString(9)
+                    Refid = reader.GetStringOrEmpty(0),
+                    Date = reader.GetStringOrEmpty(1),
+                    Type = reader.GetStringOrEmpty(2),
+                    Exchange = reader.GetStringOrEmpty(3),
+                    Amount = reader.GetDecimalOrDefault(4),
+                    Currency = reader.GetStringOrEmpty(5),
+                    Fee = reader.GetDecimalOrDefault(6),
+                    Source = reader.GetStringOrEmpty(7),
+                    Target = reader.GetStringOrEmpty(8),
+                    Notes = reader.GetStringOrEmpty(9)
                 });
             }
             reader.Close();
@@ -172,8 +190,7 @@ namespace ProjectCryptoGains
                 return;
             }
 
-            btnRefresh.IsEnabled = false;
-            this.Cursor = Cursors.Wait;
+            BlockUI();
 
             ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refreshing ledgers");
 
@@ -185,7 +202,7 @@ namespace ProjectCryptoGains
             {
                 try
                 {
-                    ledgersRefreshWarning = RefreshLedgers(_mainWindow, "Ledgers");
+                    ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Ledgers);
                     ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy when called
                 }
                 catch (Exception ex)
@@ -224,8 +241,7 @@ namespace ProjectCryptoGains
                 ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refresh unsuccessful");
             }
 
-            btnRefresh.IsEnabled = true;
-            this.Cursor = Cursors.Arrow;
+            UnblockUI();
         }
 
         private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
@@ -261,7 +277,6 @@ namespace ProjectCryptoGains
             if (txtFromDate.Text == "YYYY-MM-DD")
             {
                 txtFromDate.Text = string.Empty;
-                //txtFromDate.Foreground = Brushes.Black;
             }
         }
 
@@ -300,9 +315,7 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Printing Ledgers");
 
-            btnPrint.IsEnabled = false;
-            imgBtnPrint.Source = new BitmapImage(new Uri(@"Resources/printer_busy.png", UriKind.Relative));
-            this.Cursor = Cursors.Wait;
+            BlockUI();
 
             // Create a PrintDialog
             PrintDialog printDlg = new();
@@ -320,9 +333,7 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Printing done");
 
-            btnPrint.IsEnabled = true;
-            imgBtnPrint.Source = new BitmapImage(new Uri(@"Resources/printer.png", UriKind.Relative));
-            this.Cursor = Cursors.Arrow;
+            UnblockUI();
         }
 
         /// <summary>

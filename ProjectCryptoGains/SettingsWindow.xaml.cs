@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
-using static ProjectCryptoGains.Utility;
+using static ProjectCryptoGains.Common.Utility;
 
 namespace ProjectCryptoGains
 {
@@ -16,8 +16,9 @@ namespace ProjectCryptoGains
         public SettingsWindow(MainWindow mainWindow)
         {
             InitializeComponent();
+
             // Capture drag on titlebar
-            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
 
             _mainWindow = mainWindow;
 
@@ -37,6 +38,18 @@ namespace ProjectCryptoGains
             SystemCommands.CloseWindow(this);
         }
 
+        private void BlockUI()
+        {
+            btnSave.IsEnabled = false;
+            Cursor = Cursors.Wait;
+        }
+
+        private void UnblockUI()
+        {
+            btnSave.IsEnabled = true;
+            Cursor = Cursors.Arrow;
+        }
+
         private void Bind()
         {
             // Set the selected item based on the current setting
@@ -51,8 +64,7 @@ namespace ProjectCryptoGains
         {
             ConsoleLog(_mainWindow.txtLog, $"[Settings] Saving settings");
 
-            btnSave.IsEnabled = false;
-            this.Cursor = Cursors.Wait;
+            BlockUI();
 
             string? lastError = null;
 
@@ -97,8 +109,7 @@ namespace ProjectCryptoGains
                 ConsoleLog(_mainWindow.txtLog, $"[Settings] Saving unsuccessful");
             }
 
-            btnSave.IsEnabled = true;
-            this.Cursor = Cursors.Arrow;
+            UnblockUI();
 
             Bind();
         }
@@ -106,7 +117,7 @@ namespace ProjectCryptoGains
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
-            this.Visibility = Visibility.Hidden;
+            Visibility = Visibility.Hidden;
         }
     }
 }

@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Utility;
+using static ProjectCryptoGains.Common.Utility;
+using ProjectCryptoGains.Common;
 
 namespace ProjectCryptoGains
 {
@@ -29,7 +30,7 @@ namespace ProjectCryptoGains
             InitializeComponent();
 
             // Capture drag on titlebar
-            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
 
             _mainWindow = mainWindow;
 
@@ -66,7 +67,7 @@ namespace ProjectCryptoGains
             {
                 MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 btnRefresh.IsEnabled = true;
-                this.Cursor = Cursors.Arrow;
+                Cursor = Cursors.Arrow;
                 return false;
             }
         }
@@ -74,12 +75,26 @@ namespace ProjectCryptoGains
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
-            this.Visibility = Visibility.Hidden;
+            Visibility = Visibility.Hidden;
         }
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
         {
             OpenHelp("metrics_help.html");
+        }
+
+        private void BlockUI()
+        {
+            btnRefresh.IsEnabled = false;
+
+            Cursor = Cursors.Wait;
+        }
+
+        private void UnblockUI()
+        {
+            btnRefresh.IsEnabled = true;
+
+            Cursor = Cursors.Arrow;
         }
 
         private void BindLabels()
@@ -101,12 +116,7 @@ namespace ProjectCryptoGains
                     if (reader.HasRows)
                     {
                         reader.Read();
-                        string? totalInvestedValue = reader.IsDBNull(0) ? null : reader.GetString(0);
-
-                        if (totalInvestedValue != null)
-                        {
-                            totalInvested = ConvertStringToDecimal(totalInvestedValue);
-                        }
+                        totalInvested = reader.GetDecimalOrDefault(0, 0.00m);
                     }
                     lblTotalInvestedData.Content = totalInvested.ToString("F2") + " " + fiatCurrency;
                     reader.Close();
@@ -121,7 +131,7 @@ namespace ProjectCryptoGains
                     if (reader.HasRows)
                     {
                         reader.Read();
-                        lastInvested = reader.IsDBNull(0) ? "" : reader.GetString(0);
+                        lastInvested = reader.GetStringOrEmpty(0);
                     }
                     lblLastInvestedData.Content = lastInvested;
                     reader.Close();
@@ -174,11 +184,11 @@ namespace ProjectCryptoGains
                     {
                         dbLineNumber++;
 
-                        amnt_fiat = ConvertStringToDecimal(reader.GetString(1));
+                        amnt_fiat = reader.GetDecimalOrDefault(1);
                         dataAvgBuyPrice.Add(new AvgBuyPriceModel
                         {
                             RowNumber = dbLineNumber,
-                            Currency = reader.IsDBNull(0) ? "" : reader.GetString(0),
+                            Currency = reader.GetStringOrEmpty(0),
                             Amount_fiat = amnt_fiat
                         });
                     }
@@ -194,8 +204,7 @@ namespace ProjectCryptoGains
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
 
-                    btnRefresh.IsEnabled = true;
-                    this.Cursor = Cursors.Arrow;
+                    UnblockUI();
 
                     // Exit function early
                     return;
@@ -218,12 +227,12 @@ namespace ProjectCryptoGains
                     {
                         dbLineNumber++;
 
-                        amnt_fiat = ConvertStringToDecimal(reader.GetString(2));
+                        amnt_fiat = reader.GetDecimalOrDefault(2);
                         dataRewards.Add(new RewardsSummaryModel
                         {
                             RowNumber = dbLineNumber,
-                            Currency = reader.IsDBNull(0) ? "" : reader.GetString(0),
-                            Amount = ConvertStringToDecimal(reader.GetString(1)),
+                            Currency = reader.GetStringOrEmpty(0),
+                            Amount = reader.GetDecimalOrDefault(1),
                             Amount_fiat = amnt_fiat
                         });
                         tot_amnt_fiat += amnt_fiat;
@@ -241,8 +250,7 @@ namespace ProjectCryptoGains
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
 
-                    btnRefresh.IsEnabled = true;
-                    this.Cursor = Cursors.Arrow;
+                    UnblockUI();
 
                     // Exit function early
                     return;
@@ -263,8 +271,7 @@ namespace ProjectCryptoGains
             string? fiatCurrency = SettingFiatCurrency;
             lastError = null;
 
-            btnRefresh.IsEnabled = false;
-            this.Cursor = Cursors.Wait;
+            BlockUI();
 
             ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refreshing metrics");
 
@@ -277,7 +284,7 @@ namespace ProjectCryptoGains
                 {
                     try
                     {
-                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, "Metrics");
+                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Metrics);
                     }
                     catch (Exception)
                     {
@@ -296,7 +303,7 @@ namespace ProjectCryptoGains
                 {
                     try
                     {
-                        tradesRefreshWarning = await RefreshTrades(_mainWindow, "Metrics");
+                        tradesRefreshWarning = await RefreshTrades(_mainWindow, Caller.Metrics);
                         tradesRefreshWasBusy = TradesRefreshBusy;
                     }
                     catch (Exception ex)
@@ -375,8 +382,8 @@ namespace ProjectCryptoGains
                         using DbDataReader reader = command.ExecuteReader();
                         while (reader.Read())
                         {
-                            string code = reader.GetString(0);
-                            string asset = reader.GetString(1);
+                            string code = reader.GetStringOrEmpty(0);
+                            string asset = reader.GetStringOrEmpty(1);
 
                             using DbCommand commandIns = connection.CreateCommand();
                             commandIns.CommandText = CreateAvgBuyPriceInsert(asset);
@@ -415,15 +422,14 @@ namespace ProjectCryptoGains
                             /////////////////////////////
                             while (reader.Read())
                             {
-                                string code = reader.GetString(0);
-                                string asset = reader.GetString(1);
+                                string code = reader.GetStringOrEmpty(0);
+                                string asset = reader.GetStringOrEmpty(1);
 
                                 using DbCommand commandIns = connection.CreateCommand();
 
                                 var (xInFiat, sqlCommand, conversionSource) = CreateRewardsSummaryInsert(asset, code, date, connection);
                                 commandIns.CommandText = sqlCommand;
 
-                                //xInFiat = "O.OO";
                                 if (ConvertStringToDecimal(xInFiat) == 0m)
                                 {
                                     lastWarning = $"[Metrics] Could not calculate AMOUNT_{fiatCurrency} for currency: {asset}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
@@ -518,8 +524,7 @@ namespace ProjectCryptoGains
                 ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh unsuccessful");
             }
 
-            btnRefresh.IsEnabled = true;
-            this.Cursor = Cursors.Arrow;
+            UnblockUI();
         }
 
         private static string CreateAvgBuyPriceInsert(string currency)

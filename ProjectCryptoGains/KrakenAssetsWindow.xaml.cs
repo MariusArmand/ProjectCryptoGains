@@ -6,8 +6,10 @@ using System.Data.Common;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Utility;
+using static ProjectCryptoGains.Common.Utility;
+using ProjectCryptoGains.Common;
 
 namespace ProjectCryptoGains
 {
@@ -24,7 +26,7 @@ namespace ProjectCryptoGains
             InitializeComponent();
 
             // Capture drag on titlebar
-            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
 
             _mainWindow = mainWindow;
             KrakenAssets = [];
@@ -39,7 +41,7 @@ namespace ProjectCryptoGains
 
         private void Resize_Click(object sender, RoutedEventArgs e)
         {
-            if (this.WindowState == WindowState.Maximized)
+            if (WindowState == WindowState.Maximized)
             {
                 SystemCommands.RestoreWindow(this);
             }
@@ -57,12 +59,28 @@ namespace ProjectCryptoGains
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
-            this.Visibility = Visibility.Hidden;
+            Visibility = Visibility.Hidden;
         }
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
         {
             OpenHelp("kraken_assets_help.html");
+        }
+
+        private void BlockUI()
+        {
+            btnRefreshFromSource.IsEnabled = false;
+            btnSave.IsEnabled = false;
+
+            Cursor = Cursors.Wait;
+        }
+
+        private void UnblockUI()
+        {
+            btnRefreshFromSource.IsEnabled = true;
+            btnSave.IsEnabled = true;
+
+            Cursor = Cursors.Arrow;
         }
 
         private void RefreshFromSource_Click(object sender, RoutedEventArgs e)
@@ -90,8 +108,7 @@ namespace ProjectCryptoGains
                 return;
             }
 
-            btnSave.IsEnabled = false;
-            this.Cursor = Cursors.Wait;
+            BlockUI();
 
             await Task.Run(() =>
             {
@@ -177,8 +194,7 @@ namespace ProjectCryptoGains
                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Saving unsuccessful");
             }
 
-            btnSave.IsEnabled = true;
-            this.Cursor = Cursors.Arrow;
+            UnblockUI();
         }
 
         public void BindGrid()
@@ -196,7 +212,7 @@ namespace ProjectCryptoGains
             catch (Exception ex)
             {
                 MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                this.Cursor = Cursors.Arrow;
+                UnblockUI();
 
                 // Exit function early
                 return;
@@ -221,8 +237,8 @@ namespace ProjectCryptoGains
 
                 KrakenAssets.Add(new KrakenAssetsModel
                 {
-                    Code = reader.IsDBNull(0) ? "" : reader.GetString(0),
-                    Asset = reader.IsDBNull(1) ? "" : reader.GetString(1)
+                    Code = reader.GetStringOrEmpty(0),
+                    Asset = reader.GetStringOrEmpty(1)
                 });
             }
             reader.Close();

@@ -16,7 +16,8 @@ namespace ProjectCryptoGains
         {
             InitializeComponent();
 
-            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+            // Capture drag on titlebar
+            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
 
             DataContext = this;
 
@@ -26,7 +27,7 @@ namespace ProjectCryptoGains
 
             ImageSource = GetIconUri(icon);
 
-            this.txtMessage.TextAlignment = textAlignment;
+            txtMessage.TextAlignment = textAlignment;
 
             // Set visibility of Cancel button
             if (buttons == MessageBoxButton.OKCancel)
@@ -84,8 +85,8 @@ namespace ProjectCryptoGains
 
         private void SetDialogResultAndClose(bool result)
         {
-            this.DialogResult = result;
-            this.Close();
+            DialogResult = result;
+            Close();
         }
 
         private void OnOKClick(object sender, RoutedEventArgs e)

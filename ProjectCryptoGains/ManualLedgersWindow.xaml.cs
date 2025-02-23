@@ -10,7 +10,8 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Utility;
+using static ProjectCryptoGains.Common.Utility;
+using ProjectCryptoGains.Common;
 
 namespace ProjectCryptoGains
 {
@@ -28,7 +29,7 @@ namespace ProjectCryptoGains
             InitializeComponent();
 
             // Capture drag on titlebar
-            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
 
             _mainWindow = mainWindow;
 
@@ -42,7 +43,7 @@ namespace ProjectCryptoGains
 
         private void Resize_Click(object sender, RoutedEventArgs e)
         {
-            if (this.WindowState == WindowState.Maximized)
+            if (WindowState == WindowState.Maximized)
             {
                 SystemCommands.RestoreWindow(this);
             }
@@ -60,12 +61,28 @@ namespace ProjectCryptoGains
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
-            this.Visibility = Visibility.Hidden;
+            Visibility = Visibility.Hidden;
         }
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
         {
             OpenHelp("manual_ledgers_help.html");
+        }
+
+        private void BlockUI()
+        {
+            btnBrowse.IsEnabled = false;
+            btnUpload.IsEnabled = false;
+
+            Cursor = Cursors.Wait;
+        }
+
+        private void UnblockUI()
+        {
+            btnBrowse.IsEnabled = true;
+            btnUpload.IsEnabled = true;
+
+            Cursor = Cursors.Arrow;
         }
 
         private void BindGrid()
@@ -82,8 +99,7 @@ namespace ProjectCryptoGains
             catch (Exception ex)
             {
                 MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                btnUpload.IsEnabled = true;
-                this.Cursor = Cursors.Arrow;
+                UnblockUI();
 
                 // Exit function early
                 return;
@@ -101,16 +117,16 @@ namespace ProjectCryptoGains
                 data.Add(new ManualLedgersModel
                 {
                     RowNumber = dbLineNumber,
-                    Refid = reader.IsDBNull(0) ? "" : reader.GetString(0),
-                    Date = reader.IsDBNull(1) ? "" : reader.GetString(1),
-                    Type = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                    Exchange = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                    Asset = reader.IsDBNull(4) ? "" : reader.GetString(4),
-                    Amount = ConvertStringToDecimal(reader.GetString(5)),
-                    Fee = ConvertStringToDecimal(reader.GetString(6)),
-                    Source = reader.IsDBNull(7) ? "" : reader.GetString(7),
-                    Target = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                    Notes = reader.IsDBNull(9) ? "" : reader.GetString(9)
+                    Refid = reader.GetStringOrEmpty(0),
+                    Date = reader.GetStringOrEmpty(1),
+                    Type = reader.GetStringOrEmpty(2),
+                    Exchange = reader.GetStringOrEmpty(3),
+                    Asset = reader.GetStringOrEmpty(4),
+                    Amount = reader.GetDecimalOrDefault(5),
+                    Fee = reader.GetDecimalOrDefault(6),
+                    Source = reader.GetStringOrEmpty(7),
+                    Target = reader.GetStringOrEmpty(8),
+                    Notes = reader.GetStringOrEmpty(9)
                 });
             }
             reader.Close();
@@ -126,8 +142,7 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Attempting to load {filePath}");
 
-            btnUpload.IsEnabled = false;
-            this.Cursor = Cursors.Wait;
+            BlockUI();
 
             // Create a DataTable
             DataTable dataTable = new();
@@ -139,8 +154,7 @@ namespace ProjectCryptoGains
                 MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
 
-                btnUpload.IsEnabled = true;
-                this.Cursor = Cursors.Arrow;
+                UnblockUI();
 
                 // Exit function early
                 return;
@@ -160,8 +174,7 @@ namespace ProjectCryptoGains
                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load unsuccessful");
 
-                btnUpload.IsEnabled = true;
-                this.Cursor = Cursors.Arrow;
+                UnblockUI();
 
                 // Exit function early
                 return;
@@ -189,9 +202,9 @@ namespace ProjectCryptoGains
                             lastError = "Unexpected inputfile header";
                             MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
+                            ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load unsuccessful");
 
-                            btnUpload.IsEnabled = true;
-                            this.Cursor = Cursors.Arrow;
+                            UnblockUI();
 
                             // Exit function early
                             return;
@@ -219,8 +232,7 @@ namespace ProjectCryptoGains
                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load unsuccessful");
 
-                btnUpload.IsEnabled = true;
-                this.Cursor = Cursors.Arrow;
+                UnblockUI();
 
                 // Exit function early
                 return;
@@ -263,8 +275,7 @@ namespace ProjectCryptoGains
                             MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
 
-                            btnUpload.IsEnabled = true;
-                            this.Cursor = Cursors.Arrow;
+                            UnblockUI();
 
                             // Exit function early
                             return;
@@ -275,8 +286,7 @@ namespace ProjectCryptoGains
                             MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
 
-                            btnUpload.IsEnabled = true;
-                            this.Cursor = Cursors.Arrow;
+                            UnblockUI();
 
                             // Exit function early
                             return;
@@ -335,8 +345,7 @@ namespace ProjectCryptoGains
             }
             BindGrid();
 
-            btnUpload.IsEnabled = true;
-            this.Cursor = Cursors.Arrow;
+            UnblockUI();
 
             if (lastError == null)
             {

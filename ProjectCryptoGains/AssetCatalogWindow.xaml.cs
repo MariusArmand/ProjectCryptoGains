@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using ProjectCryptoGains.Common;
 using System;
 using System.Collections.ObjectModel;
 using System.Data.Common;
@@ -6,14 +7,14 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Utility;
+using static ProjectCryptoGains.Common.Utility;
 
 namespace ProjectCryptoGains
 {
     /// <summary>
     /// Interaction logic for AssetCatalogWindow.xaml
     /// </summary>
-    public partial class AssetCatalogWindow : Window
+    public partial class AssetCatalogWindow : SubwindowBase
     {
         private readonly MainWindow _mainWindow;
         public ObservableCollection<AssetsModel>? Assets { get; set; }
@@ -22,7 +23,7 @@ namespace ProjectCryptoGains
             InitializeComponent();
 
             // Capture drag on titlebar
-            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
 
             _mainWindow = mainWindow;
             Assets = [];
@@ -30,37 +31,21 @@ namespace ProjectCryptoGains
             BindGrid();
         }
 
-        private void Minimize_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.MinimizeWindow(this);
-        }
-
-        private void Resize_Click(object sender, RoutedEventArgs e)
-        {
-            if (this.WindowState == WindowState.Maximized)
-            {
-                SystemCommands.RestoreWindow(this);
-            }
-            else
-            {
-                SystemCommands.MaximizeWindow(this);
-            }
-        }
-
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.CloseWindow(this);
-        }
-
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            e.Cancel = true;
-            this.Visibility = Visibility.Hidden;
-        }
-
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
         {
             OpenHelp("asset_catalog_help.html");
+        }
+
+        private void BlockUI()
+        {
+            btnSave.IsEnabled = false;
+            Cursor = Cursors.Wait;
+        }
+
+        private void UnblockUI()
+        {
+            btnSave.IsEnabled = true;
+            Cursor = Cursors.Arrow;
         }
 
         private async void Save_Click(object sender, RoutedEventArgs e)
@@ -81,8 +66,7 @@ namespace ProjectCryptoGains
                 return;
             }
 
-            btnSave.IsEnabled = false;
-            this.Cursor = Cursors.Wait;
+            BlockUI();
 
             await Task.Run(() =>
             {
@@ -154,8 +138,7 @@ namespace ProjectCryptoGains
                 ConsoleLog(_mainWindow.txtLog, $"[Assets] Saving unsuccessful");
             }
 
-            btnSave.IsEnabled = true;
-            this.Cursor = Cursors.Arrow;
+            UnblockUI();
         }
 
         public void BindGrid()
@@ -173,7 +156,7 @@ namespace ProjectCryptoGains
             catch (Exception ex)
             {
                 MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                this.Cursor = Cursors.Arrow;
+                UnblockUI();
 
                 // Exit function early
                 return;
@@ -190,8 +173,8 @@ namespace ProjectCryptoGains
 
                 Assets.Add(new AssetsModel
                 {
-                    Code = reader.IsDBNull(0) ? "" : reader.GetString(0),
-                    Asset = reader.IsDBNull(1) ? "" : reader.GetString(1)
+                    Code = reader.GetStringOrEmpty(0),
+                    Asset = reader.GetStringOrEmpty(1)
                 });
             }
             reader.Close();

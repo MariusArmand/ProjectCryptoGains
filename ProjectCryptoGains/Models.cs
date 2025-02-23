@@ -82,59 +82,6 @@ namespace ProjectCryptoGains
             }
         }
 
-        public partial class KrakenPairsModel : INotifyPropertyChanged // OBSOLETE MODEL
-        {
-            private string? _code;
-            private string? _asset_left;
-            private string? _asset_right;
-
-            public string? Code
-            {
-                get => _code;
-                set
-                {
-                    if (_code != value)
-                    {
-                        _code = value;
-                        OnPropertyChanged(nameof(Code));
-                    }
-                }
-            }
-
-            public string? Asset_left
-            {
-                get => _asset_left;
-                set
-                {
-                    if (_asset_left != value)
-                    {
-                        _asset_left = value;
-                        OnPropertyChanged(nameof(Asset_left));
-                    }
-                }
-            }
-
-            public string? Asset_right
-            {
-                get => _asset_right;
-                set
-                {
-                    if (_asset_right != value)
-                    {
-                        _asset_right = value;
-                        OnPropertyChanged(nameof(Asset_right));
-                    }
-                }
-            }
-
-            public event PropertyChangedEventHandler? PropertyChanged;
-
-            protected virtual void OnPropertyChanged(string propertyName)
-            {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
-
         public class ManualLedgersModel
         {
             public int RowNumber { get; set; }
@@ -166,24 +113,6 @@ namespace ProjectCryptoGains
             public decimal? Balance { get; set; }
         }
 
-        public class KrakenTradesModel // OBSOLETE MODEL
-        {
-            public int RowNumber { get; set; }
-            public string? Txid { get; set; }
-            public string? Ordertxid { get; set; }
-            public string? Pair { get; set; }
-            public string? Time { get; set; }
-            public string? Type { get; set; }
-            public string? Ordertype { get; set; }
-            public decimal? Price { get; set; }
-            public decimal? Cost { get; set; }
-            public decimal? Fee { get; set; }
-            public decimal? Vol { get; set; }
-            public decimal? Margin { get; set; }
-            public string? Misc { get; set; }
-            public string? Ledgers { get; set; }
-        }
-
         public class LedgersModel
         {
             public int RowNumber { get; set; }
@@ -213,19 +142,6 @@ namespace ProjectCryptoGains
             public decimal? Unit_price { get; set; }
             public decimal? Unit_price_break_even { get; set; }
             public decimal? Amount_sell_break_even { get; set; }
-        }
-
-        public class TradesRawModel // OBSOLETE MODEL
-        {
-            public int RowNumber { get; set; }
-            public string? Date { get; set; }
-            public string? Type { get; set; }
-            public string? Exchange { get; set; }
-            public decimal? Base_amount { get; set; }
-            public string? Base_currency { get; set; }
-            public decimal? Quote_amount { get; set; }
-            public string? Quote_currency { get; set; }
-            public decimal? Fee { get; set; }
         }
 
         public class TradesModel

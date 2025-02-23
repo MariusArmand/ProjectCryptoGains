@@ -10,7 +10,8 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Utility;
+using static ProjectCryptoGains.Common.Utility;
+using ProjectCryptoGains.Common;
 
 namespace ProjectCryptoGains
 {
@@ -28,7 +29,7 @@ namespace ProjectCryptoGains
             InitializeComponent();
 
             // Capture drag on titlebar
-            this.TitleBar.MouseLeftButtonDown += (sender, e) => this.DragMove();
+            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
 
             _mainWindow = mainWindow;
 
@@ -42,7 +43,7 @@ namespace ProjectCryptoGains
 
         private void Resize_Click(object sender, RoutedEventArgs e)
         {
-            if (this.WindowState == WindowState.Maximized)
+            if (WindowState == WindowState.Maximized)
             {
                 SystemCommands.RestoreWindow(this);
             }
@@ -60,12 +61,28 @@ namespace ProjectCryptoGains
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
-            this.Visibility = Visibility.Hidden;
+            Visibility = Visibility.Hidden;
         }
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
         {
             OpenHelp("kraken_ledgers_help.html");
+        }
+
+        private void BlockUI()
+        {
+            btnBrowse.IsEnabled = false;
+            btnUpload.IsEnabled = false;
+
+            Cursor = Cursors.Wait;
+        }
+
+        private void UnblockUI()
+        {
+            btnBrowse.IsEnabled = true;
+            btnUpload.IsEnabled = true;
+
+            Cursor = Cursors.Arrow;
         }
 
         private void BindGrid()
@@ -82,8 +99,7 @@ namespace ProjectCryptoGains
             catch (Exception ex)
             {
                 MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                btnUpload.IsEnabled = true;
-                this.Cursor = Cursors.Arrow;
+                UnblockUI();
 
                 // Exit function early
                 return;
@@ -101,17 +117,17 @@ namespace ProjectCryptoGains
                 data.Add(new KrakenLedgersModel
                 {
                     RowNumber = dbLineNumber,
-                    Txid = reader.IsDBNull(0) ? "" : reader.GetString(0),
-                    Refid = reader.IsDBNull(1) ? "" : reader.GetString(1),
-                    Time = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                    Type = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                    Subtype = reader.IsDBNull(4) ? "" : reader.GetString(4),
-                    Aclass = reader.IsDBNull(5) ? "" : reader.GetString(5),
-                    Asset = reader.IsDBNull(6) ? "" : reader.GetString(6),
-                    Wallet = reader.IsDBNull(7) ? "" : reader.GetString(7),
-                    Amount = ConvertStringToDecimal(reader.GetString(8)),
-                    Fee = ConvertStringToDecimal(reader.GetString(9)),
-                    Balance = ConvertStringToDecimal(reader.GetString(10))
+                    Txid = reader.GetStringOrEmpty(0),
+                    Refid = reader.GetStringOrEmpty(1),
+                    Time = reader.GetStringOrEmpty(2),
+                    Type = reader.GetStringOrEmpty(3),
+                    Subtype = reader.GetStringOrEmpty(4),
+                    Aclass = reader.GetStringOrEmpty(5),
+                    Asset = reader.GetStringOrEmpty(6),
+                    Wallet = reader.GetStringOrEmpty(7),
+                    Amount = reader.GetDecimalOrDefault(8),
+                    Fee = reader.GetDecimalOrDefault(9),
+                    Balance = reader.GetDecimalOrDefault(10)
                 });
             }
             reader.Close();
@@ -127,8 +143,7 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Attempting to load {filePath}");
 
-            btnUpload.IsEnabled = false;
-            this.Cursor = Cursors.Wait;
+            BlockUI();
 
             // Create a DataTable
             DataTable dataTable = new();
@@ -141,8 +156,7 @@ namespace ProjectCryptoGains
                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Load unsuccessful");
 
-                btnUpload.IsEnabled = true;
-                this.Cursor = Cursors.Arrow;
+                UnblockUI();
 
                 // Exit function early
                 return;
@@ -173,9 +187,9 @@ namespace ProjectCryptoGains
                                 lastError = "Unexpected inputfile header";
                                 MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
+                                ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Load unsuccessful");
 
-                                btnUpload.IsEnabled = true;
-                                this.Cursor = Cursors.Arrow;
+                                UnblockUI();
 
                                 // Exit function early
                                 return;
@@ -203,8 +217,7 @@ namespace ProjectCryptoGains
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Load unsuccessful");
 
-                    btnUpload.IsEnabled = true;
-                    this.Cursor = Cursors.Arrow;
+                    UnblockUI();
 
                     // Exit function early
                     return;
@@ -292,8 +305,7 @@ namespace ProjectCryptoGains
             }
             BindGrid();
 
-            btnUpload.IsEnabled = true;
-            this.Cursor = Cursors.Arrow;
+            UnblockUI();
 
             if (lastError == null)
             {

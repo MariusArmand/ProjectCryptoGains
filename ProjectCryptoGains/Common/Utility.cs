@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Globalization;
@@ -11,13 +12,31 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace ProjectCryptoGains
+namespace ProjectCryptoGains.Common
 {
     public static class Utility
     {
         public static readonly string databaseFileName = "pcg.db";
         public static readonly string databasePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "db", databaseFileName);
         public static readonly string connectionString = $"Data Source={databasePath}";
+
+        // Enums //
+        public enum LedgerSource
+        {
+            Kraken,
+            Manual
+        }
+
+        public enum Caller
+        {
+            Ledgers,
+            Trades,
+            Gains,
+            Rewards,
+            Balances,
+            Metrics
+        }
+        /////////////////////////////
 
         // Parallel run prevention //
         public static bool LedgersRefreshBusy { get; private set; } = false;
@@ -29,6 +48,13 @@ namespace ProjectCryptoGains
         private static readonly object TradesRefreshlock = new();
         /////////////////////////////
 
+        // Custom exceptions //
+        public class ValidationException(string message) : Exception(message)
+        {
+        }
+        /////////////////////////////
+
+        // Settings //
         private static string? _settingCoinDeskDataApiKey;
 
         public static string? SettingCoinDeskDataApiKey
@@ -89,7 +115,7 @@ namespace ProjectCryptoGains
                 {
                     if (reader.Read())
                     {
-                        _settingCoinDeskDataApiKey = reader.GetString(0);
+                        _settingCoinDeskDataApiKey = reader.GetStringOrNull(0);
                     }
                     else
                     {
@@ -169,7 +195,7 @@ namespace ProjectCryptoGains
                 {
                     if (reader.Read())
                     {
-                        _settingFiatCurrency = reader.GetString(0);
+                        _settingFiatCurrency = reader.GetStringOrNull(0);
                     }
                     else
                     {
@@ -254,16 +280,7 @@ namespace ProjectCryptoGains
                 {
                     if (reader.Read())
                     {
-                        string valueFromDB = reader.GetString(0);
-
-                        if (string.IsNullOrEmpty(valueFromDB))
-                        {
-                            _settingRewardsTaxPercentage = 0m;
-                        }
-                        else
-                        {
-                            _settingRewardsTaxPercentage = ConvertStringToDecimal(valueFromDB);
-                        }
+                        _settingRewardsTaxPercentage = reader.GetDecimalOrDefault(0, 0m);
                     }
                     else
                     {
@@ -278,10 +295,29 @@ namespace ProjectCryptoGains
                 throw new InvalidOperationException("Failed to load rewards tax percentage from database", ex);
             }
         }
+        /////////////////////////////
 
-        public class ValidationException(string message) : Exception(message)
+        // Reader methods //
+        public static decimal GetDecimalOrDefault(this IDataReader reader, int columnIndex, decimal defaultValue = 0.0000000000m)
         {
+            return reader.IsDBNull(columnIndex) ? defaultValue : ConvertStringToDecimal(reader.GetString(columnIndex));
         }
+
+        public static decimal? GetDecimalOrNull(this IDataReader reader, int columnIndex)
+        {
+            return reader.IsDBNull(columnIndex) ? null : ConvertStringToDecimal(reader.GetString(columnIndex));
+        }
+
+        public static string GetStringOrEmpty(this IDataReader reader, int columnIndex)
+        {
+            return reader.IsDBNull(columnIndex) ? "" : reader.GetString(columnIndex);
+        }
+
+        public static string? GetStringOrNull(this IDataReader reader, int columnIndex)
+        {
+            return reader.IsDBNull(columnIndex) ? null : reader.GetString(columnIndex);
+        }
+        /////////////////////////////
 
         public static string TestDatabaseConnection()
         {
@@ -304,7 +340,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        public static string? RefreshLedgers(MainWindow _mainWindow, string caller)
+        public static string? RefreshLedgers(MainWindow _mainWindow, Caller caller)
         {
             lock (LedgerRefreshlock) // Only one thread can enter this block at a time
             {
@@ -314,7 +350,7 @@ namespace ProjectCryptoGains
                     {
                         string message = "There is already a ledgers refresh in progress. Please Wait";
                         MessageBoxResult result = CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        if (caller != "Ledgers")
+                        if (caller != Caller.Ledgers)
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[{caller}] {message}");
                         }
@@ -331,15 +367,13 @@ namespace ProjectCryptoGains
 
                 string? fiatCurrency = SettingFiatCurrency;
 
-                if (caller != "Ledgers")
+                if (caller != Caller.Ledgers)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing ledgers");
                     });
                 }
-
-                //System.Threading.Thread.Sleep(5000);
 
                 using SqliteConnection connection = new(connectionString);
                 connection.Open();
@@ -350,16 +384,6 @@ namespace ProjectCryptoGains
                 {
                     throw new ValidationException("Manual ledger asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Asset Catalog]");
                 }
-
-                /*
-                // OBSOLETE CHECKS
-                List<string> missingPairs = MissingPairs(connection);
-                List<string> malconfiguredPairs = MalconfiguredPairs(connection);
-                if (missingPairs.Count > 0 || malconfiguredPairs.Count > 0)
-                {
-                    throw new ValidationException("Kraken pair asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Kraken Pairs]");
-                }
-                */
 
                 List<string> missingAssets = MissingAssets(connection);
                 List<string> malconfiguredAssets = MalconfiguredAssets(connection);
@@ -373,8 +397,8 @@ namespace ProjectCryptoGains
                 List<(string RefId, string Type)> unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Manual);
                 if (unsupportedTypes.Count > 0)
                 {
-                    String lastWarningPrefix = $"[{caller}]";
-                    if (caller != "Ledgers")
+                    string lastWarningPrefix = $"[{caller}]";
+                    if (caller != Caller.Ledgers)
                     {
                         lastWarningPrefix = $"[{caller}][Ledgers]";
                     }
@@ -397,8 +421,8 @@ namespace ProjectCryptoGains
                 unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Kraken);
                 if (unsupportedTypes.Count > 0)
                 {
-                    String lastWarningPrefix = $"[{caller}]";
-                    if (caller != "Ledgers")
+                    string lastWarningPrefix = $"[{caller}]";
+                    if (caller != Caller.Ledgers)
                     {
                         lastWarningPrefix = $"[{caller}][Ledgers]";
                     }
@@ -486,7 +510,7 @@ namespace ProjectCryptoGains
                 commandInsert.ExecuteNonQuery();
 
                 connection.Close();
-                if (caller != "Ledgers")
+                if (caller != Caller.Ledgers)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -509,7 +533,7 @@ namespace ProjectCryptoGains
                 {
                     MessageBoxResult result = CustomMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 });
-                if (caller != "Ledgers")
+                if (caller != Caller.Ledgers)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -525,7 +549,7 @@ namespace ProjectCryptoGains
                 {
                     MessageBoxResult result = CustomMessageBox.Show("Failed to refresh ledgers." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 });
-                if (caller != "Ledgers")
+                if (caller != Caller.Ledgers)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -544,78 +568,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        public static void RefreshTradesRaw(MainWindow? _mainWindow = null, string caller = "") // OBSOLETE METHOD
-        {
-            lock (TradesRawRefreshlock) // Only one thread can enter this block at a time
-            {
-                if (TradesRawRefreshBusy)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        MessageBoxResult result = CustomMessageBox.Show("There is already a raw trades refresh in progress. Please Wait", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    });
-                    return; // Exit the method here if refresh is already in progress
-                }
-
-                TradesRawRefreshBusy = true;
-            } // Release the lock here, allowing other threads to check TradesRawRefreshBusy
-
-            try
-            {
-                if (_mainWindow != null)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing raw trades");
-                    });
-                }
-
-                using SqliteConnection connection = new(connectionString);
-                connection.Open();
-
-                DbCommand commandDelete = connection.CreateCommand();
-
-                // Truncate db table
-                commandDelete.CommandText = "DELETE FROM TB_TRADES_RAW_S";
-                commandDelete.ExecuteNonQuery();
-
-                // Insert into db table
-                DbCommand commandInsert = connection.CreateCommand();
-
-                commandInsert.CommandText = @"INSERT INTO TB_TRADES_RAW_S 
-                                              SELECT DATETIME(TIME) AS DATE, 
-                                              UPPER(TYPE) AS TYPE, 
-                                              'Kraken' AS EXCHANGE, 
-                                              printf('%.10f', VOL) AS BASE_AMOUNT, 
-                                              codes.ASSET_LEFT BASE_CURRENCY, 
-                                              printf('%.10f', COST) AS QUOTE_AMOUNT, 
-                                              codes.ASSET_RIGHT AS QUOTE_CURRENCY,
-                                              printf('%.10f', FEE) AS FEE
-                                              FROM TB_TRADES_KRAKEN_S trades 
-                                              INNER JOIN TB_PAIR_CODES_KRAKEN_S codes 
-                                              ON trades.PAIR = codes.CODE";
-
-                commandInsert.ExecuteNonQuery();
-
-                connection.Close();
-                if (_mainWindow != null)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing raw trades done");
-                    });
-                }
-            }
-            finally
-            {
-                lock (TradesRawRefreshlock) // Lock again to safely update TradesRawRefreshBusy
-                {
-                    TradesRawRefreshBusy = false;
-                }
-            }
-        }
-
-        public static async Task<string?> RefreshTrades(MainWindow _mainWindow, string caller)
+        public static async Task<string?> RefreshTrades(MainWindow _mainWindow, Caller caller)
         {
             lock (TradesRefreshlock) // Only one thread can enter this block at a time
             {
@@ -625,7 +578,7 @@ namespace ProjectCryptoGains
                     {
                         string message = "There is already a trades refresh in progress. Please Wait";
                         MessageBoxResult result = CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        if (caller != "Trades")
+                        if (caller != Caller.Trades)
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[{caller}] {message}");
                         }
@@ -642,7 +595,7 @@ namespace ProjectCryptoGains
 
                 string? fiatCurrency = SettingFiatCurrency;
 
-                if (caller != "Trades")
+                if (caller != Caller.Trades)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -840,21 +793,20 @@ namespace ProjectCryptoGains
                         /////////////////////////////
                         while (reader.Read())
                         {
-                            string refid = reader.GetString(0);
-                            string date = reader.GetString(1);
-                            string base_code = reader.GetString(2);
-                            string base_fee = reader.GetString(3);
-                            string quote_code = reader.GetString(4);
-                            string quote_amount = reader.GetString(5);
-                            string quote_fee = reader.GetString(6);
+                            string refid = reader.GetStringOrEmpty(0);
+                            string date = reader.GetStringOrEmpty(1);
+                            string base_code = reader.GetStringOrEmpty(2);
+                            string base_fee = reader.GetStringOrEmpty(3);
+                            string quote_code = reader.GetStringOrEmpty(4);
+                            string quote_amount = reader.GetStringOrEmpty(5);
+                            string quote_fee = reader.GetStringOrEmpty(6);
 
                             DateTime datetime = DateTime.ParseExact(date, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                             // Calculate base_fee_fiat
                             var (base_unit_price_fiat, baseConversionSource) = ConvertXToFiat(base_code, 1m, datetime.Date, connection);
-                            //base_unit_price_fiat = "0.00";
 
-                            String lastWarningPrefix = $"[{caller}]";
-                            if (caller != "Trades")
+                            string lastWarningPrefix = $"[{caller}]";
+                            if (caller != Caller.Trades)
                             {
                                 lastWarningPrefix = $"[{caller}][Trades]";
                             }
@@ -862,13 +814,10 @@ namespace ProjectCryptoGains
                             if (ConvertStringToDecimal(base_unit_price_fiat) == 0m)
                             {
                                 lastWarning = $"{lastWarningPrefix} Could not calculate BASE_UNIT_PRICE_{fiatCurrency} for asset: {base_code}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
-                                //if (_mainWindow != null)
-                                //{
                                 Application.Current.Dispatcher.Invoke(() =>
                                 {
                                     ConsoleLog(_mainWindow.txtLog, lastWarning);
                                 });
-                                //}
                             }
 
                             string base_fee_fiat = (ConvertStringToDecimal(base_unit_price_fiat) * ConvertStringToDecimal(base_fee)).ToString("F10");
@@ -879,7 +828,7 @@ namespace ProjectCryptoGains
                                 if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
                                 {
                                     // Calculate delay to ensure at least 1 seconds have passed
-                                    int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
+                                    int delay = Math.Max(0, (int)(lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds);
                                     await Task.Delay(delay);
                                 }
                             }
@@ -887,18 +836,14 @@ namespace ProjectCryptoGains
                             /////////////////////////////
 
                             var (quote_unit_price_fiat, quoteConversionSource) = ConvertXToFiat(quote_code, 1m, datetime.Date, connection);
-                            //quote_unit_price_fiat = "0.00";
 
                             if (ConvertStringToDecimal(quote_unit_price_fiat) == 0m)
                             {
                                 lastWarning = $"{lastWarningPrefix} Could not calculate QUOTE_UNIT_PRICE_{fiatCurrency} for asset: {quote_code}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
-                                //if (_mainWindow != null)
-                                //{
                                 Application.Current.Dispatcher.Invoke(() =>
                                 {
                                     ConsoleLog(_mainWindow.txtLog, lastWarning);
                                 });
-                                //}
                             }
 
                             string quote_fee_fiat = (ConvertStringToDecimal(quote_unit_price_fiat) * ConvertStringToDecimal(quote_fee)).ToString("F10");
@@ -909,7 +854,7 @@ namespace ProjectCryptoGains
                                 if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
                                 {
                                     // Calculate delay to ensure at least 1 seconds have passed
-                                    int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
+                                    int delay = Math.Max(0, (int)(lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds);
                                     await Task.Delay(delay);
                                 }
                             }
@@ -984,7 +929,7 @@ namespace ProjectCryptoGains
                 }
 
                 connection.Close();
-                if (caller != "Trades")
+                if (caller != Caller.Trades)
                 {
                     if (exceptionMessage != null)
                     {
@@ -1074,7 +1019,7 @@ namespace ProjectCryptoGains
             window.Focus();
         }
 
-        public static void ConsoleLog(TextBox txtLog, String logText)
+        public static void ConsoleLog(TextBox txtLog, string logText)
         {
             // Get the current time in the specified format
             string timestamp = DateTime.Now.ToString("HH:mm:ss");
@@ -1117,7 +1062,7 @@ namespace ProjectCryptoGains
                 {
                     if (reader.Read())
                     {
-                        exchangeRateDb = reader.GetDecimal(0);
+                        exchangeRateDb = reader.GetDecimalOrNull(0);
                     }
                 }
                 ///////////////////////////
@@ -1126,7 +1071,7 @@ namespace ProjectCryptoGains
                 {
                     using var client = new HttpClient();
 
-                    int unixTimestamp = ((int)(date - new DateTime(1970, 1, 1).ToLocalTime()).TotalSeconds);
+                    int unixTimestamp = (int)(date - new DateTime(1970, 1, 1).ToLocalTime()).TotalSeconds;
 
                     client.BaseAddress = new Uri("https://min-api.cryptocompare.com");
                     string? fiat_currency = SettingFiatCurrency;
@@ -1221,75 +1166,6 @@ namespace ProjectCryptoGains
             return DateTime.TryParseExact(date, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
         }
 
-        /*public static string TextBlockContentSplit(TextBlock tbInput)
-        {
-            string output = "";
-            foreach (Inline inline in tbInput.Inlines)
-            {
-                output += inline.ContentStart.GetTextInRun(LogicalDirection.Forward) + "\n";
-            }
-            return output;
-        }*/
-
-        public static List<string> MissingPairs(SqliteConnection connection) // OBSOLETE METHOD
-        {
-            List<string> missingPairs = [];
-
-            DbCommand command = connection.CreateCommand();
-            command.CommandText = @"SELECT DISTINCT(trades_kraken.PAIR) AS PAIR
-                                    FROM TB_TRADES_KRAKEN_S trades_kraken
-								    LEFT OUTER JOIN
-								    TB_PAIR_CODES_KRAKEN_S pairs_kraken
-								    ON trades_kraken.PAIR = pairs_kraken.CODE
-								    WHERE pairs_kraken.ASSET_LEFT IS NULL";
-
-            using (DbDataReader reader = command.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    if (reader[0] is string asset)
-                    {
-                        missingPairs.Add(asset);
-                    }
-                }
-            }
-
-            return missingPairs;
-        }
-
-        public static List<string> MalconfiguredPairs(SqliteConnection connection) // OBSOLETE METHOD
-        {
-            List<string> malfconfiguredPair = [];
-
-            DbCommand command = connection.CreateCommand();
-            command.CommandText = @"SELECT DISTINCT(CODE) FROM
-                                    (SELECT pairs_kraken.code AS CODE FROM
-									TB_PAIR_CODES_KRAKEN_S pairs_kraken
-									LEFT OUTER JOIN
-									TB_ASSET_CATALOG_S catalog
-									ON pairs_kraken.ASSET_LEFT = catalog.ASSET
-									WHERE catalog.CODE IS NULL
-									UNION ALL
-									SELECT pairs_kraken.code AS CODE FROM TB_PAIR_CODES_KRAKEN_S pairs_kraken
-									LEFT OUTER JOIN
-									TB_ASSET_CATALOG_S catalog
-									ON pairs_kraken.ASSET_RIGHT = catalog.ASSET
-									WHERE catalog.CODE IS NULL)";
-
-            using (DbDataReader reader = command.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    if (reader[0] is string code)
-                    {
-                        malfconfiguredPair.Add(code);
-                    }
-                }
-            }
-
-            return malfconfiguredPair;
-        }
-
         public static List<string> MissingAssets(SqliteConnection connection)
         {
             List<string> missingAssets = [];
@@ -1367,12 +1243,6 @@ namespace ProjectCryptoGains
             return missingAssets;
         }
 
-        public enum LedgerSource
-        {
-            Kraken,
-            Manual
-        }
-
         public static List<(string RefId, string Type)> UnsupportedTypes(SqliteConnection connection, LedgerSource ledgerSource)
         {
             List<(string RefId, string Type)> unsupportedTypes = [];
@@ -1415,7 +1285,7 @@ namespace ProjectCryptoGains
         {
             string helpfilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "help", filename);
 
-            if (System.IO.File.Exists(helpfilePath))
+            if (File.Exists(helpfilePath))
             {
                 try
                 {

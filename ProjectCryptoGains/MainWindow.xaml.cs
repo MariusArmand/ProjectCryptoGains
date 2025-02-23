@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows;
-using static ProjectCryptoGains.Utility;
+using static ProjectCryptoGains.Common.Utility;
 
 namespace ProjectCryptoGains
 {
@@ -14,11 +14,8 @@ namespace ProjectCryptoGains
         private SettingsWindow? winSettings;
         private AssetCatalogWindow? winAssetCatalog;
         private KrakenAssetsWindow? winKrakenAssets;
-        private KrakenPairsWindow? winKrakenPairs;
-        private KrakenTradesWindow? winKrakenTrades;
         private KrakenLedgersWindow? winKrakenLedgers;
         private ManualLedgersWindow? winManualLedgers;
-        private TradesRawWindow? winTradesRaw;
         private TradesWindow? winTrades;
         private GainsWindow? winGains;
         private LedgersWindow? winLedgers;
@@ -31,15 +28,15 @@ namespace ProjectCryptoGains
             InitializeComponent();
 
             // Capture events on titlebar
-            this.TitleBar.MouseLeftButtonDown += (sender, e) =>
+            TitleBar.MouseLeftButtonDown += (sender, e) =>
             {
                 if (e.ClickCount == 2) // Detect double-click
                 {
-                    this.WindowState = (this.WindowState == WindowState.Maximized) ? WindowState.Normal : WindowState.Maximized;
+                    WindowState = (WindowState == WindowState.Maximized) ? WindowState.Normal : WindowState.Maximized;
                 }
                 else
                 {
-                    this.DragMove();
+                    DragMove();
                 }
             };
 
@@ -47,13 +44,13 @@ namespace ProjectCryptoGains
             ConsoleLog(txtLog, $"[Main] {TestDatabaseConnection()}");
 
             // Handle the Closing event of the main window
-            this.Closing += async (sender, e) =>
+            Closing += async (sender, e) =>
             {
                 // Close the subwindows
                 foreach (var window in new Window?[] {
-                    winAssetCatalog, winKrakenAssets, winKrakenPairs, winKrakenTrades,
-                    winKrakenLedgers, winManualLedgers, winTradesRaw, winTrades,
-                    winGains, winLedgers, winRewards, winMetrics, winBalances
+                    winAssetCatalog, winKrakenAssets, winKrakenLedgers,
+                    winManualLedgers, winTrades, winGains, winLedgers,
+                    winRewards, winMetrics, winBalances
                 })
                 {
                     if (window != null)
@@ -136,7 +133,7 @@ namespace ProjectCryptoGains
 
         private void Resize_Click(object sender, RoutedEventArgs e)
         {
-            if (this.WindowState == WindowState.Maximized)
+            if (WindowState == WindowState.Maximized)
             {
                 SystemCommands.RestoreWindow(this);
             }
@@ -176,20 +173,6 @@ namespace ProjectCryptoGains
             ShowAndFocusSubWindow(winKrakenAssets, this);
         }
 
-        private void MenuKrakenPairs_Click(object sender, RoutedEventArgs e)
-        {
-            // Create window if it doesn't exist yet
-            winKrakenPairs ??= new KrakenPairsWindow(this);
-            ShowAndFocusSubWindow(winKrakenPairs, this);
-        }
-
-        private void MenuKrakenTrades_Click(object sender, RoutedEventArgs e)
-        {
-            // Create window if it doesn't exist yet
-            winKrakenTrades ??= new KrakenTradesWindow(this);
-            ShowAndFocusSubWindow(winKrakenTrades, this);
-        }
-
         private void MenuKrakenLedgers_Click(object sender, RoutedEventArgs e)
         {
             // Create window if it doesn't exist yet
@@ -202,13 +185,6 @@ namespace ProjectCryptoGains
             // Create window if it doesn't exist yet
             winManualLedgers ??= new ManualLedgersWindow(this);
             ShowAndFocusSubWindow(winManualLedgers, this);
-        }
-
-        private void MenuTradesRaw_Click(object sender, RoutedEventArgs e)
-        {
-            // Create window if it doesn't exist yet
-            winTradesRaw ??= new TradesRawWindow(this);
-            ShowAndFocusSubWindow(winTradesRaw, this);
         }
 
         private void MenuTrades_Click(object sender, RoutedEventArgs e)
