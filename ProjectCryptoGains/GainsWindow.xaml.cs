@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using ProjectCryptoGains.Common;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,16 +13,21 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.LedgersUtils;
+using static ProjectCryptoGains.Common.Utils.ReaderUtils;
+using static ProjectCryptoGains.Common.Utils.SettingUtils;
+using static ProjectCryptoGains.Common.Utils.TradesUtils;
+using static ProjectCryptoGains.Common.Utils.Utils;
+using static ProjectCryptoGains.Common.Utils.WindowUtils;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Common.Utility;
-using ProjectCryptoGains.Common;
 
 namespace ProjectCryptoGains
 {
     /// <summary>
     /// Interaction logic for GainsWindow.xaml
     /// </summary>
-    public partial class GainsWindow : Window
+    public partial class GainsWindow : SubwindowBase
     {
         private readonly MainWindow _mainWindow;
 
@@ -33,9 +39,7 @@ namespace ProjectCryptoGains
         public GainsWindow(MainWindow mainWindow)
         {
             InitializeComponent();
-
-            // Capture drag on titlebar
-            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
+            TitleBarElement = TitleBar;
 
             _mainWindow = mainWindow;
 
@@ -44,34 +48,6 @@ namespace ProjectCryptoGains
             txtBaseCurrency.Text = baseCurrency;
 
             BindGrid();
-        }
-
-        private void Minimize_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.MinimizeWindow(this);
-        }
-
-        private void Resize_Click(object sender, RoutedEventArgs e)
-        {
-            if (WindowState == WindowState.Maximized)
-            {
-                SystemCommands.RestoreWindow(this);
-            }
-            else
-            {
-                SystemCommands.MaximizeWindow(this);
-            }
-        }
-
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.CloseWindow(this);
-        }
-
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            e.Cancel = true;
-            Visibility = Visibility.Hidden;
         }
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
@@ -704,7 +680,7 @@ namespace ProjectCryptoGains
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Base_amount,10:F10}" ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Quote_currency ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Quote_amount,10:F10}" ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Base_unit_price_fiat,10:F10}" ?? ""))));
+                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Base_unit_price_fiat,2:F2}" ?? ""))));
                 table.RowGroups[0].Rows.Add(tableRow);
 
                 tableRow = new TableRow
@@ -717,7 +693,7 @@ namespace ProjectCryptoGains
                 table.RowGroups[0].Rows.Add(tableRow);
 
                 tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Costs_proceeds,10:F10}" ?? ""))));
+                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Costs_proceeds,2:F2}" ?? ""))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Tx_balance_remaining.HasValue ? $"{item.Tx_balance_remaining,10:F10}" : "N/A"))));
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Gain.HasValue ? $"{item.Gain,2:F2}" : "N/A"))));
                 table.RowGroups[0].Rows.Add(tableRow);
@@ -837,7 +813,7 @@ namespace ProjectCryptoGains
 
                 tableRow = new TableRow();
                 tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Currency ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Gain.ToString() ?? ""))));
+                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Gain,2:F2}" ?? ""))));
                 table.RowGroups[0].Rows.Add(tableRow);
 
                 tableRow = new TableRow();

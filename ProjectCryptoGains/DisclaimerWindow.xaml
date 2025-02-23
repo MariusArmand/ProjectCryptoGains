@@ -1,6 +1,7 @@
-﻿<Window x:Class="ProjectCryptoGains.DisclaimerWindow"
+﻿<Window 
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ProjectCryptoGains.DisclaimerWindow"
         xmlns:shell="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         Title="Disclaimer"
         Height="380" 

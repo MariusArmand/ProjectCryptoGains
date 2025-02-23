@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using ProjectCryptoGains.Common;
 using System;
 using System.Collections.ObjectModel;
 using System.Data.Common;
@@ -11,20 +12,21 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.LedgersUtils;
+using static ProjectCryptoGains.Common.Utils.ReaderUtils;
+using static ProjectCryptoGains.Common.Utils.Utils;
+using static ProjectCryptoGains.Common.Utils.WindowUtils;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Common.Utility;
-using ProjectCryptoGains.Common;
 
 namespace ProjectCryptoGains
 {
     /// <summary>
     /// Interaction logic for LedgersWindow.xaml
     /// </summary>
-    public partial class LedgersWindow : Window
+    public partial class LedgersWindow : SubwindowBase
     {
         private readonly MainWindow _mainWindow;
-
-        //public LedgersHelpWindow? winLedgersHelp;
 
         private string fromDate = "2009-01-03";
         private string toDate = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -32,9 +34,7 @@ namespace ProjectCryptoGains
         public LedgersWindow(MainWindow mainWindow)
         {
             InitializeComponent();
-
-            // Capture drag on titlebar
-            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
+            TitleBarElement = TitleBar;
 
             _mainWindow = mainWindow;
 
@@ -42,34 +42,6 @@ namespace ProjectCryptoGains
             txtToDate.Text = toDate;
 
             BindGrid();
-        }
-
-        private void Minimize_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.MinimizeWindow(this);
-        }
-
-        private void Resize_Click(object sender, RoutedEventArgs e)
-        {
-            if (WindowState == WindowState.Maximized)
-            {
-                SystemCommands.RestoreWindow(this);
-            }
-            else
-            {
-                SystemCommands.MaximizeWindow(this);
-            }
-        }
-
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.CloseWindow(this);
-        }
-
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            e.Cancel = true;
-            Visibility = Visibility.Hidden;
         }
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)

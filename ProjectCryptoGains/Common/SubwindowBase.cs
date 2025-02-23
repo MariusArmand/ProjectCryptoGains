@@ -1,14 +1,25 @@
 ﻿using System.ComponentModel;
 using System.Windows;
-using System.Windows.Input;
 
 namespace ProjectCryptoGains.Common
 {
     public class SubwindowBase : Window
     {
+        protected UIElement? TitleBarElement { get; set; }
+
         public SubwindowBase()
         {
             Closing += Subwindow_Closing;
+            // Hook up after XAML is loaded
+            Loaded += SubwindowBase_Loaded;
+        }
+
+        private void SubwindowBase_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (TitleBarElement != null)
+            {
+                TitleBarElement.MouseLeftButtonDown += (s, args) => DragMove();
+            }
         }
 
         protected virtual void Minimize_Click(object sender, RoutedEventArgs e)

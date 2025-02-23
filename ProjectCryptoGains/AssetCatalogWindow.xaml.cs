@@ -6,8 +6,11 @@ using System.Data.Common;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.ReaderUtils;
+using static ProjectCryptoGains.Common.Utils.Utils;
+using static ProjectCryptoGains.Common.Utils.WindowUtils;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Common.Utility;
 
 namespace ProjectCryptoGains
 {
@@ -21,9 +24,7 @@ namespace ProjectCryptoGains
         public AssetCatalogWindow(MainWindow mainWindow)
         {
             InitializeComponent();
-
-            // Capture drag on titlebar
-            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
+            TitleBarElement = TitleBar;
 
             _mainWindow = mainWindow;
             Assets = [];

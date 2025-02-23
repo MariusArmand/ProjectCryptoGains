@@ -1,18 +1,19 @@
-﻿<Window x:Class="ProjectCryptoGains.BalancesWindow" 
+﻿<local:SubwindowBase
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ProjectCryptoGains.Common"
+        x:Class="ProjectCryptoGains.BalancesWindow"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
-        xmlns:ctzex="clr-namespace:ControlzEx.Behaviors;assembly=ControlzEx"       
+        xmlns:ctzex="clr-namespace:ControlzEx.Behaviors;assembly=ControlzEx"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"       
         Title="Balances"
         Width="600" 
         Height="768" 
         ResizeMode="NoResize"
-        WindowStyle="SingleBorderWindow"
-        Closing="Window_Closing" >
+        WindowStyle="SingleBorderWindow">
 
     <i:Interaction.Behaviors>
         <ctzex:WindowChromeBehavior ResizeBorderThickness="6" 
@@ -82,4 +83,4 @@
             </Grid>
         </Grid>
     </Border>
-</Window>
+</local:SubwindowBase>

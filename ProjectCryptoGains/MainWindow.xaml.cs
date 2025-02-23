@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows;
-using static ProjectCryptoGains.Common.Utility;
+using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.SettingUtils;
+using static ProjectCryptoGains.Common.Utils.Utils;
+using static ProjectCryptoGains.Common.Utils.WindowUtils;
 
 namespace ProjectCryptoGains
 {
@@ -146,6 +149,11 @@ namespace ProjectCryptoGains
         private void Close_Click(object sender, RoutedEventArgs e)
         {
             SystemCommands.CloseWindow(this);
+        }
+
+        public static void CloseWindow(Window window)
+        {
+            window.Close();
         }
 
         private void MenuSettings_Click(object sender, RoutedEventArgs e)

@@ -1,24 +1,24 @@
-﻿using System;
+﻿using ProjectCryptoGains.Common;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
-using static ProjectCryptoGains.Common.Utility;
+using static ProjectCryptoGains.Common.Utils.SettingUtils;
+using static ProjectCryptoGains.Common.Utils.Utils;
 
 namespace ProjectCryptoGains
 {
     /// <summary>
     /// Interaction logic for SettingsWindow.xaml
     /// </summary>
-    public partial class SettingsWindow : Window
+    public partial class SettingsWindow : SubwindowBase
     {
         private readonly MainWindow _mainWindow;
 
         public SettingsWindow(MainWindow mainWindow)
         {
             InitializeComponent();
-
-            // Capture drag on titlebar
-            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
+            TitleBarElement = TitleBar;
 
             _mainWindow = mainWindow;
 
@@ -26,16 +26,6 @@ namespace ProjectCryptoGains
             cmbFiatCurrency.ItemsSource = new List<string> { "EUR", "USD" };
 
             Bind();
-        }
-
-        private void Minimize_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.MinimizeWindow(this);
-        }
-
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.CloseWindow(this);
         }
 
         private void BlockUI()
@@ -112,12 +102,6 @@ namespace ProjectCryptoGains
             UnblockUI();
 
             Bind();
-        }
-
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            e.Cancel = true;
-            Visibility = Visibility.Hidden;
         }
     }
 }

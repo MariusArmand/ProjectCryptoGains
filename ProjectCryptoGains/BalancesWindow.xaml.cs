@@ -1,6 +1,7 @@
 ﻿using LiveCharts;
 using LiveCharts.Wpf;
 using Microsoft.Data.Sqlite;
+using ProjectCryptoGains.Common;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,16 +15,20 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.LedgersUtils;
+using static ProjectCryptoGains.Common.Utils.ReaderUtils;
+using static ProjectCryptoGains.Common.Utils.SettingUtils;
+using static ProjectCryptoGains.Common.Utils.Utils;
+using static ProjectCryptoGains.Common.Utils.WindowUtils;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Common.Utility;
-using ProjectCryptoGains.Common;
 
 namespace ProjectCryptoGains
 {
     /// <summary>
     /// Interaction logic for BalancesWindow.xaml
     /// </summary>
-    public partial class BalancesWindow : Window
+    public partial class BalancesWindow : SubwindowBase
     {
         private readonly MainWindow _mainWindow;
 
@@ -38,35 +43,18 @@ namespace ProjectCryptoGains
         public BalancesWindow(MainWindow mainWindow)
         {
             InitializeComponent();
+            TitleBarElement = TitleBar;
 
-            // Capture drag on titlebar
-            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
+            _mainWindow = mainWindow;
 
             txtUntilDate.Text = untilDate;
             lblTotalAmountFiat.Visibility = Visibility.Collapsed;
             lblTotalAmountFiatData.Visibility = Visibility.Collapsed;
-            _mainWindow = mainWindow;
 
             BindGrid();
         }
 
-        private void Minimize_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.MinimizeWindow(this);
-        }
-
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.CloseWindow(this);
-        }
-
         public SeriesCollection? SeriesCollection { get; set; }
-
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            e.Cancel = true;
-            Visibility = Visibility.Hidden;
-        }
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
         {

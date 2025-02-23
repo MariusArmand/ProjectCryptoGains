@@ -1,8 +1,10 @@
-﻿<Window x:Class="ProjectCryptoGains.KrakenLedgersWindow"
+﻿<local:SubwindowBase
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ProjectCryptoGains.Common"
+        x:Class="ProjectCryptoGains.KrakenLedgersWindow"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
         mc:Ignorable="d"
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:ctzex="clr-namespace:ControlzEx.Behaviors;assembly=ControlzEx"
@@ -10,8 +12,7 @@
         MinHeight="768"
         Width="1300"
         MinWidth="768" 
-        WindowStyle="SingleBorderWindow"
-        Closing="Window_Closing">
+        WindowStyle="SingleBorderWindow">
 
     <i:Interaction.Behaviors>
         <ctzex:WindowChromeBehavior ResizeBorderThickness="6" 
@@ -84,4 +85,4 @@
             </Grid>
         </Grid>
     </Border>
-</Window>
+</local:SubwindowBase>

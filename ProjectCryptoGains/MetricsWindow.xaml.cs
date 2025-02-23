@@ -1,13 +1,19 @@
 ﻿using Microsoft.Data.Sqlite;
+using ProjectCryptoGains.Common;
 using System;
 using System.Collections.ObjectModel;
 using System.Data.Common;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.LedgersUtils;
+using static ProjectCryptoGains.Common.Utils.ReaderUtils;
+using static ProjectCryptoGains.Common.Utils.SettingUtils;
+using static ProjectCryptoGains.Common.Utils.TradesUtils;
+using static ProjectCryptoGains.Common.Utils.Utils;
+using static ProjectCryptoGains.Common.Utils.WindowUtils;
 using static ProjectCryptoGains.Models;
-using static ProjectCryptoGains.Common.Utility;
-using ProjectCryptoGains.Common;
 
 namespace ProjectCryptoGains
 {
@@ -15,7 +21,7 @@ namespace ProjectCryptoGains
     /// Interaction logic for MetricsWindow.xaml
     /// </summary>
 
-    public partial class MetricsWindow : Window
+    public partial class MetricsWindow : SubwindowBase
     {
         private readonly MainWindow _mainWindow;
 
@@ -28,9 +34,7 @@ namespace ProjectCryptoGains
         public MetricsWindow(MainWindow mainWindow)
         {
             InitializeComponent();
-
-            // Capture drag on titlebar
-            TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
+            TitleBarElement = TitleBar;
 
             _mainWindow = mainWindow;
 
@@ -43,16 +47,6 @@ namespace ProjectCryptoGains
             BindGrid();
 
             connection?.Close();
-        }
-
-        private void Minimize_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.MinimizeWindow(this);
-        }
-
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
-            SystemCommands.CloseWindow(this);
         }
 
         private bool OpenDatabaseConnection()
@@ -70,12 +64,6 @@ namespace ProjectCryptoGains
                 Cursor = Cursors.Arrow;
                 return false;
             }
-        }
-
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            e.Cancel = true;
-            Visibility = Visibility.Hidden;
         }
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
