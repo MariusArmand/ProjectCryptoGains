@@ -48,9 +48,9 @@
             <Grid Grid.Row="1">
                 <Grid>
                     <Label x:Name="lblFromDate" Width="125" Margin="25,20,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="From" />
-                    <TextBox x:Name="txtFromDate" Width="125" Margin="75,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" GotFocus="TxtFromDate_GotFocus" KeyUp="TextBoxFromDate_KeyUp" LostFocus="TxtFromDate_LostFocus" Text="YYYY-MM-DD" />
+                    <TextBox x:Name="txtFromDate" Width="125" Margin="75,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" GotFocus="TxtFromDate_GotFocus" KeyUp="TxtFromDate_KeyUp" LostFocus="TxtFromDate_LostFocus" Text="YYYY-MM-DD" />
                     <Label x:Name="lblToDate" Width="125" Margin="25,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="To" />
-                    <TextBox x:Name="txtToDate" Width="125" Margin="75,60,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" GotFocus="TxtToDate_GotFocus" KeyUp="TextBoxToDate_KeyUp" LostFocus="TxtToDate_LostFocus" Text="YYYY-MM-DD" />
+                    <TextBox x:Name="txtToDate" Width="125" Margin="75,60,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" GotFocus="TxtToDate_GotFocus" KeyUp="TxtToDate_KeyUp" LostFocus="TxtToDate_LostFocus" Text="YYYY-MM-DD" />
                     <Button x:Name="btnRefresh" Width="125" Height="40" Margin="225,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonRefresh_Click" Content="Refresh" />
                     <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnPrint" Width="40" Height="40" Margin="375,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonPrint_Click">
                         <Image x:Name="imgBtnPrint" Width="32" Height="32" Source="Resources/printer.png" />

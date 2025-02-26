@@ -114,11 +114,11 @@ namespace ProjectCryptoGains
 
                     foreach (var krakenAsset in KrakenAssets)
                     {
-                        command.CommandText = "INSERT INTO TB_ASSET_CODES_KRAKEN_S (CODE, ASSET) VALUES (@Code, @Asset)";
+                        command.CommandText = "INSERT INTO TB_ASSET_CODES_KRAKEN_S (CODE, ASSET) VALUES (@CODE, @ASSET)";
                         command.Parameters.Clear();
 
-                        command.Parameters.AddWithValue("@Code", (object?)krakenAsset.Code ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@Asset", (object?)krakenAsset.Asset ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@CODE", (object?)krakenAsset.Code ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@ASSET", (object?)krakenAsset.Asset ?? DBNull.Value);
 
                         try
                         {
@@ -194,14 +194,13 @@ namespace ProjectCryptoGains
 
             DbCommand command = connection.CreateCommand();
             command.CommandText = @"SELECT 
-                                        ledgers_kraken.ASSET AS CODE, 
-                                        asset_codes.ASSET 
+                                        ledgers_kraken.ASSET AS CODE,
+                                        asset_codes.ASSET
                                     FROM 
                                         (SELECT DISTINCT ASSET FROM TB_LEDGERS_KRAKEN_S) ledgers_kraken
-                                    LEFT OUTER JOIN 
-                                        TB_ASSET_CODES_KRAKEN_S asset_codes
-                                    ON 
-                                        ledgers_kraken.ASSET = asset_codes.CODE";
+                                        LEFT OUTER JOIN TB_ASSET_CODES_KRAKEN_S asset_codes
+                                            ON ledgers_kraken.ASSET = asset_codes.CODE";
+
             DbDataReader reader = command.ExecuteReader();
 
             int dbLineNumber = 0;

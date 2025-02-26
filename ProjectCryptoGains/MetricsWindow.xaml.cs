@@ -327,22 +327,24 @@ namespace ProjectCryptoGains
                         // Total Invested
                         DbCommand commandInsert = connection.CreateCommand();
 
-                        commandInsert.CommandText = $@"INSERT INTO TB_METRICS_S
-                                                    SELECT 'TOTAL_INVESTED' AS METRIC,
-                                                    SUM(CAST(AMOUNT AS NUMERIC)) AS VALUE
-                                                    FROM TB_LEDGERS_S
-                                                    WHERE CURRENCY = '{fiatCurrency}'
-                                                    AND TYPE = 'DEPOSIT'";
+                        commandInsert.CommandText = $@"INSERT INTO TB_METRICS_S (METRIC, VALUE)
+                                                           SELECT 
+                                                               'TOTAL_INVESTED' AS METRIC,
+                                                               printf('%.2f', SUM(CAST(AMOUNT AS NUMERIC))) AS VALUE
+                                                           FROM TB_LEDGERS_S
+                                                           WHERE CURRENCY = '{fiatCurrency}'
+                                                               AND TYPE = 'DEPOSIT'";
 
                         commandInsert.ExecuteNonQuery();
 
                         // Last Invested
-                        commandInsert.CommandText = $@"INSERT INTO TB_METRICS_S
-													SELECT 'LAST_INVESTED' AS METRIC,
-													MAX(DATE) AS VALUE
-													FROM TB_LEDGERS_S
-                                                    WHERE CURRENCY = '{fiatCurrency}'
-                                                    AND TYPE = 'DEPOSIT'";
+                        commandInsert.CommandText = $@"INSERT INTO TB_METRICS_S (METRIC, VALUE)
+													       SELECT 
+                                                               'LAST_INVESTED' AS METRIC,
+													           MAX(DATE) AS VALUE
+													       FROM TB_LEDGERS_S
+                                                           WHERE CURRENCY = '{fiatCurrency}'
+                                                               AND TYPE = 'DEPOSIT'";
 
                         commandInsert.ExecuteNonQuery();
                     });
@@ -394,19 +396,22 @@ namespace ProjectCryptoGains
 
                             // Insert into standard DB table
                             using DbCommand command = connection.CreateCommand();
-                            command.CommandText = @"SELECT catalog.CODE, catalog.ASSET
+                            command.CommandText = @"SELECT 
+                                                        catalog.CODE,
+                                                        catalog.ASSET
                                                     FROM
-                                                    (SELECT CODE, ASSET FROM TB_ASSET_CATALOG_S) catalog
-                                                    INNER JOIN
-                                                    (SELECT DISTINCT CURRENCY FROM TB_LEDGERS_S) ledgers
-                                                    ON catalog.ASSET = ledgers.CURRENCY
+                                                        (SELECT CODE, ASSET FROM TB_ASSET_CATALOG_S) catalog
+                                                        INNER JOIN
+                                                            (SELECT DISTINCT CURRENCY FROM TB_LEDGERS_S) ledgers
+                                                            ON catalog.ASSET = ledgers.CURRENCY
                                                     ORDER BY CODE, ASSET";
+
                             using DbDataReader reader = command.ExecuteReader();
 
                             // For each asset, create rewards summary insert
 
                             // Rate limiting mechanism //
-                            DateTime lastCallTime = DateTime.MinValue;
+                            DateTime lastCallTime = DateTime.Now;
                             /////////////////////////////
                             while (reader.Read())
                             {
@@ -517,22 +522,31 @@ namespace ProjectCryptoGains
 
         private static string CreateAvgBuyPriceInsert(string currency)
         {
-            return $@"INSERT INTO TB_AVG_BUY_PRICE_S
-                      SELECT CURRENCY, AMOUNT_FIAT
-					  FROM(
-                          SELECT '{currency}' AS CURRENCY,
-                          SUM(AMOUNT * UNIT_PRICE_FIAT) / SUM(AMOUNT) AS AMOUNT_FIAT
+            return $@"INSERT INTO TB_AVG_BUY_PRICE_S (CURRENCY, AMOUNT_FIAT)
+                          SELECT 
+                              CURRENCY,
+                              printf('%.2f', AMOUNT_FIAT) AS AMOUNT_FIAT
                           FROM (
-	                          SELECT BASE_AMOUNT AS AMOUNT, BASE_UNIT_PRICE_FIAT AS UNIT_PRICE_FIAT
-	                          FROM TB_TRADES_S
-	                          WHERE TYPE = 'BUY'
-	                          AND BASE_CURRENCY = '{currency}'
-	                          UNION ALL
-	                          SELECT QUOTE_AMOUNT AS AMOUNT, QUOTE_UNIT_PRICE_FIAT AS UNIT_PRICE_FIAT
-	                          FROM TB_TRADES_S
-	                          WHERE TYPE = 'SELL'
-	                          AND QUOTE_CURRENCY = '{currency}'))
-					  WHERE AMOUNT_FIAT != ''";
+                              SELECT 
+                                  '{currency}' AS CURRENCY,
+                                  SUM(AMOUNT * UNIT_PRICE_FIAT) / SUM(AMOUNT) AS AMOUNT_FIAT
+                              FROM (
+                                  SELECT 
+                                      BASE_AMOUNT AS AMOUNT,
+                                      BASE_UNIT_PRICE_FIAT AS UNIT_PRICE_FIAT
+                                  FROM TB_TRADES_S
+                                  WHERE TYPE = 'BUY'
+                                      AND BASE_CURRENCY = '{currency}'
+                                  UNION ALL
+                                  SELECT 
+                                      QUOTE_AMOUNT AS AMOUNT,
+                                      QUOTE_UNIT_PRICE_FIAT AS UNIT_PRICE_FIAT
+                                  FROM TB_TRADES_S
+                                  WHERE TYPE = 'SELL'
+                                      AND QUOTE_CURRENCY = '{currency}'
+                              )
+                          )
+                          WHERE AMOUNT_FIAT != ''";
         }
 
         private static (string xInFiat, string sqlCommand, string conversionSource) CreateRewardsSummaryInsert(string currency, string currency_code, DateTime date, SqliteConnection connection)
@@ -544,16 +558,18 @@ namespace ProjectCryptoGains
                 string conversionSource = source;
 
                 string sqlCommand = $@"WITH cas AS (
-						                 SELECT printf('%.10f', SUM(CAST(AMOUNT AS NUMERIC)) - SUM(CAST(FEE AS NUMERIC))) AS REWARD_SUM
-						                 FROM TB_LEDGERS_S
-						                 WHERE TYPE IN ('EARN', 'STAKING', 'AIRDROP') AND CURRENCY IN ('{currency}')
-					                     )
-					                     INSERT INTO TB_REWARDS_SUMMARY_S
-					                     SELECT 
-						                     '{currency_code}' AS CURRENCY,
-						                     IFNULL(cas.REWARD_SUM, 0.00) AS AMOUNT,
-						                     IFNULL({xInFiat} * cas.REWARD_SUM, 0.00) AS AMOUNT_FIAT
-					                     FROM cas";
+                                           SELECT 
+                                               printf('%.10f', SUM(CAST(AMOUNT AS NUMERIC)) - SUM(CAST(FEE AS NUMERIC))) AS REWARD_SUM
+                                           FROM TB_LEDGERS_S
+                                           WHERE TYPE IN ('EARN', 'STAKING', 'AIRDROP')
+                                               AND CURRENCY IN ('{currency}')
+                                       )
+                                       INSERT INTO TB_REWARDS_SUMMARY_S (CURRENCY, AMOUNT, AMOUNT_FIAT)
+                                           SELECT 
+                                               '{currency_code}' AS CURRENCY,
+                                               IFNULL(cas.REWARD_SUM, 0.00) AS AMOUNT,
+                                               printf('%.2f', IFNULL({xInFiat} * cas.REWARD_SUM, 0.00)) AS AMOUNT_FIAT
+                                           FROM cas";
 
                 return (xInFiat, sqlCommand, conversionSource);
             }

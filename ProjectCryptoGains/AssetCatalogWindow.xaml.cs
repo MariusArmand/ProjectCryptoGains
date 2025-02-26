@@ -99,11 +99,11 @@ namespace ProjectCryptoGains
 
                     foreach (var asset in Assets)
                     {
-                        command.CommandText = "INSERT INTO TB_ASSET_CATALOG_S (Code, Asset) VALUES (@Code, @Asset)";
+                        command.CommandText = "INSERT INTO TB_ASSET_CATALOG_S (CODE, ASSET) VALUES (@CODE, @ASSET)";
                         command.Parameters.Clear();
 
-                        command.Parameters.AddWithValue("@Code", (object?)asset.Code ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@Asset", (object?)asset.Asset ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@CODE", (object?)asset.Code ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@ASSET", (object?)asset.Asset ?? DBNull.Value);
 
                         try
                         {

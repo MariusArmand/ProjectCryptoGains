@@ -33,7 +33,7 @@ namespace ProjectCryptoGains
 
         private int errors = 0;
         private string fromDate = "2009-01-03";
-        private string toDate = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        private string toDate = GetTodayAsIsoDate();
         private string baseCurrency = "";
 
         public GainsWindow(MainWindow mainWindow)
@@ -105,28 +105,28 @@ namespace ProjectCryptoGains
             DbCommand command = connection.CreateCommand();
 
             command.CommandText = $@"SELECT 
-                                        trades.REFID,
-                                        trades.DATE,
-                                        trades.TYPE,
-                                        trades.BASE_CURRENCY,
-                                        trades.BASE_AMOUNT,
-                                        trades.QUOTE_CURRENCY,
-                                        trades.QUOTE_AMOUNT,
-                                        trades.BASE_UNIT_PRICE_FIAT,
-                                        trades.COSTS_PROCEEDS,
-										CASE 
-											WHEN trades.TYPE = 'SELL' THEN NULL
-											ELSE gains.TX_BALANCE_REMAINING
-										END AS TX_BALANCE_REMAINING,
-										CASE 
-											WHEN trades.TYPE = 'BUY' THEN NULL
-											ELSE gains.GAIN
-										END AS GAIN                                        
-                                    FROM TB_GAINS_S gains
-                                    INNER JOIN TB_TRADES_S trades
-                                    ON gains.REFID = trades.REFID
-									WHERE trades.BASE_CURRENCY like '%{baseCurrency}%'
-									ORDER BY DATE ASC";
+                                         trades.REFID,
+                                         trades.DATE,
+                                         trades.TYPE,
+                                         trades.BASE_CURRENCY,
+                                         trades.BASE_AMOUNT,
+                                         trades.QUOTE_CURRENCY,
+                                         trades.QUOTE_AMOUNT,
+                                         trades.BASE_UNIT_PRICE_FIAT,
+                                         trades.COSTS_PROCEEDS,
+                                         CASE 
+                                             WHEN trades.TYPE = 'SELL' THEN NULL
+                                             ELSE gains.TX_BALANCE_REMAINING
+                                         END AS TX_BALANCE_REMAINING,
+                                         CASE 
+                                             WHEN trades.TYPE = 'BUY' THEN NULL
+                                             ELSE gains.GAIN
+                                         END AS GAIN
+                                     FROM TB_GAINS_S gains
+                                         INNER JOIN TB_TRADES_S trades
+                                             ON gains.REFID = trades.REFID
+                                     WHERE trades.BASE_CURRENCY LIKE '%{baseCurrency}%'
+                                     ORDER BY DATE ASC";
 
             DbDataReader reader = command.ExecuteReader();
 
@@ -158,16 +158,16 @@ namespace ProjectCryptoGains
             /////////////////////////////////
 
             command.CommandText = $@"SELECT 
-									 trades.BASE_CURRENCY AS CURRENCY, 
-									 printf('%.10f', SUM(CAST(gains.GAIN AS REAL))) AS GAIN
-									 FROM TB_GAINS_S gains
-                                     INNER JOIN TB_TRADES_S trades
-                                     ON gains.REFID = trades.REFID
-									 WHERE gains.GAIN != ''
-                                     AND trades.BASE_CURRENCY like '%{baseCurrency}%'
-                                     AND strftime('%s', trades.DATE) BETWEEN strftime('%s', '{fromDate}') AND strftime('%s', date('{toDate}', '+1 day'))
-									 GROUP BY trades.BASE_CURRENCY
-									 ORDER BY trades.BASE_CURRENCY";
+                                         trades.BASE_CURRENCY AS CURRENCY,
+                                         printf('%.10f', SUM(CAST(gains.GAIN AS REAL))) AS GAIN
+                                     FROM TB_GAINS_S gains
+                                         INNER JOIN TB_TRADES_S trades
+                                             ON gains.REFID = trades.REFID
+                                     WHERE gains.GAIN != ''
+                                         AND trades.BASE_CURRENCY LIKE '%{baseCurrency}%'
+                                         AND strftime('%s', trades.DATE) BETWEEN strftime('%s', '{fromDate}') AND strftime('%s', date('{toDate}', '+1 day'))
+                                     GROUP BY trades.BASE_CURRENCY
+                                     ORDER BY trades.BASE_CURRENCY";
 
             reader = command.ExecuteReader();
 
@@ -358,16 +358,17 @@ namespace ProjectCryptoGains
                 {
                     connection.Open();
                     using DbCommand command = connection.CreateCommand();
-                    command.CommandText = $@"SELECT REFID, 
-                                                DATE, 
-                                                BASE_AMOUNT AS AMOUNT,
-                                                BASE_UNIT_PRICE_FIAT AS UNIT_PRICE,
-                                                COSTS_PROCEEDS,
-                                                BASE_AMOUNT AS TX_BALANCE_REMAINING
-                                                FROM TB_TRADES_S
-                                                WHERE BASE_CURRENCY = '{asset}'
-                                                AND TYPE = '{tx_type}'
-                                                ORDER BY DATE {orderBy}";
+                    command.CommandText = $@"SELECT 
+                                                 REFID,
+                                                 DATE,
+                                                 BASE_AMOUNT AS AMOUNT,
+                                                 BASE_UNIT_PRICE_FIAT AS UNIT_PRICE,
+                                                 COSTS_PROCEEDS,
+                                                 BASE_AMOUNT AS TX_BALANCE_REMAINING
+                                             FROM TB_TRADES_S
+                                             WHERE BASE_CURRENCY = '{asset}'
+                                                 AND TYPE = '{tx_type}'
+                                             ORDER BY DATE {orderBy}";
 
                     using DbDataReader reader = command.ExecuteReader();
                     while (reader.Read())
@@ -415,7 +416,7 @@ namespace ProjectCryptoGains
                 var relevantBuyTransactions = buyTransactions.Where(btx =>
                 {
                     if (btx.Date == null || sellDate == null) return true; // Handle cases where date might be missing
-                    DateTime buyDate = DateTime.ParseExact(btx.Date, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                    DateTime buyDate = ConvertStringToIsoDateTime(btx.Date);
                     return buyDate <= sellDate.Value;
                 }).ToList();
 
@@ -470,7 +471,19 @@ namespace ProjectCryptoGains
             {
                 connection.Open();
                 using var commandInsert = connection.CreateCommand();
-                commandInsert.CommandText = "INSERT INTO TB_GAINS_S (REFID, TX_BALANCE_REMAINING, GAIN) VALUES (@REFID, @TX_BALANCE_REMAINING, @GAIN)";
+                commandInsert.CommandText = @"INSERT INTO TB_GAINS_S (
+                                                  REFID,
+                                                  TX_BALANCE_REMAINING,
+                                                  GAIN
+                                              ) VALUES (
+                                                  @REFID,
+                                                  printf('%.10f', @TX_BALANCE_REMAINING),
+                                                  CASE 
+                                                      WHEN @GAIN != '' 
+                                                      THEN printf('%.10f', @GAIN) 
+                                                      ELSE '' 
+                                                  END
+                                              )";
 
                 foreach (var tx in sellTransactions)
                 {
@@ -527,7 +540,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void TextBoxToDate_KeyUp(object sender, KeyboardEventArgs e)
+        private void TxtToDate_KeyUp(object sender, KeyboardEventArgs e)
         {
             SetToDate();
             txtToDate.Foreground = Brushes.White;
@@ -555,7 +568,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void TextBoxFromDate_KeyUp(object sender, KeyboardEventArgs e)
+        private void TxtFromDate_KeyUp(object sender, KeyboardEventArgs e)
         {
             SetFromDate();
             txtFromDate.Foreground = Brushes.White;

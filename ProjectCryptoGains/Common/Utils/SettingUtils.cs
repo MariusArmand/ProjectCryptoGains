@@ -32,17 +32,17 @@ namespace ProjectCryptoGains.Common.Utils
                 // First, delete any existing setting with the same name
                 using (var deleteCommand = connection.CreateCommand())
                 {
-                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @Name";
-                    deleteCommand.Parameters.AddWithValue("@Name", "COINDESKDATA_API_KEY");
+                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @NAME";
+                    deleteCommand.Parameters.AddWithValue("@NAME", "COINDESKDATA_API_KEY");
                     deleteCommand.ExecuteNonQuery();
                 }
 
                 // Then, insert the new setting
                 using (var insertCommand = connection.CreateCommand())
                 {
-                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (Name, Value) VALUES (@Name, @Value)";
-                    insertCommand.Parameters.AddWithValue("@Name", "COINDESKDATA_API_KEY");
-                    insertCommand.Parameters.AddWithValue("@Value", value);
+                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, VALUE) VALUES (@NAME, @VALUE)";
+                    insertCommand.Parameters.AddWithValue("@NAME", "COINDESKDATA_API_KEY");
+                    insertCommand.Parameters.AddWithValue("@VALUE", value);
                     insertCommand.ExecuteNonQuery();
                 }
                 connection.Close();
@@ -60,7 +60,8 @@ namespace ProjectCryptoGains.Common.Utils
                 using SqliteConnection connection = new(connectionString);
                 connection.Open();
                 DbCommand command = connection.CreateCommand();
-                command.CommandText = @"SELECT VALUE FROM TB_SETTINGS_S
+                command.CommandText = @"SELECT VALUE 
+                                        FROM TB_SETTINGS_S
 										WHERE NAME = 'COINDESKDATA_API_KEY'";
 
                 using (DbDataReader reader = command.ExecuteReader())
@@ -111,17 +112,17 @@ namespace ProjectCryptoGains.Common.Utils
                 // First, delete any existing setting with the same name
                 using (var deleteCommand = connection.CreateCommand())
                 {
-                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @Name";
-                    deleteCommand.Parameters.AddWithValue("@Name", "FIAT_CURRENCY");
+                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @NAME";
+                    deleteCommand.Parameters.AddWithValue("@NAME", "FIAT_CURRENCY");
                     deleteCommand.ExecuteNonQuery();
                 }
 
                 // Then, insert the new setting
                 using (var insertCommand = connection.CreateCommand())
                 {
-                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (Name, Value) VALUES (@Name, @Value)";
-                    insertCommand.Parameters.AddWithValue("@Name", "FIAT_CURRENCY");
-                    insertCommand.Parameters.AddWithValue("@Value", value);
+                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, VALUE) VALUES (@NAME, @VALUE)";
+                    insertCommand.Parameters.AddWithValue("@NAME", "FIAT_CURRENCY");
+                    insertCommand.Parameters.AddWithValue("@VALUE", value);
                     insertCommand.ExecuteNonQuery();
                 }
                 connection.Close();
@@ -140,7 +141,8 @@ namespace ProjectCryptoGains.Common.Utils
                 connection.Open();
 
                 DbCommand command = connection.CreateCommand();
-                command.CommandText = @"SELECT VALUE FROM TB_SETTINGS_S
+                command.CommandText = @"SELECT VALUE 
+                                        FROM TB_SETTINGS_S
 										WHERE NAME = 'FIAT_CURRENCY'";
 
                 using (DbDataReader reader = command.ExecuteReader())
@@ -196,17 +198,17 @@ namespace ProjectCryptoGains.Common.Utils
                 // First, delete any existing setting with the same name
                 using (var deleteCommand = connection.CreateCommand())
                 {
-                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @Name";
-                    deleteCommand.Parameters.AddWithValue("@Name", "REWARDS_TAX_PERCENTAGE");
+                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @NAME";
+                    deleteCommand.Parameters.AddWithValue("@NAME", "REWARDS_TAX_PERCENTAGE");
                     deleteCommand.ExecuteNonQuery();
                 }
 
                 // Then, insert the new setting
                 using (var insertCommand = connection.CreateCommand())
                 {
-                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (Name, Value) VALUES (@Name, @Value)";
-                    insertCommand.Parameters.AddWithValue("@Name", "REWARDS_TAX_PERCENTAGE");
-                    insertCommand.Parameters.AddWithValue("@Value", value);
+                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, VALUE) VALUES (@NAME, @VALUE)";
+                    insertCommand.Parameters.AddWithValue("@NAME", "REWARDS_TAX_PERCENTAGE");
+                    insertCommand.Parameters.AddWithValue("@VALUE", value);
                     insertCommand.ExecuteNonQuery();
                 }
                 connection.Close();
@@ -225,7 +227,8 @@ namespace ProjectCryptoGains.Common.Utils
                 connection.Open();
 
                 DbCommand command = connection.CreateCommand();
-                command.CommandText = @"SELECT VALUE FROM TB_SETTINGS_S
+                command.CommandText = @"SELECT VALUE 
+                                        FROM TB_SETTINGS_S
 										WHERE NAME = 'REWARDS_TAX_PERCENTAGE'";
 
                 using (DbDataReader reader = command.ExecuteReader())

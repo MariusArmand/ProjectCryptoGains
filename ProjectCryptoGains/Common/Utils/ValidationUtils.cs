@@ -13,12 +13,11 @@ namespace ProjectCryptoGains.Common.Utils
             List<string> missingAssets = [];
 
             DbCommand command = connection.CreateCommand();
-            command.CommandText = @"SELECT DISTINCT(ledgers_kraken.ASSET) AS ASSET 
+            command.CommandText = @"SELECT DISTINCT(ledgers_kraken.ASSET) AS ASSET
                                     FROM TB_LEDGERS_KRAKEN_S ledgers_kraken
-								    LEFT OUTER JOIN
-								    TB_ASSET_CODES_KRAKEN_S assets_kraken
-								    ON ledgers_kraken.ASSET = assets_kraken.CODE
-								    WHERE assets_kraken.ASSET IS NULL";
+                                        LEFT OUTER JOIN TB_ASSET_CODES_KRAKEN_S assets_kraken
+                                            ON ledgers_kraken.ASSET = assets_kraken.CODE
+                                    WHERE assets_kraken.ASSET IS NULL";
 
             using (DbDataReader reader = command.ExecuteReader())
             {
@@ -39,11 +38,10 @@ namespace ProjectCryptoGains.Common.Utils
             List<string> malfconfiguredAsset = [];
 
             DbCommand command = connection.CreateCommand();
-            command.CommandText = @"SELECT assets_kraken.CODE FROM
-									TB_ASSET_CODES_KRAKEN_S assets_kraken
-									LEFT OUTER JOIN
-									TB_ASSET_CATALOG_S catalog
-									ON assets_kraken.ASSET = catalog.ASSET
+            command.CommandText = @"SELECT assets_kraken.CODE 
+                                    FROM TB_ASSET_CODES_KRAKEN_S assets_kraken
+									    LEFT OUTER JOIN TB_ASSET_CATALOG_S catalog
+									        ON assets_kraken.ASSET = catalog.ASSET
 									WHERE catalog.CODE IS NULL";
 
             using (DbDataReader reader = command.ExecuteReader())
@@ -67,8 +65,8 @@ namespace ProjectCryptoGains.Common.Utils
             DbCommand command = connection.CreateCommand();
             command.CommandText = @"SELECT ledgers_manual.ASSET 
                                     FROM TB_LEDGERS_MANUAL_S ledgers_manual
-                                    LEFT OUTER JOIN TB_ASSET_CATALOG_S catalog
-                                    ON ledgers_manual.ASSET = catalog.ASSET
+                                        LEFT OUTER JOIN TB_ASSET_CATALOG_S catalog
+                                            ON ledgers_manual.ASSET = catalog.ASSET
                                     WHERE catalog.CODE IS NULL";
 
             using (DbDataReader reader = command.ExecuteReader())
@@ -96,7 +94,7 @@ namespace ProjectCryptoGains.Common.Utils
                 case LedgerSource.Kraken:
                     command.CommandText = @"SELECT REFID, TYPE
                                             FROM TB_LEDGERS_KRAKEN_S
-                                            WHERE UPPER(TYPE) NOT IN ('DEPOSIT', 'WITHDRAWAL', 'TRADE', 'STAKING', 'EARN', 'TRANSFER')";
+                                            WHERE UPPER(TYPE) NOT IN ('DEPOSIT', 'WITHDRAWAL', 'TRADE', 'SPEND', 'RECEIVE', 'STAKING', 'EARN', 'TRANSFER')";
                     break;
 
                 case LedgerSource.Manual:

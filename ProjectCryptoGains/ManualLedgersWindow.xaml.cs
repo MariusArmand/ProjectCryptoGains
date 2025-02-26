@@ -234,7 +234,29 @@ namespace ProjectCryptoGains
                 {
                     DbCommand commandInsert = connection.CreateCommand();
 
-                    commandInsert.CommandText = "INSERT INTO TB_LEDGERS_MANUAL_S (REFID, DATE, TYPE, EXCHANGE, ASSET, AMOUNT, FEE, SOURCE, TARGET, NOTES) VALUES (@REFID, @DATE, @TYPE, @EXCHANGE, @ASSET, @AMOUNT, @FEE, @SOURCE, @TARGET, @NOTES)";
+                    commandInsert.CommandText = @"INSERT INTO TB_LEDGERS_MANUAL_S (
+                                                      REFID,
+                                                      DATE,
+                                                      TYPE,
+                                                      EXCHANGE,
+                                                      ASSET,
+                                                      AMOUNT,
+                                                      FEE,
+                                                      SOURCE,
+                                                      TARGET,
+                                                      NOTES
+                                                  ) VALUES (
+                                                      @REFID,
+                                                      @DATE,
+                                                      @TYPE,
+                                                      @EXCHANGE,
+                                                      @ASSET,
+                                                      printf('%.10f', @AMOUNT),
+                                                      printf('%.10f', @FEE),
+                                                      @SOURCE,
+                                                      @TARGET,
+                                                      @NOTES
+                                                  )";
                     commandInsert.Prepare();
 
                     string value = "";

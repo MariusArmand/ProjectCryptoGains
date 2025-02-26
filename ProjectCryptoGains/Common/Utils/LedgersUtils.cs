@@ -128,61 +128,65 @@ namespace ProjectCryptoGains.Common.Utils
                 // Insert into db table
                 DbCommand commandInsert = connection.CreateCommand();
 
-                commandInsert.CommandText = $@"INSERT INTO TB_LEDGERS_S
-                                                SELECT REFID AS REFID,
-                                                DATETIME(TIME) AS DATE,
-                                                UPPER(TYPE) AS TYPE,
-                                                'Kraken' AS EXCHANGE,
-                                                printf('%.10f',AMOUNT) AS AMOUNT,
-                                                assets_kraken.ASSET CURRENCY,
-                                                printf('%.10f',FEE) AS FEE,
-                                                CASE
-                                                WHEN TYPE = 'staking' THEN 'Kraken'
-                                                WHEN TYPE = 'earn' THEN 'Kraken'
-                                                WHEN TYPE = 'trade' THEN ''
-                                                WHEN TYPE = 'deposit' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'BANK'
-                                                WHEN TYPE = 'deposit' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
-                                                WHEN TYPE = 'withdrawal' THEN 'Kraken'
-                                                ELSE ''
-                                                END AS SOURCE,
-                                                CASE
-                                                WHEN TYPE = 'staking' THEN 'Kraken'
-                                                WHEN TYPE = 'earn' THEN 'Kraken'
-                                                WHEN TYPE = 'trade' THEN ''
-                                                WHEN TYPE = 'deposit' THEN 'Kraken'
-                                                WHEN TYPE = 'withdrawal' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
-                                                WHEN TYPE = 'withdrawal' AND assets_kraken.ASSET = '{fiatCurrency}'THEN 'BANK'
-                                                ELSE ''
-                                                END AS TARGET,
-                                                CASE
-                                                WHEN TYPE = 'staking' THEN assets_kraken.ASSET || ' staking reward'
-                                                WHEN TYPE = 'earn' AND SUBTYPE = 'reward' THEN assets_kraken.ASSET || ' staking reward'
-                                                WHEN TYPE = 'earn' AND SUBTYPE = 'allocation' THEN 'Allocation ' || WALLET
-                                                WHEN TYPE = 'earn' AND SUBTYPE = 'deallocation' THEN 'Deallocation ' || WALLET
-                                                WHEN TYPE = 'earn' AND SUBTYPE = 'migration' THEN 'Migration ' || WALLET
-                                                WHEN TYPE = 'deposit' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'From Bank to Kraken'
-                                                WHEN TYPE = 'deposit' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From wallet to Kraken'
-                                                WHEN TYPE = 'withdrawal' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From Kraken to wallet'
-                                                ELSE ''
-                                                END AS NOTES
-                                                FROM TB_LEDGERS_KRAKEN_S ledgers_kraken
-                                                INNER JOIN TB_ASSET_CODES_KRAKEN_S assets_kraken
-                                                ON ledgers_kraken.ASSET = assets_kraken.CODE
-                                                WHERE REFID != ''
-                                                AND NOT (UPPER(TYPE) = 'TRANSFER' AND UPPER(SUBTYPE) IN ('STAKINGFROMSPOT', 'SPOTTOSTAKING', 'SPOTFROMSTAKING', 'STAKINGTOSPOT', 'SPOTFROMFUTURES'))
-                                                AND NOT (UPPER(TYPE) = 'EARN' AND UPPER(SUBTYPE) IN ('MIGRATION', 'ALLOCATION', 'DEALLOCATION'))
-                                                UNION ALL
-                                                SELECT REFID AS REFID,
-                                                DATETIME(DATE) AS DATE,
-                                                UPPER(TYPE),
-                                                EXCHANGE,
-                                                printf('%.10f',AMOUNT) AS AMOUNT,
-                                                ASSET,
-                                                printf('%.10f',FEE) AS FEE,
-                                                SOURCE,
-                                                TARGET,
-                                                NOTES
-                                                FROM TB_LEDGERS_MANUAL_S";
+                commandInsert.CommandText = $@"INSERT INTO TB_LEDGERS_S (REFID, DATE, TYPE_SOURCE, TYPE, EXCHANGE, AMOUNT, CURRENCY, FEE, SOURCE, TARGET, NOTES)
+                                                   SELECT 
+                                                       REFID AS REFID,
+                                                       DATETIME(TIME) AS DATE,
+                                                       UPPER(TYPE) AS TYPE_SOURCE,
+                                                       CASE
+                                                           WHEN UPPER(TYPE) = 'SPEND' THEN 'TRADE'
+                                                           WHEN UPPER(TYPE) = 'RECEIVE' THEN 'TRADE'
+                                                           WHEN UPPER(TYPE) = 'EARN' THEN 'STAKING'
+                                                           ELSE UPPER(TYPE)
+                                                       END AS TYPE,
+                                                       'Kraken' AS EXCHANGE,
+                                                       printf('%.10f', AMOUNT) AS AMOUNT,
+                                                       assets_kraken.ASSET AS CURRENCY,
+                                                       printf('%.10f', FEE) AS FEE,
+                                                       CASE
+                                                           WHEN UPPER(TYPE) IN ('STAKING', 'EARN') THEN 'Kraken'
+                                                           WHEN UPPER(TYPE) = 'TRADE' THEN ''
+                                                           WHEN UPPER(TYPE) = 'DEPOSIT' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'BANK'
+                                                           WHEN UPPER(TYPE) = 'DEPOSIT' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
+                                                           WHEN UPPER(TYPE) = 'WITHDRAWAL' THEN 'Kraken'
+                                                           ELSE ''
+                                                       END AS SOURCE,
+                                                       CASE
+                                                           WHEN UPPER(TYPE) IN ('STAKING', 'EARN') THEN 'Kraken'
+                                                           WHEN UPPER(TYPE) = 'TRADE' THEN ''
+                                                           WHEN UPPER(TYPE) = 'DEPOSIT' THEN 'Kraken'
+                                                           WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
+                                                           WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'BANK'
+                                                           ELSE ''
+                                                       END AS TARGET,
+                                                       CASE
+                                                           WHEN UPPER(TYPE) IN ('STAKING', 'EARN') THEN assets_kraken.ASSET || ' staking reward'
+                                                           WHEN UPPER(TYPE) = 'DEPOSIT' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'From Bank to Kraken'
+                                                           WHEN UPPER(TYPE) = 'DEPOSIT' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From wallet to Kraken'
+                                                           WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From Kraken to wallet'
+                                                           WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'From Kraken to Bank'
+                                                           ELSE ''
+                                                       END AS NOTES
+                                                   FROM TB_LEDGERS_KRAKEN_S ledgers_kraken
+                                                   INNER JOIN TB_ASSET_CODES_KRAKEN_S assets_kraken
+                                                       ON ledgers_kraken.ASSET = assets_kraken.CODE
+                                                   WHERE REFID != ''
+                                                       AND NOT (UPPER(TYPE) = 'TRANSFER' AND UPPER(SUBTYPE) IN ('STAKINGFROMSPOT', 'SPOTTOSTAKING', 'SPOTFROMSTAKING', 'STAKINGTOSPOT', 'SPOTFROMFUTURES'))
+                                                       AND NOT (UPPER(TYPE) = 'EARN' AND UPPER(SUBTYPE) IN ('MIGRATION', 'ALLOCATION', 'DEALLOCATION'))
+                                                   UNION ALL
+                                                   SELECT 
+                                                       REFID AS REFID,
+                                                       DATETIME(DATE) AS DATE,
+                                                       UPPER(TYPE) AS TYPE_SOURCE,
+                                                       UPPER(TYPE) AS TYPE,
+                                                       EXCHANGE,
+                                                       printf('%.10f', AMOUNT) AS AMOUNT,
+                                                       ASSET AS CURRENCY,
+                                                       printf('%.10f', FEE) AS FEE,
+                                                       SOURCE,
+                                                       TARGET,
+                                                       NOTES
+                                                   FROM TB_LEDGERS_MANUAL_S";
 
                 commandInsert.ExecuteNonQuery();
 

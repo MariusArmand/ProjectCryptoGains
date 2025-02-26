@@ -220,7 +220,31 @@ namespace ProjectCryptoGains
                 {
                     DbCommand commandInsert = connection.CreateCommand();
 
-                    commandInsert.CommandText = "INSERT INTO TB_LEDGERS_KRAKEN_S (TXID, REFID, TIME, TYPE, SUBTYPE, ACLASS, ASSET, WALLET, AMOUNT, FEE, BALANCE) VALUES (@TXID, @REFID, @TIME, @TYPE, @SUBTYPE, @ACLASS, @ASSET, @WALLET, @AMOUNT, @FEE, @BALANCE)";
+                    commandInsert.CommandText = @"INSERT INTO TB_LEDGERS_KRAKEN_S (
+                                                      TXID,
+                                                      REFID,
+                                                      TIME,
+                                                      TYPE,
+                                                      SUBTYPE,
+                                                      ACLASS,
+                                                      ASSET,
+                                                      WALLET,
+                                                      AMOUNT,
+                                                      FEE,
+                                                      BALANCE
+                                                  ) VALUES (
+                                                      @TXID,
+                                                      @REFID,
+                                                      @TIME,
+                                                      @TYPE,
+                                                      @SUBTYPE,
+                                                      @ACLASS,
+                                                      @ASSET,
+                                                      @WALLET,
+                                                      printf('%.10f', @AMOUNT),
+                                                      printf('%.10f', @FEE),
+                                                      printf('%.10f', @BALANCE)
+                                                  )";
                     commandInsert.Prepare();
 
                     for (int i = 0; i < dataTable.Columns.Count; i++)

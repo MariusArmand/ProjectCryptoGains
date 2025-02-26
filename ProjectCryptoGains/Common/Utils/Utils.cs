@@ -12,6 +12,15 @@ namespace ProjectCryptoGains.Common.Utils
 {
     public static class Utils
     {
+        public static string AssemblyVersion
+        {
+            get
+            {
+                System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                return $"v{assembly?.GetName()?.Version?.ToString()}" ?? "Unknown Version";
+            }
+        }
+
         // Enums //
         public enum LedgerSource
         {
@@ -68,12 +77,12 @@ namespace ProjectCryptoGains.Common.Utils
                 string formattedDate = date.ToString("yyyy-MM-dd HH:mm:ss");
                 ///////////////////////////
                 DbCommand command = connection.CreateCommand();
-                command.CommandText = $@"SELECT EXCHANGE_RATE FROM
-									     TB_CONVERT_X_TO_FIAT_A
+                command.CommandText = $@"SELECT EXCHANGE_RATE
+                                         FROM TB_CONVERT_X_TO_FIAT_A
                                          WHERE CURRENCY = '{xCurrency}'
-                                         AND AMOUNT = '{xAmount}'
-                                         AND DATE = '{formattedDate}'
-                                         AND FIAT_CURRENCY = '{fiatCurrency}'";
+                                            AND AMOUNT = '{xAmount}'
+                                            AND DATE = '{formattedDate}'
+                                            AND FIAT_CURRENCY = '{fiatCurrency}'";
 
                 using (DbDataReader reader = command.ExecuteReader())
                 {
@@ -126,14 +135,26 @@ namespace ProjectCryptoGains.Common.Utils
                 {
                     using var commandInsert = connection.CreateCommand();
 
-                    commandInsert.CommandText = @"INSERT INTO TB_CONVERT_X_TO_FIAT_A (CURRENCY, AMOUNT, DATE, FIAT_CURRENCY, EXCHANGE_RATE)
-                                              VALUES (@Currency, @Amount, @Date, @Fiat_currency, @Exchange_rate)";
+                    commandInsert.CommandText = @"INSERT INTO TB_CONVERT_X_TO_FIAT_A (
+                                                      CURRENCY, 
+                                                      AMOUNT, 
+                                                      DATE, 
+                                                      FIAT_CURRENCY, 
+                                                      EXCHANGE_RATE
+                                                  )
+                                                  VALUES (
+                                                      @CURRENCY, 
+                                                      @AMOUNT, 
+                                                      @DATE, 
+                                                      @FIAT_CURRENCY, 
+                                                      printf('%.10f', @EXCHANGE_RATE)
+                                                  )";
 
-                    commandInsert.Parameters.AddWithValue("@Currency", xCurrency);
-                    commandInsert.Parameters.AddWithValue("@Amount", xAmount.ToString());
-                    commandInsert.Parameters.AddWithValue("@Date", formattedDate);
-                    commandInsert.Parameters.AddWithValue("@Fiat_currency", fiatCurrency);
-                    commandInsert.Parameters.AddWithValue("@Exchange_rate", exchangeRateApi);
+                    commandInsert.Parameters.AddWithValue("@CURRENCY", xCurrency);
+                    commandInsert.Parameters.AddWithValue("@AMOUNT", xAmount.ToString());
+                    commandInsert.Parameters.AddWithValue("@DATE", formattedDate);
+                    commandInsert.Parameters.AddWithValue("@FIAT_CURRENCY", fiatCurrency);
+                    commandInsert.Parameters.AddWithValue("@EXCHANGE_RATE", exchangeRateApi);
 
                     commandInsert.ExecuteNonQuery();
                 }
@@ -181,6 +202,21 @@ namespace ProjectCryptoGains.Common.Utils
         {
             // Try to parse the date using the specified format
             return DateTime.TryParseExact(date, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
+        }
+
+        public static string GetTodayAsIsoDate()
+        {
+            return DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        }
+
+        public static DateTime ConvertStringToIsoDate(string date)
+        {
+            return DateTime.ParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        }
+
+        public static DateTime ConvertStringToIsoDateTime(string datetime)
+        {
+            return DateTime.ParseExact(datetime, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         }
     }
 }

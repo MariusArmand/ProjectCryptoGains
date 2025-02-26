@@ -9,6 +9,8 @@ namespace ProjectCryptoGains.Common
 
         public SubwindowBase()
         {
+            Opacity = 0; // Start invisible to prevent white window flash
+
             Closing += Subwindow_Closing;
             // Hook up after XAML is loaded
             Loaded += SubwindowBase_Loaded;
@@ -16,6 +18,8 @@ namespace ProjectCryptoGains.Common
 
         private void SubwindowBase_Loaded(object sender, RoutedEventArgs e)
         {
+            Opacity = 1;
+
             if (TitleBarElement != null)
             {
                 TitleBarElement.MouseLeftButtonDown += (s, args) => DragMove();

@@ -3,7 +3,6 @@ using ProjectCryptoGains.Common;
 using System;
 using System.Collections.ObjectModel;
 using System.Data.Common;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -31,7 +30,7 @@ namespace ProjectCryptoGains
         private readonly MainWindow _mainWindow;
 
         private string fromDate = "2009-01-03";
-        private string toDate = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        private string toDate = GetTodayAsIsoDate();
 
         public TradesWindow(MainWindow mainWindow)
         {
@@ -102,29 +101,29 @@ namespace ProjectCryptoGains
             DbCommand command = connection.CreateCommand();
 
             command.CommandText = $@"SELECT 
-                                        REFID,
-                                        DATE,
-                                        TYPE,
-                                        EXCHANGE,
-                                        BASE_CURRENCY,
-                                        BASE_AMOUNT,
-                                        BASE_FEE,
-                                        BASE_FEE_FIAT,
-                                        QUOTE_CURRENCY,
-                                        QUOTE_AMOUNT,
-                                        QUOTE_AMOUNT_FIAT,
-                                        QUOTE_FEE,
-                                        QUOTE_FEE_FIAT,
-                                        BASE_UNIT_PRICE,
-                                        BASE_UNIT_PRICE_FIAT,
-                                        QUOTE_UNIT_PRICE,
-                                        QUOTE_UNIT_PRICE_FIAT,
-                                        TOTAL_FEE_FIAT,
-                                        COSTS_PROCEEDS
-                                    FROM TB_TRADES_S
-									WHERE strftime('%s', DATE) BETWEEN strftime('%s', '{fromDate}')
-									  AND strftime('%s', date('{toDate}', '+1 day'))
-									ORDER BY DATE ASC";
+                                         REFID,
+                                         DATE,
+                                         TYPE,
+                                         EXCHANGE,
+                                         BASE_CURRENCY,
+                                         BASE_AMOUNT,
+                                         BASE_FEE,
+                                         BASE_FEE_FIAT,
+                                         QUOTE_CURRENCY,
+                                         QUOTE_AMOUNT,
+                                         QUOTE_AMOUNT_FIAT,
+                                         QUOTE_FEE,
+                                         QUOTE_FEE_FIAT,
+                                         BASE_UNIT_PRICE,
+                                         BASE_UNIT_PRICE_FIAT,
+                                         QUOTE_UNIT_PRICE,
+                                         QUOTE_UNIT_PRICE_FIAT,
+                                         TOTAL_FEE_FIAT,
+                                         COSTS_PROCEEDS
+                                     FROM TB_TRADES_S
+                                     WHERE strftime('%s', DATE) BETWEEN strftime('%s', '{fromDate}')
+                                         AND strftime('%s', date('{toDate}', '+1 day'))
+                                     ORDER BY DATE ASC";
 
             DbDataReader reader = command.ExecuteReader();
 
@@ -285,7 +284,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void TextBoxToDate_KeyUp(object sender, KeyboardEventArgs e)
+        private void TxtToDate_KeyUp(object sender, KeyboardEventArgs e)
         {
             SetToDate();
             txtToDate.Foreground = Brushes.White;
@@ -313,7 +312,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void TextBoxFromDate_KeyUp(object sender, KeyboardEventArgs e)
+        private void TxtFromDate_KeyUp(object sender, KeyboardEventArgs e)
         {
             SetFromDate();
             txtFromDate.Foreground = Brushes.White;

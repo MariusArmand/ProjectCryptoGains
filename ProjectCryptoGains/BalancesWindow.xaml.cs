@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data.Common;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -32,7 +31,7 @@ namespace ProjectCryptoGains
     {
         private readonly MainWindow _mainWindow;
 
-        private string untilDate = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        private string untilDate = GetTodayAsIsoDate();
 
         private SqliteConnection? connection;
 
@@ -79,6 +78,13 @@ namespace ProjectCryptoGains
             imgBtnPrint.Source = new BitmapImage(new Uri(@"Resources/printer.png", UriKind.Relative));
 
             Cursor = Cursors.Arrow;
+        }
+
+        private void ToggleDataUIVisibility(Visibility visibility)
+        {
+            pcBalances.Visibility = visibility;
+            lblTotalAmountFiat.Visibility = visibility;
+            lblTotalAmountFiatData.Visibility = visibility;
         }
 
         private void ButtonRefresh_Click(object sender, RoutedEventArgs e)
@@ -159,15 +165,11 @@ namespace ProjectCryptoGains
                     lblTotalAmountFiatData.Content = tot_amnt_fiat + " " + fiatCurrency;
 
                     RefreshPie([.. currencies], [.. amounts_fiat]); // Spreads collection items into new arrays for method argument
-                    pcBalances.Visibility = Visibility.Visible;
-                    lblTotalAmountFiat.Visibility = Visibility.Visible;
-                    lblTotalAmountFiatData.Visibility = Visibility.Visible;
+                    ToggleDataUIVisibility(Visibility.Visible);
                 }
                 else
                 {
-                    pcBalances.Visibility = Visibility.Hidden;
-                    lblTotalAmountFiat.Visibility = Visibility.Hidden;
-                    lblTotalAmountFiatData.Visibility = Visibility.Hidden;
+                    ToggleDataUIVisibility(Visibility.Hidden);
                 }
             }
             catch (Exception ex)
@@ -186,9 +188,7 @@ namespace ProjectCryptoGains
         private void UnbindGrid()
         {
             dgBalances.ItemsSource = null;
-            pcBalances.Visibility = Visibility.Hidden;
-            lblTotalAmountFiat.Visibility = Visibility.Hidden;
-            lblTotalAmountFiatData.Visibility = Visibility.Hidden;
+            ToggleDataUIVisibility(Visibility.Hidden);
         }
 
         private void RefreshPie(string[] currencies, decimal[] amounts_fiat)
@@ -289,19 +289,25 @@ namespace ProjectCryptoGains
 
                         // Insert into db table
                         using DbCommand command = connection.CreateCommand();
-                        command.CommandText = @"SELECT catalog.CODE, catalog.ASSET
+                        command.CommandText = @"SELECT 
+                                                    catalog.CODE, 
+                                                    catalog.ASSET
                                                 FROM
-                                                (SELECT CODE, ASSET FROM TB_ASSET_CATALOG_S) catalog
-                                                INNER JOIN
-                                                (SELECT DISTINCT CURRENCY FROM TB_LEDGERS_S) ledgers
-                                                ON catalog.ASSET = ledgers.CURRENCY
-                                                ORDER BY CODE, ASSET";
+                                                    (SELECT CODE, ASSET 
+                                                     FROM TB_ASSET_CATALOG_S) catalog
+                                                    INNER JOIN
+                                                    (SELECT DISTINCT CURRENCY 
+                                                     FROM TB_LEDGERS_S) ledgers
+                                                    ON catalog.ASSET = ledgers.CURRENCY
+                                                ORDER BY 
+                                                    CODE, 
+                                                    ASSET";
                         using DbDataReader reader = command.ExecuteReader();
 
                         // For each asset, create balance insert
 
                         // Rate limiting mechanism //
-                        DateTime lastCallTime = DateTime.MinValue;
+                        DateTime lastCallTime = DateTime.Now;
                         /////////////////////////////
                         while (reader.Read())
                         {
@@ -543,33 +549,38 @@ namespace ProjectCryptoGains
 
                 if (convertToFiat == true)
                 {
-                    var (fiatAmount, source) = ConvertXToFiat(currency_code, 1m, DateTime.ParseExact(untilDate, "yyyy-MM-dd", CultureInfo.InvariantCulture), connection);
+                    var (fiatAmount, source) = ConvertXToFiat(currency_code, 1m, ConvertStringToIsoDate(untilDate), connection);
                     xInFiat = fiatAmount;
                     conversionSource = source;
                 }
 
-                string sqlCommand = $@"INSERT INTO TB_BALANCES_S
-						                  SELECT CURRENCY, AMOUNT, AMOUNT_FIAT 
-						                  FROM
-						                  (
-						                  SELECT 
-							                  '{currency}' AS CURRENCY, 
-							                  printf(' %.10f', SUM(AMNT)) AS AMOUNT,
-							                  ROUND({xInFiat} * SUM(AMNT), 2) AS AMOUNT_FIAT 
-						                  FROM (
-							                    SELECT SUM(AMOUNT) AS AMNT 
-							                    FROM TB_LEDGERS_S
-							                    WHERE CURRENCY = '{currency}'
-				                                AND TYPE NOT IN ('WITHDRAWAL', 'DEPOSIT')
-							                    AND strftime('%s', DATE) < strftime('%s', date('{untilDate}', '+1 day'))
-							                    UNION ALL
-							                    SELECT -SUM(FEE) AS AMNT 
-							                    FROM TB_LEDGERS_S
-							                    WHERE CURRENCY = '{currency}'
-							                    AND strftime('%s', DATE) < strftime('%s', date('{untilDate}', '+1 day'))
-							                   )
-						                  )
-						                  WHERE CAST(AMOUNT AS REAL) > 0";
+                string sqlCommand = $@"INSERT INTO TB_BALANCES_S (CURRENCY, AMOUNT, AMOUNT_FIAT)
+                                           SELECT 
+                                               CURRENCY, 
+                                               AMOUNT, 
+                                               AMOUNT_FIAT 
+                                           FROM
+                                               (
+                                                   SELECT 
+                                                       '{currency}' AS CURRENCY,
+                                                       printf('%.10f', SUM(AMNT)) AS AMOUNT,
+                                                       printf('%.2f', {xInFiat} * SUM(AMNT)) AS AMOUNT_FIAT
+                                                   FROM (
+                                                       SELECT 
+                                                           SUM(AMOUNT) AS AMNT
+                                                       FROM TB_LEDGERS_S
+                                                       WHERE CURRENCY = '{currency}'
+                                                           AND TYPE NOT IN ('WITHDRAWAL', 'DEPOSIT')
+                                                           AND strftime('%s', DATE) < strftime('%s', date('{untilDate}', '+1 day'))
+                                                       UNION ALL
+                                                       SELECT 
+                                                           -SUM(FEE) AS AMNT
+                                                       FROM TB_LEDGERS_S
+                                                       WHERE CURRENCY = '{currency}'
+                                                           AND strftime('%s', DATE) < strftime('%s', date('{untilDate}', '+1 day'))
+                                                   )
+                                               )
+                                           WHERE CAST(AMOUNT AS REAL) > 0";
 
                 return (xInFiat, sqlCommand, conversionSource);
             }
@@ -581,22 +592,24 @@ namespace ProjectCryptoGains
 
         private static string CreateFiatBalancesInsert(string fiat_code, string untilDate)
         {
-            string query = $@"INSERT INTO TB_BALANCES_S
-							  SELECT 
-					              '{fiat_code}' AS CURRENCY, 
-								  printf('%.10f', SUM(AMNT)) AS AMOUNT,
-								  ROUND(SUM(AMNT), 2) AS AMOUNT_FIAT 
-							  FROM (
-								    SELECT SUM(AMOUNT) AS AMNT 
-								    FROM TB_LEDGERS_S
-								    WHERE CURRENCY = '{fiat_code}'
-					                AND strftime('%s', DATE) <= strftime('%s', date('{untilDate}', '+1 day'))
-								    UNION ALL
-								    SELECT -SUM(FEE) AS AMNT 
-								    FROM TB_LEDGERS_S
-								    WHERE CURRENCY = '{fiat_code}'
-									AND strftime('%s', DATE) <= strftime('%s', date('{untilDate}', '+1 day'))
-								   )";
+            string query = $@"INSERT INTO TB_BALANCES_S (CURRENCY, AMOUNT, AMOUNT_FIAT)
+                                  SELECT 
+                                      '{fiat_code}' AS CURRENCY,
+                                      printf('%.10f', SUM(AMNT)) AS AMOUNT,
+                                      printf('%.2f', SUM(AMNT)) AS AMOUNT_FIAT
+                                  FROM (
+                                      SELECT 
+                                          SUM(AMOUNT) AS AMNT
+                                      FROM TB_LEDGERS_S
+                                      WHERE CURRENCY = '{fiat_code}'
+                                          AND strftime('%s', DATE) <= strftime('%s', date('{untilDate}', '+1 day'))
+                                      UNION ALL
+                                      SELECT 
+                                          -SUM(FEE) AS AMNT
+                                      FROM TB_LEDGERS_S
+                                      WHERE CURRENCY = '{fiat_code}'
+                                          AND strftime('%s', DATE) <= strftime('%s', date('{untilDate}', '+1 day'))
+                                  )";
             return query;
         }
     }

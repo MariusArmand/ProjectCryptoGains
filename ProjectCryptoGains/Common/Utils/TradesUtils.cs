@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
@@ -67,149 +66,149 @@ namespace ProjectCryptoGains.Common.Utils
                 // Insert into db table
                 DbCommand commandInsert = connection.CreateCommand();
 
-                commandInsert.CommandText = $@"INSERT INTO TB_TRADES_S 
-                                                SELECT 
-												    REFID, 
-												    DATE, 
-												    TYPE, 
-												    EXCHANGE, 
-												    BASE_CURRENCY, 
-												    ABS(BASE_AMOUNT) AS BASE_AMOUNT, 
-												    BASE_FEE,
-												    CASE 
-													    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-													    ELSE printf('%.10f', BASE_FEE * BASE_UNIT_PRICE_FIAT)
-												    END AS BASE_FEE_FIAT,
-												    QUOTE_CURRENCY, 
-												    ABS(QUOTE_AMOUNT) AS QUOTE_AMOUNT, 
-												    ABS(QUOTE_AMOUNT_FIAT) AS QUOTE_AMOUNT_FIAT,
-												    QUOTE_FEE,
-												    CASE 
-													    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-													    ELSE QUOTE_FEE
-												    END AS QUOTE_FEE_FIAT,
-												    BASE_UNIT_PRICE, 
-												    BASE_UNIT_PRICE_FIAT,
-												    QUOTE_UNIT_PRICE, 
-												    QUOTE_UNIT_PRICE_FIAT,
-                                                    BASE_FEE_FIAT + QUOTE_FEE_FIAT AS TOTAL_FEE_FIAT,
-												    CASE 
-													    WHEN QUOTE_CURRENCY = '{fiatCurrency}' AND TYPE = 'BUY' THEN ABS(QUOTE_AMOUNT) + BASE_FEE_FIAT + QUOTE_FEE_FIAT
-													    WHEN QUOTE_CURRENCY = '{fiatCurrency}' AND TYPE = 'SELL' THEN ABS(QUOTE_AMOUNT) - BASE_FEE_FIAT - QUOTE_FEE_FIAT
-													    ELSE NULL
-												    END AS COSTS_PROCEEDS											
-											    FROM (
-												    SELECT 
-													    REFID, 
-													    DATE, 
-													    TYPE, 
-													    EXCHANGE, 
-													    BASE_CURRENCY, 
-													    BASE_AMOUNT, 
-													    BASE_FEE,
-													    CASE 
-														    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-														    ELSE printf('%.10f', BASE_FEE * BASE_UNIT_PRICE_FIAT)
-													    END AS BASE_FEE_FIAT,
-													    QUOTE_CURRENCY, 
-													    QUOTE_AMOUNT, 
-													    QUOTE_AMOUNT_FIAT,
-													    QUOTE_FEE,
-													    CASE 
-														    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-														    ELSE QUOTE_FEE
-													    END AS QUOTE_FEE_FIAT,
-													    BASE_UNIT_PRICE, 
-													    BASE_UNIT_PRICE_FIAT,
-													    QUOTE_UNIT_PRICE, 
-													    QUOTE_UNIT_PRICE_FIAT
-												    FROM (
-													    SELECT 
-														    REFID, 
-														    DATE, 
-														    TYPE, 
-														    EXCHANGE, 
-														    BASE_CURRENCY, 
-														    BASE_AMOUNT, 
-														    BASE_FEE, 
-														    QUOTE_CURRENCY, 
-														    QUOTE_AMOUNT,
-														    CASE 
-															    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-															    ELSE QUOTE_AMOUNT
-														    END AS QUOTE_AMOUNT_FIAT,												
-														    QUOTE_FEE,
-														    printf('%.10f', ABS(QUOTE_AMOUNT / BASE_AMOUNT)) AS BASE_UNIT_PRICE,
-														    CASE 
-															    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-															    ELSE printf('%.10f', ABS(QUOTE_AMOUNT / BASE_AMOUNT))
-														    END AS BASE_UNIT_PRICE_FIAT,
-														    printf('%.10f', ABS(BASE_AMOUNT / QUOTE_AMOUNT)) AS QUOTE_UNIT_PRICE,
-														    CASE 
-															    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-															    ELSE printf('%.10f', 1)
-														    END AS QUOTE_UNIT_PRICE_FIAT
-													    FROM (
-														    -- BUY => RIGHT = negative FIAT
-														    SELECT 
-															    b.REFID, 
-															    b.DATE, 
-															    'BUY' AS TYPE, 
-															    b.EXCHANGE, 
-															    b.CURRENCY AS BASE_CURRENCY, 
-															    b.AMOUNT AS BASE_AMOUNT, 
-															    b.FEE AS BASE_FEE, 
-															    q.CURRENCY AS QUOTE_CURRENCY, 
-															    q.AMOUNT AS QUOTE_AMOUNT, 
-															    q.FEE AS QUOTE_FEE 
-														    FROM 
-															    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT > 0) b
-														    INNER JOIN 
-															    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND CURRENCY = '{fiatCurrency}') q
-														    ON b.REFID = q.REFID
+                commandInsert.CommandText = $@"INSERT INTO TB_TRADES_S (REFID, DATE, TYPE, EXCHANGE, BASE_CURRENCY, BASE_AMOUNT, BASE_FEE, BASE_FEE_FIAT, QUOTE_CURRENCY, QUOTE_AMOUNT, QUOTE_AMOUNT_FIAT, QUOTE_FEE, QUOTE_FEE_FIAT, BASE_UNIT_PRICE, BASE_UNIT_PRICE_FIAT, QUOTE_UNIT_PRICE, QUOTE_UNIT_PRICE_FIAT, TOTAL_FEE_FIAT, COSTS_PROCEEDS)
+                                                   SELECT 
+                                                        REFID,
+                                                        DATE,
+                                                        TYPE,
+                                                        EXCHANGE,
+                                                        BASE_CURRENCY,
+                                                        printf('%.10f', ABS(BASE_AMOUNT)) AS BASE_AMOUNT,
+                                                        BASE_FEE,
+                                                        CASE 
+                                                            WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                            ELSE printf('%.10f', BASE_FEE * BASE_UNIT_PRICE_FIAT)
+                                                        END AS BASE_FEE_FIAT,
+                                                        QUOTE_CURRENCY,
+                                                        printf('%.10f', ABS(QUOTE_AMOUNT)) AS QUOTE_AMOUNT,
+                                                        printf('%.10f', ABS(QUOTE_AMOUNT_FIAT)) AS QUOTE_AMOUNT_FIAT,
+                                                        QUOTE_FEE,
+                                                        CASE 
+                                                            WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                            ELSE QUOTE_FEE
+                                                        END AS QUOTE_FEE_FIAT,
+                                                        BASE_UNIT_PRICE,
+                                                        BASE_UNIT_PRICE_FIAT,
+                                                        QUOTE_UNIT_PRICE,
+                                                        QUOTE_UNIT_PRICE_FIAT,
+                                                        printf('%.10f', BASE_FEE_FIAT + QUOTE_FEE_FIAT) AS TOTAL_FEE_FIAT,
+                                                        CASE 
+                                                            WHEN QUOTE_CURRENCY = '{fiatCurrency}' AND TYPE = 'BUY' THEN printf('%.10f', ABS(QUOTE_AMOUNT) + BASE_FEE_FIAT + QUOTE_FEE_FIAT)
+                                                            WHEN QUOTE_CURRENCY = '{fiatCurrency}' AND TYPE = 'SELL' THEN printf('%.10f', ABS(QUOTE_AMOUNT) - BASE_FEE_FIAT - QUOTE_FEE_FIAT)
+                                                            ELSE NULL
+                                                        END AS COSTS_PROCEEDS
+                                                    FROM (
+                                                        SELECT 
+                                                            REFID,
+                                                            DATE,
+                                                            TYPE,
+                                                            EXCHANGE,
+                                                            BASE_CURRENCY,
+                                                            BASE_AMOUNT,
+                                                            BASE_FEE,
+                                                            CASE 
+                                                                WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                                ELSE printf('%.10f', BASE_FEE * BASE_UNIT_PRICE_FIAT)
+                                                            END AS BASE_FEE_FIAT,
+                                                            QUOTE_CURRENCY,
+                                                            QUOTE_AMOUNT,
+                                                            QUOTE_AMOUNT_FIAT,
+                                                            QUOTE_FEE,
+                                                            CASE 
+                                                                WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                                ELSE QUOTE_FEE
+                                                            END AS QUOTE_FEE_FIAT,
+                                                            BASE_UNIT_PRICE,
+                                                            BASE_UNIT_PRICE_FIAT,
+                                                            QUOTE_UNIT_PRICE,
+                                                            QUOTE_UNIT_PRICE_FIAT
+                                                        FROM (
+                                                            SELECT 
+                                                                REFID,
+                                                                DATE,
+                                                                TYPE,
+                                                                EXCHANGE,
+                                                                BASE_CURRENCY,
+                                                                BASE_AMOUNT,
+                                                                BASE_FEE,
+                                                                QUOTE_CURRENCY,
+                                                                QUOTE_AMOUNT,
+                                                                CASE 
+                                                                    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                                    ELSE QUOTE_AMOUNT
+                                                                END AS QUOTE_AMOUNT_FIAT,
+                                                                QUOTE_FEE,
+                                                                printf('%.10f', ABS(QUOTE_AMOUNT / BASE_AMOUNT)) AS BASE_UNIT_PRICE,
+                                                                CASE 
+                                                                    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                                    ELSE printf('%.10f', ABS(QUOTE_AMOUNT / BASE_AMOUNT))
+                                                                END AS BASE_UNIT_PRICE_FIAT,
+                                                                printf('%.10f', ABS(BASE_AMOUNT / QUOTE_AMOUNT)) AS QUOTE_UNIT_PRICE,
+                                                                CASE 
+                                                                    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                                    ELSE printf('%.10f', 1)
+                                                                END AS QUOTE_UNIT_PRICE_FIAT
+                                                            FROM (
+                                                                -- BUY => RIGHT = negative FIAT
+                                                                SELECT 
+                                                                    b.REFID,
+                                                                    b.DATE,
+                                                                    'BUY' AS TYPE,
+                                                                    b.EXCHANGE,
+                                                                    b.CURRENCY AS BASE_CURRENCY,
+                                                                    b.AMOUNT AS BASE_AMOUNT,
+                                                                    b.FEE AS BASE_FEE,
+                                                                    q.CURRENCY AS QUOTE_CURRENCY,
+                                                                    q.AMOUNT AS QUOTE_AMOUNT,
+                                                                    q.FEE AS QUOTE_FEE
+                                                                FROM 
+                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT > 0) b
+                                                                    INNER JOIN 
+                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND CURRENCY = '{fiatCurrency}') q
+                                                                    ON b.REFID = q.REFID
 
-														    UNION ALL
+                                                                UNION ALL
 
-														    -- SELL => RIGHT = positive FIAT
-														    SELECT 
-															    b.REFID, 
-															    b.DATE, 
-															    'SELL' AS TYPE, 
-															    b.EXCHANGE, 
-															    b.CURRENCY AS BASE_CURRENCY, 
-															    b.AMOUNT AS BASE_AMOUNT, 
-															    b.FEE AS BASE_FEE, 
-															    q.CURRENCY AS QUOTE_CURRENCY, 
-															    q.AMOUNT AS QUOTE_AMOUNT, 
-															    q.FEE AS QUOTE_FEE 
-														    FROM 
-															    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT < 0) b
-														    INNER JOIN 
-															    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND CURRENCY = '{fiatCurrency}') q
-														    ON b.REFID = q.REFID
+                                                                -- SELL => RIGHT = positive FIAT
+                                                                SELECT 
+                                                                    b.REFID,
+                                                                    b.DATE,
+                                                                    'SELL' AS TYPE,
+                                                                    b.EXCHANGE,
+                                                                    b.CURRENCY AS BASE_CURRENCY,
+                                                                    b.AMOUNT AS BASE_AMOUNT,
+                                                                    b.FEE AS BASE_FEE,
+                                                                    q.CURRENCY AS QUOTE_CURRENCY,
+                                                                    q.AMOUNT AS QUOTE_AMOUNT,
+                                                                    q.FEE AS QUOTE_FEE
+                                                                FROM 
+                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT < 0) b
+                                                                    INNER JOIN 
+                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND CURRENCY = '{fiatCurrency}') q
+                                                                    ON b.REFID = q.REFID
 
-														    UNION ALL
+                                                                UNION ALL
 
-														    -- SELL => LEFT != FIAT, RIGHT != FIAT, LEFT negative amount
-														    SELECT 
-															    b.REFID, 
-															    b.DATE, 
-															    'SELL' AS TYPE, 
-															    b.EXCHANGE, 
-															    b.CURRENCY AS BASE_CURRENCY, 
-															    b.AMOUNT AS BASE_AMOUNT, 
-															    b.FEE AS BASE_FEE, 
-															    q.CURRENCY AS QUOTE_CURRENCY, 
-															    q.AMOUNT AS QUOTE_AMOUNT, 
-															    q.FEE AS QUOTE_FEE 
-														    FROM 
-															    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND CURRENCY != '{fiatCurrency}') b
-														    INNER JOIN 
-															    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND CURRENCY != '{fiatCurrency}') q
-														    ON b.REFID = q.REFID
-													    )
-												    )
-											    )";
+                                                                -- SELL => LEFT != FIAT, RIGHT != FIAT, LEFT negative amount
+                                                                SELECT 
+                                                                    b.REFID,
+                                                                    b.DATE,
+                                                                    'SELL' AS TYPE,
+                                                                    b.EXCHANGE,
+                                                                    b.CURRENCY AS BASE_CURRENCY,
+                                                                    b.AMOUNT AS BASE_AMOUNT,
+                                                                    b.FEE AS BASE_FEE,
+                                                                    q.CURRENCY AS QUOTE_CURRENCY,
+                                                                    q.AMOUNT AS QUOTE_AMOUNT,
+                                                                    q.FEE AS QUOTE_FEE
+                                                                FROM 
+                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND CURRENCY != '{fiatCurrency}') b
+                                                                    INNER JOIN 
+                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND CURRENCY != '{fiatCurrency}') q
+                                                                    ON b.REFID = q.REFID
+                                                            )
+                                                        )
+                                                    )";
 
                 commandInsert.ExecuteNonQuery();
 
@@ -219,27 +218,28 @@ namespace ProjectCryptoGains.Common.Utils
                 try
                 {
                     DbCommand command = connection.CreateCommand();
-                    command.CommandText = $@"SELECT trades.REFID,
-                                             trades.DATE,
-									         catalog_base.CODE as BASE_CODE,
-                                             trades.BASE_FEE,
-									         catalog_quote.CODE as QUOTE_CODE,
-                                             trades.QUOTE_AMOUNT,
-									         trades.QUOTE_FEE
-                                             FROM TB_TRADES_S trades
-									         LEFT JOIN TB_ASSET_CATALOG_S catalog_base
-									         on trades.BASE_CURRENCY = catalog_base.ASSET
-									         LEFT JOIN TB_ASSET_CATALOG_S catalog_quote
-									         on trades.QUOTE_CURRENCY = catalog_quote.ASSET
-                                             WHERE trades.BASE_CURRENCY != '{fiatCurrency}'
-                                             AND trades.QUOTE_CURRENCY != '{fiatCurrency}'";
+                    command.CommandText = $@"SELECT 
+                                                trades.REFID,
+                                                trades.DATE,
+                                                catalog_base.CODE AS BASE_CODE,
+                                                trades.BASE_FEE,
+                                                catalog_quote.CODE AS QUOTE_CODE,
+                                                trades.QUOTE_AMOUNT,
+                                                trades.QUOTE_FEE
+                                            FROM TB_TRADES_S trades
+                                                LEFT JOIN TB_ASSET_CATALOG_S catalog_base
+                                                    ON trades.BASE_CURRENCY = catalog_base.ASSET
+                                                LEFT JOIN TB_ASSET_CATALOG_S catalog_quote
+                                                    ON trades.QUOTE_CURRENCY = catalog_quote.ASSET
+                                            WHERE trades.BASE_CURRENCY != '{fiatCurrency}'
+                                                AND trades.QUOTE_CURRENCY != '{fiatCurrency}'";
 
                     List<(string RefId, Dictionary<string, string> UpdateData)> updates = [];
 
                     using (DbDataReader reader = command.ExecuteReader())
                     {
                         // Rate limiting mechanism //
-                        DateTime lastCallTime = DateTime.MinValue;
+                        DateTime lastCallTime = DateTime.Now;
                         /////////////////////////////
                         while (reader.Read())
                         {
@@ -251,7 +251,7 @@ namespace ProjectCryptoGains.Common.Utils
                             string quote_amount = reader.GetStringOrEmpty(5);
                             string quote_fee = reader.GetStringOrEmpty(6);
 
-                            DateTime datetime = DateTime.ParseExact(date, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                            DateTime datetime = ConvertStringToIsoDateTime(date);
                             // Calculate base_fee_fiat
                             var (base_unit_price_fiat, baseConversionSource) = ConvertXToFiat(base_code, 1m, datetime.Date, connection);
 
@@ -318,13 +318,13 @@ namespace ProjectCryptoGains.Common.Utils
 
                             var updateData = new Dictionary<string, string>
                             {
-                            { "Base_fee_fiat", base_fee_fiat },
-                            { "Quote_amount_fiat", quote_amount_fiat },
-                            { "Quote_fee_fiat", quote_fee_fiat },
-                            { "Base_unit_price_fiat", base_unit_price_fiat },
-                            { "Quote_unit_price_fiat", quote_unit_price_fiat },
-                            { "Total_fee_fiat", total_fee_fiat },
-                            { "Costs_proceeds", costs_proceeds }
+                                { "BASE_FEE_FIAT", base_fee_fiat },
+                                { "QUOTE_AMOUNT_FIAT", quote_amount_fiat },
+                                { "QUOTE_FEE_FIAT", quote_fee_fiat },
+                                { "BASE_UNIT_PRICE_FIAT", base_unit_price_fiat },
+                                { "QUOTE_UNIT_PRICE_FIAT", quote_unit_price_fiat },
+                                { "TOTAL_FEE_FIAT", total_fee_fiat },
+                                { "COSTS_PROCEEDS", costs_proceeds }
                             };
 
                             updates.Add((refid, updateData));
@@ -347,16 +347,18 @@ namespace ProjectCryptoGains.Common.Utils
                             using var commandUpdate = connection.CreateCommand();
                             commandUpdate.Transaction = transaction; // Assign the transaction to the command
                             commandUpdate.CommandText = @"UPDATE TB_TRADES_S 
-                                                            SET BASE_FEE_FIAT = @Base_fee_fiat,
-                                                            QUOTE_AMOUNT_FIAT = @Quote_amount_fiat,
-                                                            QUOTE_FEE_FIAT = @Quote_fee_fiat,
-                                                            BASE_UNIT_PRICE_FIAT = @Base_unit_price_fiat,
-                                                            QUOTE_UNIT_PRICE_FIAT = @Quote_unit_price_fiat,
-                                                            TOTAL_FEE_FIAT = @Total_fee_fiat,
-                                                            COSTS_PROCEEDS = @Costs_proceeds
-                                                            WHERE REFID = @RefId";
+                                                          SET 
+                                                              BASE_FEE_FIAT = @BASE_FEE_FIAT,
+                                                              QUOTE_AMOUNT_FIAT = @QUOTE_AMOUNT_FIAT,
+                                                              QUOTE_FEE_FIAT = @QUOTE_FEE_FIAT,
+                                                              BASE_UNIT_PRICE_FIAT = @BASE_UNIT_PRICE_FIAT,
+                                                              QUOTE_UNIT_PRICE_FIAT = @QUOTE_UNIT_PRICE_FIAT,
+                                                              TOTAL_FEE_FIAT = @TOTAL_FEE_FIAT,
+                                                              COSTS_PROCEEDS = @COSTS_PROCEEDS
+                                                          WHERE 
+                                                              REFID = @REFID";
 
-                            commandUpdate.Parameters.AddWithValue("@RefId", RefId);
+                            commandUpdate.Parameters.AddWithValue("@REFID", RefId);
                             foreach (var kvp in UpdateData) // kvp = Key-Value Pair
                             {
                                 commandUpdate.Parameters.AddWithValue("@" + kvp.Key, kvp.Value);

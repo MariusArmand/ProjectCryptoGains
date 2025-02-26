@@ -3,7 +3,6 @@ using ProjectCryptoGains.Common;
 using System;
 using System.Collections.ObjectModel;
 using System.Data.Common;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -30,7 +29,7 @@ namespace ProjectCryptoGains
         private readonly MainWindow _mainWindow;
 
         private string fromDate = "2009-01-03";
-        private string toDate = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        private string toDate = GetTodayAsIsoDate();
 
         private string? lastWarning = null;
 
@@ -105,19 +104,19 @@ namespace ProjectCryptoGains
 
             DbCommand command = connection.CreateCommand();
             command.CommandText = $@"SELECT 
-									 REFID, 
-									 DATE, 
-									 TYPE, 
-									 EXCHANGE,										
-									 CURRENCY, 
-									 AMOUNT, 
-									 AMOUNT_FIAT,
-                                     TAX,
-                                     UNIT_PRICE,
-                                     UNIT_PRICE_BREAK_EVEN,
-                                     AMOUNT_SELL_BREAK_EVEN
-									 FROM TB_REWARDS_S
-									 ORDER BY DATE ASC";
+                                         REFID,
+                                         DATE,
+                                         TYPE,
+                                         EXCHANGE,
+                                         CURRENCY,
+                                         AMOUNT,
+                                         AMOUNT_FIAT,
+                                         TAX,
+                                         UNIT_PRICE,
+                                         UNIT_PRICE_BREAK_EVEN,
+                                         AMOUNT_SELL_BREAK_EVEN
+                                     FROM TB_REWARDS_S
+                                     ORDER BY DATE ASC";
 
             DbDataReader reader = command.ExecuteReader();
 
@@ -149,16 +148,16 @@ namespace ProjectCryptoGains
             /////////////////////////////////
 
             command.CommandText = $@"SELECT 
-									 CURRENCY, 
-									 printf('%.10f', SUM(CAST(AMOUNT AS REAL))) AS AMOUNT, 
-									 printf('%.2f', SUM(CAST(AMOUNT_FIAT AS REAL))) AS AMOUNT_FIAT,
-                                     printf('%.2f', SUM(CAST(TAX AS REAL))) AS TAX,
-                                     printf('%.2f', AVG(CAST(UNIT_PRICE AS REAL))) AS UNIT_PRICE,
-                                     printf('%.2f', AVG(CAST(UNIT_PRICE_BREAK_EVEN AS REAL))) AS UNIT_PRICE_BREAK_EVEN,
-                                     printf('%.10f', SUM(CAST(AMOUNT_SELL_BREAK_EVEN AS REAL))) AS AMOUNT_SELL_BREAK_EVEN
-									 FROM TB_REWARDS_S
-									 GROUP BY CURRENCY
-									 ORDER BY CURRENCY";
+                                         CURRENCY,
+                                         printf('%.10f', SUM(CAST(AMOUNT AS REAL))) AS AMOUNT,
+                                         printf('%.2f', SUM(CAST(AMOUNT_FIAT AS REAL))) AS AMOUNT_FIAT,
+                                         printf('%.2f', SUM(CAST(TAX AS REAL))) AS TAX,
+                                         printf('%.2f', AVG(CAST(UNIT_PRICE AS REAL))) AS UNIT_PRICE,
+                                         printf('%.2f', AVG(CAST(UNIT_PRICE_BREAK_EVEN AS REAL))) AS UNIT_PRICE_BREAK_EVEN,
+                                         printf('%.10f', SUM(CAST(AMOUNT_SELL_BREAK_EVEN AS REAL))) AS AMOUNT_SELL_BREAK_EVEN
+                                     FROM TB_REWARDS_S
+                                     GROUP BY CURRENCY
+                                     ORDER BY CURRENCY";
 
             reader = command.ExecuteReader();
 
@@ -305,23 +304,24 @@ namespace ProjectCryptoGains
                 using (DbCommand command = connection.CreateCommand())
                 {
                     command.CommandText = $@"SELECT
-                                             ledgers.REFID,
-                                             ledgers.DATE,
-                                             ledgers.TYPE,
-                                             ledgers.EXCHANGE,
-                                             catalog.CODE AS CURRENCY,
-                                             printf('%.10f', ledgers.AMOUNT - ledgers.FEE) AS AMOUNT
+                                                 ledgers.REFID,
+                                                 ledgers.DATE,
+                                                 ledgers.TYPE,
+                                                 ledgers.EXCHANGE,
+                                                 catalog.CODE AS CURRENCY,
+                                                 printf('%.10f', ledgers.AMOUNT - ledgers.FEE) AS AMOUNT
                                              FROM TB_LEDGERS_S ledgers
-										     INNER JOIN TB_ASSET_CATALOG_S catalog ON ledgers.CURRENCY = catalog.ASSET
-                                             WHERE ledgers.TYPE IN('EARN','STAKING','AIRDROP')
-                                             AND strftime('%s', DATE) BETWEEN strftime('%s', '{fromDate}')
-                                             AND strftime('%s', date('{toDate}', '+1 day'))";
+                                                 INNER JOIN TB_ASSET_CATALOG_S catalog 
+                                                     ON ledgers.CURRENCY = catalog.ASSET
+                                             WHERE ledgers.TYPE IN ('EARN', 'STAKING', 'AIRDROP')
+                                                 AND strftime('%s', DATE) BETWEEN strftime('%s', '{fromDate}')
+                                                     AND strftime('%s', date('{toDate}', '+1 day'))";
 
                     // Insert into rewards db table
                     using DbDataReader reader = command.ExecuteReader();
 
                     // Rate limiting mechanism //
-                    DateTime lastCallTime = DateTime.MinValue;
+                    DateTime lastCallTime = DateTime.Now;
                     /////////////////////////////
                     while (reader.Read())
                     {
@@ -331,8 +331,7 @@ namespace ProjectCryptoGains
                         string exchange = reader.GetStringOrEmpty(3);
                         string currency = reader.GetStringOrEmpty(4);
                         string amount = reader.GetStringOrEmpty(5);
-                        DateTime datetime = DateTime.ParseExact(date, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-                        string formattedDateTime = datetime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                        DateTime datetime = ConvertStringToIsoDateTime(date);
 
                         var (fiatAmount, source) = ConvertXToFiat(currency, 1m, datetime.Date, connection);
                         string exchangeRate = fiatAmount;
@@ -371,30 +370,45 @@ namespace ProjectCryptoGains
                         }
 
                         using DbCommand commandIns = connection.CreateCommand();
-                        commandIns.CommandText = $@"INSERT INTO TB_REWARDS_S
-                                                    (REFID,
-	                                                DATE,
-	                                                TYPE,
-	                                                EXCHANGE,
-	                                                CURRENCY,
-	                                                AMOUNT,
-	                                                AMOUNT_FIAT,
-                                                    TAX,
-                                                    UNIT_PRICE,
-                                                    UNIT_PRICE_BREAK_EVEN,
-                                                    AMOUNT_SELL_BREAK_EVEN)
-                                                    VALUES
-                                                    ('{refid}',
-                                                    '{formattedDateTime}',
-                                                    '{type}',
-                                                    '{exchange}',
-                                                    '{currency}',
-                                                    '{amount}',
-                                                    '{amount_fiat}',
-                                                    '{tax}',
-                                                    '{exchangeRate}',
-                                                    '{unit_price_break_even}',
-                                                    '{amount_sell_break_even}')";
+                        commandIns.CommandText = $@"INSERT INTO TB_REWARDS_S (
+                                                        REFID,
+                                                        DATE,
+                                                        TYPE,
+                                                        EXCHANGE,
+                                                        CURRENCY,
+                                                        AMOUNT,
+                                                        AMOUNT_FIAT,
+                                                        TAX,
+                                                        UNIT_PRICE,
+                                                        UNIT_PRICE_BREAK_EVEN,
+                                                        AMOUNT_SELL_BREAK_EVEN
+                                                    )
+                                                    VALUES (
+                                                        @REFID,
+                                                        @DATE,
+                                                        @TYPE,
+                                                        @EXCHANGE,
+                                                        @CURRENCY,
+                                                        @AMOUNT,
+                                                        printf('%.10f', @AMOUNT_FIAT),
+                                                        @TAX,
+                                                        @UNIT_PRICE,
+                                                        @UNIT_PRICE_BREAK_EVEN,
+                                                        @AMOUNT_SELL_BREAK_EVEN
+                                                    )";
+
+                        AddParameterWithValue(commandIns, "@REFID", refid);
+                        AddParameterWithValue(commandIns, "@DATE", date);
+                        AddParameterWithValue(commandIns, "@TYPE", type);
+                        AddParameterWithValue(commandIns, "@EXCHANGE", exchange);
+                        AddParameterWithValue(commandIns, "@CURRENCY", currency);
+                        AddParameterWithValue(commandIns, "@AMOUNT", amount);
+                        AddParameterWithValue(commandIns, "@AMOUNT_FIAT", amount_fiat);
+                        AddParameterWithValue(commandIns, "@TAX", tax);
+                        AddParameterWithValue(commandIns, "@UNIT_PRICE", exchangeRate);
+                        AddParameterWithValue(commandIns, "@UNIT_PRICE_BREAK_EVEN", unit_price_break_even);
+                        AddParameterWithValue(commandIns, "@AMOUNT_SELL_BREAK_EVEN", amount_sell_break_even);
+
                         commandIns.ExecuteNonQuery();
                     }
                     if (lastWarning != null)
@@ -430,7 +444,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void TextBoxToDate_KeyUp(object sender, KeyboardEventArgs e)
+        private void TxtToDate_KeyUp(object sender, KeyboardEventArgs e)
         {
             SetToDate();
             txtToDate.Foreground = Brushes.White;
@@ -458,7 +472,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void TextBoxFromDate_KeyUp(object sender, KeyboardEventArgs e)
+        private void TxtFromDate_KeyUp(object sender, KeyboardEventArgs e)
         {
             SetFromDate();
             txtFromDate.Foreground = Brushes.White;
