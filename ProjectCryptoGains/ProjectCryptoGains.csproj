@@ -111,7 +111,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ControlzEx" Version="6.0.0" />
+    <PackageReference Include="ControlzEx" Version="7.0.0" />
     <PackageReference Include="LiveCharts.Wpf.Core" Version="0.9.8" />
     <PackageReference Include="Microsoft.Data.SQLite" Version="9.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

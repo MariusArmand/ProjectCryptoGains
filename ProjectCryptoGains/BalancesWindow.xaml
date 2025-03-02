@@ -19,9 +19,10 @@
         <ctzex:WindowChromeBehavior ResizeBorderThickness="6" 
                                     EnableMinimize="True" 
                                     EnableMaxRestore="True" 
-                                    KeepBorderOnMaximize="True"/>
+                                    KeepBorderOnMaximize="True"
+                                    CornerPreference="DoNotRound"/>
     </i:Interaction.Behaviors>
-    <Border BorderBrush="#444444" BorderThickness="1" Background="#1E1E1E">
+    <Border BorderBrush="#444444" BorderThickness="0" Background="#1E1E1E">
         <Grid>
             <!-- Title Bar -->
             <Grid.RowDefinitions>
