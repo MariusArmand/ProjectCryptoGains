@@ -2,6 +2,7 @@
 using LiveCharts.Wpf;
 using Microsoft.Data.Sqlite;
 using ProjectCryptoGains.Common;
+using ProjectCryptoGains.Common.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -10,7 +11,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -437,107 +437,45 @@ namespace ProjectCryptoGains
 
             BlockUI();
 
-            // Create a PrintDialog
-            PrintDialog printDlg = new();
-
-            await Task.Run(() =>
+            try
             {
-                // Create a FlowDocument dynamically.
-                FlowDocument doc = CreateFlowDocument();
-                doc.Name = "FlowDoc";
-                // Create IDocumentPaginatorSource from FlowDocument
-                IDocumentPaginatorSource idpSource = doc;
-                // Call PrintDocument method to send document to printer
-                printDlg.PrintDocument(idpSource.DocumentPaginator, "Project Crypto Gains - Balances");
-            });
-
-            ConsoleLog(_mainWindow.txtLog, $"[Balances] Printing done");
-
-            UnblockUI();
+                await PrintBalancesAsync();
+                ConsoleLog(_mainWindow.txtLog, $"[Balances] Printing done");
+            }
+            catch (Exception ex)
+            {
+                ConsoleLog(_mainWindow.txtLog, $"[Balances] Printing failed: {ex.Message}");
+                MessageBoxResult result = CustomMessageBox.Show($"Printing failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                UnblockUI();
+            }
         }
 
-        /// <summary>
-        /// This method creates a dynamic FlowDocument. You can add anything to this
-        /// FlowDocument that you would like to send to the printer
-        /// </summary>
-        private FlowDocument CreateFlowDocument()
+        private async Task PrintBalancesAsync()
         {
             string? fiatCurrency = SettingFiatCurrency;
-            // Create a FlowDocument
-            FlowDocument flowDoc = new()
-            {
-                // Set the page width of the flow document to the width of an A4 page
-                PageWidth = 793,
-                ColumnWidth = 793,
+            var balances = dgBalances.ItemsSource.OfType<BalancesModel>();
 
-                PagePadding = new Thickness(20),
+            PrintDialog printDlg = new();
 
-                FontFamily = new FontFamily("Fixedsys"),
-                FontSize = 8
-            };
-
-            Table table = new();
-            table.RowGroups.Add(new TableRowGroup());
-            TableRow? tableRow = new()
-            {
-                FontWeight = FontWeights.Bold
-            };
-            TableCell? tableCell = new(new Paragraph(new Run("Project Crypto Gains - Balances"))
-            {
-                FontSize = 16
-            })
-            {
-                ColumnSpan = 7,
-                TextAlignment = TextAlignment.Center
-            };
-            tableRow.Cells.Add(tableCell);
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            tableRow = new TableRow();
-            tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            tableRow = new TableRow();
-            tableCell = new TableCell(new Paragraph(new Run("Until\t" + untilDate)))
-            {
-                ColumnSpan = 7,
-                TextAlignment = TextAlignment.Left
-            };
-            tableRow.Cells.Add(tableCell);
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            tableRow = new TableRow();
-            tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            var firstColumnWidth = 120; // Set the desired width for the first column
-
-            TableColumn column = new()
-            {
-                Width = new GridLength(firstColumnWidth, GridUnitType.Pixel)
-            };
-            table.Columns.Add(column);
-
-            tableRow = new TableRow
-            {
-                FontWeight = FontWeights.Bold
-            };
-            tableRow.Cells.Add(new TableCell(new Paragraph(new Run("CURRENCY"))));
-            tableRow.Cells.Add(new TableCell(new Paragraph(new Run("AMOUNT"))) { TextAlignment = TextAlignment.Right });
-            tableRow.Cells.Add(new TableCell(new Paragraph(new Run("AMOUNT " + fiatCurrency))) { TextAlignment = TextAlignment.Right });
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            foreach (var item in dgBalances.ItemsSource.OfType<BalancesModel>())
-            {
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Currency ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Amount,10:F10}" ?? ""))) { TextAlignment = TextAlignment.Right });
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Amount_fiat,2:F2}" ?? ""))) { TextAlignment = TextAlignment.Right });
-                table.RowGroups[0].Rows.Add(tableRow);
-            }
-
-            flowDoc.Blocks.Add(table);
-            return flowDoc;
+            await PrintUtils.PrintFlowDocumentAsync(
+                title: "Project Crypto Gains - Balances",
+                subtitle: "Until\t" + untilDate,
+                columnHeaders: new[] { "CURRENCY", "AMOUNT", $"AMOUNT {fiatCurrency}" },
+                dataItems: balances,
+                dataExtractor: item => new[]
+                {
+                    (item.Currency ?? "", TextAlignment.Left, 1),
+                    ($"{item.Amount,10:F10}", TextAlignment.Right, 1),
+                    ($"{item.Amount_fiat,2:F2}", TextAlignment.Right, 1)
+                },
+                printDlg: printDlg,
+                maxColumnsPerRow: 3,
+                repeatHeadersPerItem: false,
+                virtualColumnCount: 6
+            );
         }
 
         private static (string xInFiat, string sqlCommand, string conversionSource) CreateCryptoBalancesInsert(string currency, string currency_code, string untilDate, bool? convertToFiat, SqliteConnection connection)

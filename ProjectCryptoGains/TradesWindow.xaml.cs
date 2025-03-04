@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using ProjectCryptoGains.Common;
+using ProjectCryptoGains.Common.Utils;
 using System;
 using System.Collections.ObjectModel;
 using System.Data.Common;
@@ -7,7 +8,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -340,116 +340,58 @@ namespace ProjectCryptoGains
 
             BlockUI();
 
-            // Create a PrintDialog
-            PrintDialog printDlg = new();
-
-            await Task.Run(() =>
+            try
             {
-                // Create a FlowDocument dynamically.
-                FlowDocument doc = CreateFlowDocument();
-                doc.Name = "FlowDoc";
-                // Create IDocumentPaginatorSource from FlowDocument
-                IDocumentPaginatorSource idpSource = doc;
-                // Call PrintDocument method to send document to printer
-                printDlg.PrintDocument(idpSource.DocumentPaginator, "Project Crypto Gains - Trades");
-            });
-
-            ConsoleLog(_mainWindow.txtLog, $"[Trades] Printing done");
-
-            UnblockUI();
+                await PrintTradesAsync();
+                ConsoleLog(_mainWindow.txtLog, "[Trades] Printing done");
+            }
+            catch (Exception ex)
+            {
+                ConsoleLog(_mainWindow.txtLog, $"[Trades] Printing failed: {ex.Message}");
+                MessageBoxResult result = CustomMessageBox.Show($"Printing failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                UnblockUI();
+            }
         }
 
-        /// <summary>
-        /// This method creates a dynamic FlowDocument. You can add anything to this
-        /// FlowDocument that you would like to send to the printer
-        /// </summary>
-        private FlowDocument CreateFlowDocument()
+        private async Task PrintTradesAsync()
         {
             string? fiatCurrency = SettingFiatCurrency;
-            // Create a FlowDocument
-            FlowDocument flowDoc = new()
-            {
-                // Set the page width of the flow document to the width of an A4 page
-                PageWidth = 793,
-                ColumnWidth = 793,
+            var trades = dgTrades.ItemsSource.OfType<TradesModel>();
 
-                PagePadding = new Thickness(20),
+            PrintDialog printDlg = new();
 
-                FontFamily = new FontFamily("Fixedsys"),
-                FontSize = 8
-            };
-
-            Table table = new();
-            table.RowGroups.Add(new TableRowGroup());
-            TableRow? tableRow = new()
-            {
-                FontWeight = FontWeights.Bold
-            };
-            TableCell? tableCell = new(new Paragraph(new Run("Project Crypto Gains - Trades"))
-            {
-                FontSize = 16
-            })
-            {
-                ColumnSpan = 8,
-                TextAlignment = TextAlignment.Center
-            };
-            tableRow.Cells.Add(tableCell);
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            tableRow = new TableRow();
-            tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            foreach (var item in dgTrades.ItemsSource.OfType<TradesModel>())
-            {
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Date ?? ""))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow
+            await PrintUtils.PrintFlowDocumentAsync(
+                columnHeaders: new[]
                 {
-                    FontWeight = FontWeights.Bold
-                };
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("REFID"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("TYPE"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("EXCHANGE"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("BASE_AMOUNT"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("BASE_CURRENCY"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("QUOTE_AMOUNT"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("QUOTE_CURRENCY"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("QUOTE_AMOUNT_" + fiatCurrency))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Refid ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Type ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Exchange ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Base_amount,10:F10}" ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Base_currency ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Quote_amount,10:F10}" ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Quote_currency ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Quote_amount_fiat,2:F2}" ?? ""))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow
+                    "DATE", "REFID", "TYPE", "EXCHANGE", "BASE_AMOUNT", "BASE_CURRENCY",
+                    "QUOTE_AMOUNT", "QUOTE_CURRENCY", $"QUOTE_AMOUNT_{fiatCurrency}",
+                    $"TOTAL_FEE_{fiatCurrency}", "COSTS_PROCEEDS"
+                },
+                dataItems: trades,
+                dataExtractor: item => new[]
                 {
-                    FontWeight = FontWeights.Bold
-                };
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("TOTAL_FEE_" + fiatCurrency))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("COSTS_PROCEEDS"))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Total_fee_fiat,2:F2}" ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run($"{item.Costs_proceeds,2:F2}" ?? ""))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));
-                table.RowGroups[0].Rows.Add(tableRow);
-            }
-            flowDoc.Blocks.Add(table);
-            return flowDoc;
+                    (item.Date ?? "", TextAlignment.Left, 1),
+                    (item.Refid ?? "", TextAlignment.Left, 2),
+                    (item.Type ?? "", TextAlignment.Left, 1),
+                    (item.Exchange ?? "", TextAlignment.Left, 1),
+                    ($"{item.Base_amount,10:F10}", TextAlignment.Left, 1),
+                    (item.Base_currency ?? "", TextAlignment.Left, 1),
+                    ($"{item.Quote_amount,10:F10}", TextAlignment.Left, 1),
+                    (item.Quote_currency ?? "", TextAlignment.Left, 1),
+                    ($"{item.Quote_amount_fiat,2:F2}", TextAlignment.Left, 1),
+                    ($"{item.Total_fee_fiat,2:F2}", TextAlignment.Left, 1),
+                    ($"{item.Costs_proceeds,2:F2}", TextAlignment.Left, 1)
+                },
+                printDlg: printDlg,
+                title: "Project Crypto Gains - Trades",
+                footerHeight: 20,
+                maxColumnsPerRow: 6,
+                repeatHeadersPerItem: true,
+                itemsPerPage: 15
+            );
         }
     }
 }

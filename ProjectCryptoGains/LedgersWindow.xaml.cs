@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using ProjectCryptoGains.Common;
+using ProjectCryptoGains.Common.Utils;
 using System;
 using System.Collections.ObjectModel;
 using System.Data.Common;
@@ -7,7 +8,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -288,121 +288,55 @@ namespace ProjectCryptoGains
 
             BlockUI();
 
-            // Create a PrintDialog
-            PrintDialog printDlg = new();
-
-            await Task.Run(() =>
+            try
             {
-                // Create a FlowDocument dynamically.
-                FlowDocument doc = CreateFlowDocument();
-                doc.Name = "FlowDoc";
-                // Create IDocumentPaginatorSource from FlowDocument
-                IDocumentPaginatorSource idpSource = doc;
-                // Call PrintDocument method to send document to printer
-                printDlg.PrintDocument(idpSource.DocumentPaginator, "Project Crypto Gains - Ledgers");
-            });
-
-            ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Printing done");
-
-            UnblockUI();
+                await PrintLedgersAsync();
+                ConsoleLog(_mainWindow.txtLog, "[Ledgers] Printing done");
+            }
+            catch (Exception ex)
+            {
+                ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Printing failed: {ex.Message}");
+                MessageBoxResult result = CustomMessageBox.Show($"Printing failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                UnblockUI();
+            }
         }
 
-        /// <summary>
-        /// This method creates a dynamic FlowDocument. You can add anything to this
-        /// FlowDocument that you would like to send to the printer
-        /// </summary>
-        private FlowDocument CreateFlowDocument()
+        private async Task PrintLedgersAsync()
         {
-            // Create a FlowDocument
-            FlowDocument flowDoc = new()
-            {
-                // Set the page width of the flow document to the width of an A4 page
-                PageWidth = 793,
-                ColumnWidth = 793,
+            var ledgers = dgLedgers.ItemsSource.OfType<LedgersModel>();
 
-                PagePadding = new Thickness(20),
+            PrintDialog printDlg = new();
 
-                FontFamily = new FontFamily("Fixedsys"),
-                FontSize = 8
-            };
-
-            Table table = new();
-            table.RowGroups.Add(new TableRowGroup());
-            TableRow? tableRow = new()
-            {
-                FontWeight = FontWeights.Bold
-            };
-            TableCell? tableCell = new(new Paragraph(new Run("Project Crypto Gains - Ledgers"))
-            {
-                FontSize = 16
-            })
-            {
-                ColumnSpan = 6,
-                TextAlignment = TextAlignment.Center
-            };
-            tableRow.Cells.Add(tableCell);
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            tableRow = new TableRow();
-            tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            foreach (var item in dgLedgers.ItemsSource.OfType<LedgersModel>())
-            {
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Date ?? ""))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow
+            await PrintUtils.PrintFlowDocumentAsync(
+                columnHeaders: new[]
                 {
-                    FontWeight = FontWeights.Bold
-                };
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("REFID"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("TYPE"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("EXCHANGE"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("AMOUNT"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("CURRENCY"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("FEE"))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Refid ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Type ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Exchange ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Amount.ToString() ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Currency ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Fee.ToString() ?? ""))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow
+                    "DATE", "REFID", "TYPE", "EXCHANGE", "AMOUNT", "CURRENCY",
+                    "FEE", "SOURCE", "TARGET", "NOTES"
+                },
+                dataItems: ledgers,
+                dataExtractor: item => new[]
                 {
-                    FontWeight = FontWeights.Bold
-                };
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("SOURCE"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("TARGET"))));
-                tableCell = new TableCell(new Paragraph(new Run("NOTES")))
-                {
-                    ColumnSpan = 2
-                };
-                tableRow.Cells.Add(tableCell);
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Source?.NullIfEmpty() ?? "N/A"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Target?.NullIfEmpty() ?? "N/A"))));
-                tableCell = new TableCell(new Paragraph(new Run(item.Notes?.NullIfEmpty() ?? "N/A")))
-                {
-                    ColumnSpan = 2
-                };
-                tableRow.Cells.Add(tableCell);
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));
-                table.RowGroups[0].Rows.Add(tableRow);
-            }
-            flowDoc.Blocks.Add(table);
-            return flowDoc;
+                    (item.Date ?? "", TextAlignment.Left, 1),
+                    (item.Refid ?? "", TextAlignment.Left, 2),
+                    (item.Type ?? "", TextAlignment.Left, 1),
+                    (string.IsNullOrEmpty(item.Exchange) ? "N/A" : item.Exchange, TextAlignment.Left, 1),
+                    ($"{item.Amount,10:F10}", TextAlignment.Left, 1),
+                    (item.Currency ?? "", TextAlignment.Left, 1),
+                    ($"{item.Fee,10:F10}", TextAlignment.Left, 1),
+                    (string.IsNullOrEmpty(item.Source) ? "N/A" : item.Source, TextAlignment.Left, 1),
+                    (string.IsNullOrEmpty(item.Target) ? "N/A" : item.Target, TextAlignment.Left, 1),
+                    (string.IsNullOrEmpty(item.Notes) ? "N/A" : item.Notes, TextAlignment.Left, 3)
+                },
+                printDlg: printDlg,
+                title: "Project Crypto Gains - Ledgers",
+                footerHeight: 20,
+                maxColumnsPerRow: 6,
+                repeatHeadersPerItem: true,
+                itemsPerPage: 15
+            );
         }
     }
 }

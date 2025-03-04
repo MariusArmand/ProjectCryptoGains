@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using ProjectCryptoGains.Common;
+using ProjectCryptoGains.Common.Utils;
 using System;
 using System.Collections.ObjectModel;
 using System.Data.Common;
@@ -7,7 +8,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -501,99 +501,48 @@ namespace ProjectCryptoGains
 
             BlockUI();
 
-            // Create a PrintDialog
-            PrintDialog printDlg = new();
-
-            await Task.Run(() =>
+            try
             {
-                // Create a FlowDocument dynamically.
-                FlowDocument doc = CreateFlowDocument();
-                doc.Name = "FlowDoc";
-                // Create IDocumentPaginatorSource from FlowDocument
-                IDocumentPaginatorSource idpSource = doc;
-                // Call PrintDocument method to send document to printer
-                printDlg.PrintDocument(idpSource.DocumentPaginator, "Project Crypto Gains - Rewards");
-            });
-
-            ConsoleLog(_mainWindow.txtLog, $"[Rewards] Printing done");
-
-            UnblockUI();
+                await PrintRewardsAsync();
+                ConsoleLog(_mainWindow.txtLog, "[Rewards] Printing done");
+            }
+            catch (Exception ex)
+            {
+                ConsoleLog(_mainWindow.txtLog, $"[Rewards] Printing failed: {ex.Message}");
+                MessageBoxResult result = CustomMessageBox.Show($"Printing failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                UnblockUI();
+            }
         }
 
-        /// <summary>
-        /// This method creates a dynamic FlowDocument. You can add anything to this
-        /// FlowDocument that you would like to send to the printer
-        /// </summary>
-        private FlowDocument CreateFlowDocument()
+        private async Task PrintRewardsAsync()
         {
             string? fiatCurrency = SettingFiatCurrency;
-            // Create a FlowDocument
-            FlowDocument flowDoc = new()
-            {
-                // Set the page width of the flow document to the width of an A4 page
-                PageWidth = 793,
-                ColumnWidth = 793,
+            var rewards = dgRewards.ItemsSource.OfType<RewardsModel>();
 
-                PagePadding = new Thickness(20),
+            PrintDialog printDlg = new();
 
-                FontFamily = new FontFamily("Fixedsys"),
-                FontSize = 8
-            };
-
-            Table table = new();
-            table.RowGroups.Add(new TableRowGroup());
-            TableRow? tableRow = new()
-            {
-                FontWeight = FontWeights.Bold
-            };
-            TableCell? tableCell = new(new Paragraph(new Run("Project Crypto Gains - Rewards"))
-            {
-                FontSize = 16
-            })
-            {
-                ColumnSpan = 6,
-                TextAlignment = TextAlignment.Center
-            };
-            tableRow.Cells.Add(tableCell);
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            tableRow = new TableRow();
-            tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            foreach (var item in dgRewards.ItemsSource.OfType<RewardsModel>())
-            {
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Date ?? ""))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow
+            await PrintUtils.PrintFlowDocumentAsync(
+                columnHeaders: new[] { "DATE", "REFID", "TYPE", "EXCHANGE", "CURRENCY", "AMOUNT", $"AMOUNT {fiatCurrency}" },
+                dataItems: rewards,
+                dataExtractor: item => new[]
                 {
-                    FontWeight = FontWeights.Bold
-                };
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("REFID"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("TYPE"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("EXCHANGE"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("CURRENCY"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("AMOUNT"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("AMOUNT_" + fiatCurrency))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Refid ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Type ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Exchange ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Currency ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Amount.ToString() ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Amount_fiat.ToString() ?? ""))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));
-                table.RowGroups[0].Rows.Add(tableRow);
-            }
-            flowDoc.Blocks.Add(table);
-            return flowDoc;
+                    (item.Date ?? "", TextAlignment.Left, 1),
+                    (item.Refid ?? "", TextAlignment.Left, 1),
+                    (item.Type ?? "", TextAlignment.Left, 1),
+                    (item.Exchange ?? "", TextAlignment.Left, 1),
+                    (item.Currency ?? "", TextAlignment.Left, 1),
+                    ($"{item.Amount,10:F10}", TextAlignment.Left, 1),
+                    ($"{item.Amount_fiat,2:F2}", TextAlignment.Left, 1)
+                },
+                printDlg: printDlg,
+                title: "Project Crypto Gains - Rewards",
+                maxColumnsPerRow: 7,
+                repeatHeadersPerItem: true,
+                itemsPerPage: 21
+            );
         }
 
         private async void ButtonPrintSummary_Click(object sender, RoutedEventArgs e)
@@ -608,119 +557,46 @@ namespace ProjectCryptoGains
 
             BlockUI();
 
-            // Create a PrintDialog
-            PrintDialog printDlg = new();
-
-            string totalAmountFiat = (String)(lblTotalAmountFiatData.Content ?? "");
-
-            await Task.Run(() =>
+            try
             {
-                // Create a FlowDocument dynamically.
-                FlowDocument doc = CreateFlowDocumentSummary(totalAmountFiat);
-                doc.Name = "FlowDoc";
-                // Create IDocumentPaginatorSource from FlowDocument
-                IDocumentPaginatorSource idpSource = doc;
-                // Call PrintDocument method to send document to printer
-                printDlg.PrintDocument(idpSource.DocumentPaginator, "Project Crypto Gains - Rewards Summary");
-            });
-
-            ConsoleLog(_mainWindow.txtLog, $"[Rewards] Printing done");
-
-            UnblockUI();
+                await PrintRewardsSummaryAsync(lblTotalAmountFiatData.Content?.ToString() ?? "");
+                ConsoleLog(_mainWindow.txtLog, "[Rewards] Printing done");
+            }
+            catch (Exception ex)
+            {
+                ConsoleLog(_mainWindow.txtLog, $"[Rewards] Printing failed: {ex.Message}");
+                MessageBoxResult result = CustomMessageBox.Show($"Printing failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                UnblockUI();
+            }
         }
 
-        private FlowDocument CreateFlowDocumentSummary(string totalAmountFiat)
+        private async Task PrintRewardsSummaryAsync(string totalAmountFiat)
         {
             string? fiatCurrency = SettingFiatCurrency;
-            // Create a FlowDocument
-            FlowDocument flowDoc = new()
-            {
-                // Set the page width of the flow document to the width of an A4 page
-                PageWidth = 793,
-                ColumnWidth = 793,
+            var rewardsSummary = dgRewardsSummary.ItemsSource.OfType<RewardsSummaryModel>();
 
-                PagePadding = new Thickness(20),
+            PrintDialog printDlg = new();
 
-                FontFamily = new FontFamily("Fixedsys"),
-                FontSize = 8
-            };
-
-            Table table = new();
-            table.RowGroups.Add(new TableRowGroup());
-            TableRow? tableRow = new()
-            {
-                FontWeight = FontWeights.Bold
-            };
-            TableCell? tableCell = new(new Paragraph(new Run("Project Crypto Gains - Rewards Summary"))
-            {
-                FontSize = 16
-            })
-            {
-                ColumnSpan = 7,
-                TextAlignment = TextAlignment.Center
-            };
-            tableRow.Cells.Add(tableCell);
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            tableRow = new TableRow();
-            tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            tableRow = new TableRow();
-            tableCell = new TableCell(new Paragraph(new Run("From\t" + fromDate)))
-            {
-                ColumnSpan = 7,
-                TextAlignment = TextAlignment.Left
-            };
-            tableRow.Cells.Add(tableCell);
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            tableRow = new TableRow();
-            tableCell = new TableCell(new Paragraph(new Run("To\t" + toDate)))
-            {
-                ColumnSpan = 7,
-                TextAlignment = TextAlignment.Left
-            };
-            tableRow.Cells.Add(tableCell);
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            tableRow = new TableRow();
-            tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            foreach (var item in dgRewardsSummary.ItemsSource.OfType<RewardsSummaryModel>())
-            {
-                tableRow = new TableRow
+            await PrintUtils.PrintFlowDocumentAsync(
+                columnHeaders: new[] { "CURRENCY", "AMOUNT", $"AMOUNT {fiatCurrency}" },
+                dataItems: rewardsSummary,
+                dataExtractor: item => new[]
                 {
-                    FontWeight = FontWeights.Bold
-                };
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("CURRENCY"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("AMOUNT"))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("AMOUNT_" + fiatCurrency))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Currency ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Amount.ToString() ?? ""))));
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run(item.Amount_fiat.ToString() ?? ""))));
-                table.RowGroups[0].Rows.Add(tableRow);
-
-                tableRow = new TableRow();
-                tableRow.Cells.Add(new TableCell(new Paragraph(new Run("\n"))));
-                table.RowGroups[0].Rows.Add(tableRow);
-            }
-
-            tableRow = new TableRow();
-            tableCell = new TableCell(new Paragraph(new Run("Total rewards converted " + totalAmountFiat)))
-            {
-                ColumnSpan = 7,
-                TextAlignment = TextAlignment.Left
-            };
-            tableRow.Cells.Add(tableCell);
-            table.RowGroups[0].Rows.Add(tableRow);
-
-            flowDoc.Blocks.Add(table);
-            return flowDoc;
+                    (item.Currency ?? "", TextAlignment.Left, 1),
+                    ($"{item.Amount,10:F10}", TextAlignment.Left, 1),
+                    ($"{item.Amount_fiat,2:F2}", TextAlignment.Left, 1)
+                },
+                printDlg: printDlg,
+                title: "Project Crypto Gains - Rewards Summary",
+                subtitle: $"From\t{fromDate}\nTo\t{toDate}",
+                summaryText: "Total rewards converted " + totalAmountFiat,
+                maxColumnsPerRow: 3,
+                repeatHeadersPerItem: true,
+                virtualColumnCount: 8
+            );
         }
     }
 }
