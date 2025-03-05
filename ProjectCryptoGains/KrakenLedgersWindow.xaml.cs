@@ -186,7 +186,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "File could not be parsed." + Environment.NewLine + ex.Message;
+                    lastError = "File could not be parsed" + Environment.NewLine + ex.Message;
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Load unsuccessful");
