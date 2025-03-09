@@ -16,6 +16,9 @@ namespace ProjectCryptoGains
         {
             InitializeComponent();
 
+            // Set owner of Custom MessageBox
+            Owner = Application.Current.MainWindow;
+
             // Capture drag on titlebar
             TitleBar.MouseLeftButtonDown += (sender, e) => DragMove();
 
@@ -72,6 +75,12 @@ namespace ProjectCryptoGains
         {
             var customMessageBox = new CustomMessageBox(message, caption, buttons, icon, textAlignment);
             customMessageBox.ShowDialog();
+
+            // After the dialog closes, ensure the owner regains focus
+            if (customMessageBox.Owner != null)
+            {
+                customMessageBox.Owner.Activate();
+            }
 
             if (customMessageBox.DialogResult == true)
             {
