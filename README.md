@@ -90,3 +90,16 @@ or in connection with the software or the use or other dealings in the software
 For any questions or feedback, feel free to reach out via:
 - The **issues page** of this repository
 - My X handle: [@ProjCryptoGains](https://x.com/ProjCryptoGains).
+
+## Licensing
+
+ProjectCryptoGains is licensed under the [Apache License 2.0](LICENSE).
+
+This project includes or depends on the following third-party components:
+- **Firebird Embedded**:
+  - [Initial Developer's Public License (IDPL)](licenses/LICENSE-FIREBIRD-IDPL.txt)
+  - [InterBase Public License (IPL)](licenses/LICENSE-FIREBIRD-IPL.txt)
+- **ControlzEx**:
+  - [MIT License](licenses/LICENSE-CONTROLZEX-MIT.txt)
+
+If you distribute this project with Firebird Embedded, please ensure compliance with the IDPL [licenses/LICENSE-FIREBIRD-IDPL.txt](licenses/LICENSE-FIREBIRD-IDPL.txt) and IPL [licenses/LICENSE-FIREBIRD-IPL.txt](licenses/LICENSE-FIREBIRD-IPL.txt) terms.

@@ -68,7 +68,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding RowNumber}" Header="ROW__NR" />
                             <DataGridTextColumn Binding="{Binding Refid}" Header="REFID" />
-                            <DataGridTextColumn Binding="{Binding Date}" Header="DATE" />
+                            <DataGridTextColumn Binding="{Binding Date, StringFormat=yyyy-MM-dd HH:mm:ss}" Header="DATE" />
                             <DataGridTextColumn Binding="{Binding Type}" Header="TYPE" />
                             <DataGridTextColumn Binding="{Binding Exchange}" Header="EXCHANGE" />
                             <DataGridTextColumn Binding="{Binding Currency}" Header="CURRENCY" />

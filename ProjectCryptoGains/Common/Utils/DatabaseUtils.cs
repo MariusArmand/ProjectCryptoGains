@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using FirebirdSql.Data.FirebirdClient;
 using System;
 using System.Data.Common;
 using System.IO;
@@ -7,23 +7,49 @@ namespace ProjectCryptoGains.Common.Utils
 {
     public static class DatabaseUtils
     {
-        public static readonly string databaseFileName = "pcg.db";
+        public static readonly string databaseFileName = "pcg.fdb";
         public static readonly string databasePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "db", databaseFileName);
-        public static readonly string connectionString = $"Data Source={databasePath}";
+        public static readonly string fbClientLibraryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "db", "fbclient.dll");
+        public static readonly string connectionString = GetConnectionString();
+
+        public static string GetConnectionString()
+        {
+            var csb = new FbConnectionStringBuilder
+            {
+                ServerType = FbServerType.Embedded,
+                ClientLibrary = fbClientLibraryPath,
+                Database = databasePath,
+                UserID = "SYSDBA",
+                Password = "masterkey"
+            };
+            return csb.ToString();
+        }
 
         public static string TestDatabaseConnection()
         {
+            // Check if fbclient.dll exists (critical for Firebird Embedded)
+            if (!File.Exists(fbClientLibraryPath))
+            {
+                return $"Firebird client library not found at {fbClientLibraryPath}";
+            }
+
+            // Check if the database file exists
             if (!File.Exists(databasePath))
             {
                 return "Database file does not exist";
             }
-            else
+
+            // Attempt to connect
+            using (FbConnection connection = new FbConnection(connectionString))
             {
-                using SqliteConnection connection = new(connectionString);
                 try
                 {
                     connection.Open(); // No need to close connection, since it'll get closed automatically because we are relying on "using"
                     return "Database connection successful";
+                }
+                catch (FbException fbEx)
+                {
+                    return $"Firebird error connecting to the database: {fbEx.Message} (Error Code: {fbEx.ErrorCode})";
                 }
                 catch (Exception ex)
                 {
@@ -32,7 +58,7 @@ namespace ProjectCryptoGains.Common.Utils
             }
         }
 
-        public static void AddParameterWithValue(DbCommand command, string parameterName, object parameterValue)
+        public static void AddParameterWithValue(DbCommand command, string parameterName, object? parameterValue)
         {
             /// Add parameter and value to a DBCommand
 

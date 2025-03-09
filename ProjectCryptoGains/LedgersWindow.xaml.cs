@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using FirebirdSql.Data.FirebirdClient;
 using ProjectCryptoGains.Common;
 using ProjectCryptoGains.Common.Utils;
 using System;
@@ -12,6 +12,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.DateUtils;
 using static ProjectCryptoGains.Common.Utils.LedgersUtils;
 using static ProjectCryptoGains.Common.Utils.ReaderUtils;
 using static ProjectCryptoGains.Common.Utils.Utils;
@@ -71,69 +72,70 @@ namespace ProjectCryptoGains
         public void BindGrid()
         {
             // Create a collection of LedgersModel objects
-            ObservableCollection<LedgersModel> data = [];
+            ObservableCollection<LedgersModel> LedgersData = [];
 
-            using SqliteConnection connection = new(connectionString);
-
-            try
+            using (FbConnection connection = new(connectionString))
             {
-                // code that may throw an exception
-                connection.Open();
-            }
-            catch (Exception ex)
-            {
-                // code to handle the exception
-                MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                UnblockUI();
-
-                // Exit function early
-                return;
-            }
-
-            DbCommand command = connection.CreateCommand();
-
-            command.CommandText = $@"SELECT 
-                                         REFID,
-                                         DATE,
-                                         TYPE,
-                                         EXCHANGE,
-                                         AMOUNT,
-                                         CURRENCY,
-                                         FEE,
-                                         SOURCE,
-                                         TARGET,
-                                         NOTES
-                                     FROM TB_LEDGERS_S
-                                     WHERE strftime('%s', DATE) BETWEEN strftime('%s', '{fromDate}')
-                                         AND strftime('%s', date('{toDate}', '+1 day'))
-                                     ORDER BY DATE ASC";
-
-            DbDataReader reader = command.ExecuteReader();
-
-            int dbLineNumber = 0;
-            while (reader.Read())
-            {
-                dbLineNumber++;
-
-                data.Add(new LedgersModel
+                try
                 {
-                    RowNumber = dbLineNumber,
-                    Refid = reader.GetStringOrEmpty(0),
-                    Date = reader.GetStringOrEmpty(1),
-                    Type = reader.GetStringOrEmpty(2),
-                    Exchange = reader.GetStringOrEmpty(3),
-                    Amount = reader.GetDecimalOrDefault(4),
-                    Currency = reader.GetStringOrEmpty(5),
-                    Fee = reader.GetDecimalOrDefault(6),
-                    Source = reader.GetStringOrEmpty(7),
-                    Target = reader.GetStringOrEmpty(8),
-                    Notes = reader.GetStringOrEmpty(9)
-                });
-            }
-            reader.Close();
-            connection.Close();
+                    // code that may throw an exception
+                    connection.Open();
+                }
+                catch (Exception ex)
+                {
+                    // code to handle the exception
+                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
-            dgLedgers.ItemsSource = data;
+                    // Exit function early
+                    return;
+                }
+
+                using DbCommand selectCommand = connection.CreateCommand();
+                selectCommand.CommandText = $@"SELECT 
+                                                   REFID,
+                                                   ""DATE"",
+                                                   TYPE,
+                                                   EXCHANGE,
+                                                   AMOUNT,
+                                                   CURRENCY,
+                                                   FEE,
+                                                   SOURCE,
+                                                   TARGET,
+                                                   NOTES
+                                               FROM TB_LEDGERS_S
+                                               WHERE ""DATE"" BETWEEN @FROM_DATE AND @TO_DATE
+                                               ORDER BY ""DATE"" ASC";
+
+                // Convert string dates to DateTime and add parameters
+                AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(fromDate));
+                AddParameterWithValue(selectCommand, "@TO_DATE", ConvertStringToIsoDate(toDate).AddDays(1));
+
+                using (DbDataReader reader = selectCommand.ExecuteReader())
+                {
+                    int dbLineNumber = 0;
+                    while (reader.Read())
+                    {
+                        dbLineNumber++;
+
+                        LedgersData.Add(new LedgersModel
+                        {
+                            RowNumber = dbLineNumber,
+                            Refid = reader.GetStringOrEmpty(0),
+                            Date = reader.GetDateTime(1),
+                            Type = reader.GetStringOrEmpty(2),
+                            Exchange = reader.GetStringOrEmpty(3),
+                            Amount = reader.GetDecimalOrDefault(4),
+                            Currency = reader.GetStringOrEmpty(5),
+                            Fee = reader.GetDecimalOrDefault(6),
+                            Source = reader.GetStringOrEmpty(7),
+                            Target = reader.GetStringOrEmpty(8),
+                            Notes = reader.GetStringOrEmpty(9)
+                        });
+                    }
+                }
+            }
+
+            dgLedgers.ItemsSource = LedgersData;
         }
 
         private void UnbindGrid()
@@ -146,7 +148,7 @@ namespace ProjectCryptoGains
             if (!IsValidDateFormat(txtFromDate.Text, "yyyy-MM-dd"))
             {
                 // code to handle the exception
-                MessageBoxResult result = CustomMessageBox.Show("From date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("From date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
                 return;
@@ -155,7 +157,7 @@ namespace ProjectCryptoGains
             if (!IsValidDateFormat(txtToDate.Text, "yyyy-MM-dd"))
             {
                 // code to handle the exception
-                MessageBoxResult result = CustomMessageBox.Show("To date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("To date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
                 return;
@@ -163,56 +165,61 @@ namespace ProjectCryptoGains
 
             BlockUI();
 
-            ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refreshing ledgers");
-
-            // Load the db table
-            bool ledgersRefreshFailed = false;
-            string? ledgersRefreshWarning = null;
-            bool ledgersRefreshWasBusy = false;
-            await Task.Run(() =>
+            try
             {
-                try
+                ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refreshing ledgers");
+
+                // Load the db table
+                bool ledgersRefreshFailed = false;
+                string? ledgersRefreshWarning = null;
+                bool ledgersRefreshWasBusy = false;
+                await Task.Run(() =>
                 {
-                    ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Ledgers);
-                    ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy when called
-                }
-                catch (Exception ex)
-                {
-                    ledgersRefreshFailed = true;
-                    Application.Current.Dispatcher.Invoke(() =>
+                    try
                     {
-                        if (ex.InnerException != null)
+                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Ledgers);
+                        ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy when called
+                    }
+                    catch (Exception ex)
+                    {
+                        ledgersRefreshFailed = true;
+                        Application.Current.Dispatcher.Invoke(() =>
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Ledgers] " + ex.InnerException.Message);
-                        }
-                    });
-                }
+                            if (ex.InnerException != null)
+                            {
+                                ConsoleLog(_mainWindow.txtLog, $"[Ledgers] " + ex.InnerException.Message);
+                            }
+                        });
+                    }
 
-            });
+                });
 
-            if (!ledgersRefreshWasBusy && !ledgersRefreshFailed)
-            {
-                BindGrid();
-                if (ledgersRefreshWarning == null)
+                if (!ledgersRefreshWasBusy && !ledgersRefreshFailed)
                 {
-                    ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refresh done");
+                    BindGrid();
+                    if (ledgersRefreshWarning == null)
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refresh done");
+                    }
+                    else
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refresh done with warnings");
+                    }
                 }
                 else
                 {
-                    ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refresh done with warnings");
+                    UnbindGrid();
+                    if (ledgersRefreshWasBusy)
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Ledgers] There is already a ledgers refresh in progress. Please Wait");
+                    }
+                    ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refresh unsuccessful");
                 }
             }
-            else
+            finally
             {
-                UnbindGrid();
-                if (ledgersRefreshWasBusy)
-                {
-                    ConsoleLog(_mainWindow.txtLog, $"[Ledgers] There is already a ledgers refresh in progress. Please Wait");
-                }
-                ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refresh unsuccessful");
+                UnblockUI();
             }
-
-            UnblockUI();
         }
 
         private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
@@ -280,11 +287,11 @@ namespace ProjectCryptoGains
         {
             if (!dgLedgers.HasItems)
             {
-                MessageBoxResult result = CustomMessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBoxResult result = CustomMessageBox.Show("Nothing to print.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Printing Ledgers");
+            ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Printing ledgers");
 
             BlockUI();
 
@@ -319,7 +326,7 @@ namespace ProjectCryptoGains
                 dataItems: ledgers,
                 dataExtractor: item => new[]
                 {
-                    (item.Date ?? "", TextAlignment.Left, 1),
+                    (ConvertDateTimeToString(item.Date) ?? "", TextAlignment.Left, 1),
                     (item.Refid ?? "", TextAlignment.Left, 2),
                     (item.Type ?? "", TextAlignment.Left, 1),
                     (string.IsNullOrEmpty(item.Exchange) ? "N/A" : item.Exchange, TextAlignment.Left, 1),

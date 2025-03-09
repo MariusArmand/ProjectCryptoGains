@@ -1,5 +1,4 @@
 ﻿using System.Data;
-using static ProjectCryptoGains.Common.Utils.Utils;
 
 namespace ProjectCryptoGains.Common.Utils
 {
@@ -7,12 +6,12 @@ namespace ProjectCryptoGains.Common.Utils
     {
         public static decimal GetDecimalOrDefault(this IDataReader reader, int columnIndex, decimal defaultValue = 0.0000000000m)
         {
-            return reader.IsDBNull(columnIndex) ? defaultValue : ConvertStringToDecimal(reader.GetString(columnIndex), defaultValue);
+            return reader.IsDBNull(columnIndex) ? defaultValue : reader.GetDecimal(columnIndex);
         }
 
         public static decimal? GetDecimalOrNull(this IDataReader reader, int columnIndex)
         {
-            return reader.IsDBNull(columnIndex) ? null : ConvertStringToDecimal(reader.GetString(columnIndex));
+            return reader.IsDBNull(columnIndex) ? null : reader.GetDecimal(columnIndex);
         }
 
         public static string GetStringOrEmpty(this IDataReader reader, int columnIndex)

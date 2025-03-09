@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using FirebirdSql.Data.FirebirdClient;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Data.Common;
@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
+using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
 using static ProjectCryptoGains.Common.Utils.SettingUtils;
 
 namespace ProjectCryptoGains.Common.Utils
@@ -39,52 +40,52 @@ namespace ProjectCryptoGains.Common.Utils
         }
         /////////////////////////////
 
-        // Custom exceptions //
-        public class ValidationException(string message) : Exception(message)
-        {
-        }
-        /////////////////////////////
-
         public static void ConsoleLog(TextBox txtLog, string logText)
         {
             // Get the current time in the specified format
             string timestamp = DateTime.Now.ToString("HH:mm:ss");
 
+            // Remove trailing period from logText
+            string trimmedLogText = logText.TrimEnd('.');
+
             // Append text
             if (string.IsNullOrWhiteSpace(txtLog.Text))
             {
-                txtLog.AppendText($"{timestamp} {logText}");
+                txtLog.AppendText($"{timestamp} {trimmedLogText}");
             }
-
             else
             {
-                txtLog.AppendText($"\n{timestamp} {logText}");
+                txtLog.AppendText($"\n{timestamp} {trimmedLogText}");
             }
 
             // Scroll the TextBox to the bottom
             txtLog.ScrollToEnd();
         }
 
-        public static (string fiatAmount, string source) ConvertXToFiat(string xCurrency, decimal xAmount, DateTime date, SqliteConnection connection)
+        public static (decimal fiatAmount, string source) ConvertXToFiat(string xCurrency, decimal xAmount, DateTime date, FbConnection connection)
         {
             try
             {
-                string? fiatCurrency = SettingFiatCurrency;
+                string fiatCurrency = SettingFiatCurrency;
 
                 decimal? exchangeRateApi = null;
                 decimal? exchangeRateDb = null;
-                ///////////////////////////
-                string formattedDate = date.ToString("yyyy-MM-dd HH:mm:ss");
-                ///////////////////////////
-                DbCommand command = connection.CreateCommand();
-                command.CommandText = $@"SELECT EXCHANGE_RATE
-                                         FROM TB_CONVERT_X_TO_FIAT_A
-                                         WHERE CURRENCY = '{xCurrency}'
-                                            AND AMOUNT = '{xAmount}'
-                                            AND DATE = '{formattedDate}'
-                                            AND FIAT_CURRENCY = '{fiatCurrency}'";
 
-                using (DbDataReader reader = command.ExecuteReader())
+                using DbCommand selectCommand = connection.CreateCommand();
+                selectCommand.CommandText = $@"SELECT EXCHANGE_RATE
+                                               FROM TB_CONVERT_X_TO_FIAT_A
+                                               WHERE CURRENCY = @CURRENCY
+                                                  AND AMOUNT = @AMOUNT
+                                                  AND ""DATE"" = @DATE
+                                                  AND FIAT_CURRENCY = @FIAT_CURRENCY";
+
+                // Add parameters
+                AddParameterWithValue(selectCommand, "@CURRENCY", xCurrency);
+                AddParameterWithValue(selectCommand, "@AMOUNT", xAmount);
+                AddParameterWithValue(selectCommand, "@DATE", date);
+                AddParameterWithValue(selectCommand, "@FIAT_CURRENCY", fiatCurrency);
+
+                using (DbDataReader reader = selectCommand.ExecuteReader())
                 {
                     if (reader.Read())
                     {
@@ -100,7 +101,7 @@ namespace ProjectCryptoGains.Common.Utils
                     int unixTimestamp = (int)(date - new DateTime(1970, 1, 1).ToLocalTime()).TotalSeconds;
 
                     client.BaseAddress = new Uri("https://min-api.cryptocompare.com");
-                    string? fiat_currency = SettingFiatCurrency;
+                    string fiat_currency = SettingFiatCurrency;
                     string? api_key = SettingCoinDeskDataApiKey;
                     var response = client.GetAsync($"/data/v2/histoday?limit=1&fsym=" + xCurrency + "&tsym=" + fiat_currency + "&toTs=" + unixTimestamp + "&api_key={" + api_key + "}").Result;
                     var result = response.Content.ReadAsStringAsync().Result;
@@ -114,7 +115,7 @@ namespace ProjectCryptoGains.Common.Utils
                         string? error_message = null;
                         if (string.IsNullOrEmpty(api_key))
                         {
-                            error_message = "CoinDesk Data API call failed: API key is not set";
+                            error_message = "CoinDesk Data API call failed: API key is not set.";
                         }
                         else
                         {
@@ -133,12 +134,11 @@ namespace ProjectCryptoGains.Common.Utils
                 ///////////////////////////
                 if (exchangeRateApi > 0)
                 {
-                    using var commandInsert = connection.CreateCommand();
-
-                    commandInsert.CommandText = @"INSERT INTO TB_CONVERT_X_TO_FIAT_A (
+                    using DbCommand insertCommand = connection.CreateCommand();
+                    insertCommand.CommandText = @"INSERT INTO TB_CONVERT_X_TO_FIAT_A (
                                                       CURRENCY, 
                                                       AMOUNT, 
-                                                      DATE, 
+                                                      ""DATE"", 
                                                       FIAT_CURRENCY, 
                                                       EXCHANGE_RATE
                                                   )
@@ -147,16 +147,16 @@ namespace ProjectCryptoGains.Common.Utils
                                                       @AMOUNT, 
                                                       @DATE, 
                                                       @FIAT_CURRENCY, 
-                                                      printf('%.10f', @EXCHANGE_RATE)
+                                                      ROUND(@EXCHANGE_RATE, 10)
                                                   )";
 
-                    commandInsert.Parameters.AddWithValue("@CURRENCY", xCurrency);
-                    commandInsert.Parameters.AddWithValue("@AMOUNT", xAmount.ToString());
-                    commandInsert.Parameters.AddWithValue("@DATE", formattedDate);
-                    commandInsert.Parameters.AddWithValue("@FIAT_CURRENCY", fiatCurrency);
-                    commandInsert.Parameters.AddWithValue("@EXCHANGE_RATE", exchangeRateApi);
+                    AddParameterWithValue(insertCommand, "@CURRENCY", xCurrency);
+                    AddParameterWithValue(insertCommand, "@AMOUNT", xAmount);
+                    AddParameterWithValue(insertCommand, "@DATE", date);
+                    AddParameterWithValue(insertCommand, "@FIAT_CURRENCY", fiatCurrency);
+                    AddParameterWithValue(insertCommand, "@EXCHANGE_RATE", exchangeRateApi);
 
-                    commandInsert.ExecuteNonQuery();
+                    insertCommand.ExecuteNonQuery();
                 }
                 ///////////////////////////
                 decimal fiatAmount = 0;
@@ -173,7 +173,7 @@ namespace ProjectCryptoGains.Common.Utils
                     source = "API";
                 }
 
-                return (fiatAmount.ToString("0.0000000000", NumberFormatInfo.InvariantInfo), source);
+                return (fiatAmount, source);
             }
             catch (Exception ex)
             {
@@ -183,7 +183,7 @@ namespace ProjectCryptoGains.Common.Utils
 
         public static decimal ConvertStringToDecimal(string input, decimal defaultValue = 0.0000000000m)
         {
-            if (decimal.TryParse(input, out decimal tryParsedAmount))
+            if (decimal.TryParse(input, CultureInfo.InvariantCulture, out decimal tryParsedAmount))
             {
                 return tryParsedAmount;
             }
@@ -196,27 +196,6 @@ namespace ProjectCryptoGains.Common.Utils
         public static string? NullIfEmpty(this string s)
         {
             return string.IsNullOrEmpty(s) ? null : s;
-        }
-
-        public static bool IsValidDateFormat(string date, string format)
-        {
-            // Try to parse the date using the specified format
-            return DateTime.TryParseExact(date, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
-        }
-
-        public static string GetTodayAsIsoDate()
-        {
-            return DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        }
-
-        public static DateTime ConvertStringToIsoDate(string date)
-        {
-            return DateTime.ParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-        }
-
-        public static DateTime ConvertStringToIsoDateTime(string datetime)
-        {
-            return DateTime.ParseExact(datetime, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         }
     }
 }

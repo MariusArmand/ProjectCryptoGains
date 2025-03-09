@@ -42,7 +42,6 @@ namespace ProjectCryptoGains
 
         private void Bind()
         {
-            // Set the selected item based on the current setting
             cmbFiatCurrency.Text = SettingFiatCurrency;
 
             txtRewardsTaxPercentage.Text = SettingRewardsTaxPercentage.ToString();
@@ -56,52 +55,58 @@ namespace ProjectCryptoGains
 
             BlockUI();
 
-            string? lastError = null;
-
             try
             {
-                SettingFiatCurrency = cmbFiatCurrency.SelectedItem as string;
 
-                if (decimal.TryParse(txtRewardsTaxPercentage.Text, out decimal tryParsedAmount))
+                string? lastError = null;
+
+                try
                 {
-                    SettingRewardsTaxPercentage = tryParsedAmount;
+                    SettingFiatCurrency = cmbFiatCurrency.SelectedItem as string ?? "NONE";
+
+                    if (decimal.TryParse(txtRewardsTaxPercentage.Text, out decimal tryParsedAmount))
+                    {
+                        SettingRewardsTaxPercentage = tryParsedAmount;
+                    }
+                    else
+                    {
+                        txtRewardsTaxPercentage.Text = "0";
+                        SettingRewardsTaxPercentage = 0m;
+                    }
+
+                    SettingCoinDeskDataApiKey = txtCoinDeskDataApiKey.Text;
+
+                    string message = "Settings have been saved.";
+                    ConsoleLog(_mainWindow.txtLog, $"[Settings] {message}");
+                    MessageBoxResult result = CustomMessageBox.Show(message, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    lastError = ex.Message;
+                    if (ex.InnerException != null)
+                    {
+                        lastError += Environment.NewLine + ex.InnerException.Message;
+                    }
+
+                    ConsoleLog(_mainWindow.txtLog, $"[Settings] {lastError}");
+                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+                if (lastError == null)
+                {
+                    ConsoleLog(_mainWindow.txtLog, $"[Settings] Saving successful");
                 }
                 else
                 {
-                    txtRewardsTaxPercentage.Text = "0";
-                    SettingRewardsTaxPercentage = 0m;
+                    ConsoleLog(_mainWindow.txtLog, $"[Settings] Saving unsuccessful");
                 }
 
-                SettingCoinDeskDataApiKey = txtCoinDeskDataApiKey.Text;
-
-                string message = "Settings have been saved";
-                ConsoleLog(_mainWindow.txtLog, $"[Settings] {message}");
-                MessageBoxResult result = CustomMessageBox.Show(message, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                Bind();
             }
-            catch (InvalidOperationException ex)
+            finally
             {
-                lastError = ex.Message;
-                if (ex.InnerException != null)
-                {
-                    lastError += Environment.NewLine + ex.InnerException.Message;
-                }
-
-                ConsoleLog(_mainWindow.txtLog, $"[Settings] {lastError}");
-                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                UnblockUI();
             }
-
-            if (lastError == null)
-            {
-                ConsoleLog(_mainWindow.txtLog, $"[Settings] Saving successful");
-            }
-            else
-            {
-                ConsoleLog(_mainWindow.txtLog, $"[Settings] Saving unsuccessful");
-            }
-
-            UnblockUI();
-
-            Bind();
         }
     }
 }

@@ -76,7 +76,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding RowNumber}" Header="ROW__NR" />
                             <DataGridTextColumn Binding="{Binding Refid}" Header="REFID" />
-                            <DataGridTextColumn Binding="{Binding Date}" Header="DATE" />
+                            <DataGridTextColumn Binding="{Binding Date, StringFormat=yyyy-MM-dd HH:mm:ss}" Header="DATE" />
                             <DataGridTextColumn Binding="{Binding Type}" Header="TYPE" />
                             <DataGridTextColumn Binding="{Binding Exchange}" Header="EXCHANGE" />
                             <DataGridTextColumn Binding="{Binding Currency}" Header="CURRENCY" />
@@ -93,7 +93,7 @@
                 <!-- Second Row: Summary DataGrid -->
                 <Grid Grid.Row="1">
                     <Label x:Name="lblSummary" Width="125" Margin="25,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Summary" FontWeight="Bold" />
-                    <DataGrid x:Name="dgRewardsSummary" Width="800" Height="200" Margin="25,30,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
+                    <DataGrid x:Name="dgRewardsSummary" Width="850" Height="200" Margin="25,30,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
                         <DataGrid.Resources>
                             <Style x:Key="CellRightAlign">
                                 <Setter Property="Control.HorizontalAlignment" Value="Right" />
@@ -110,7 +110,7 @@
                             <DataGridTextColumn Binding="{Binding Amount_sell_break_even, StringFormat='0.0000000000'}" ElementStyle="{StaticResource CellRightAlign}" Header="AMOUNT__SELL__BREAK__EVEN" />
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnPrintSummary" Width="40" Height="40" Margin="850,30,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonPrintSummary_Click">
+                    <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnPrintSummary" Width="40" Height="40" Margin="900,30,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonPrintSummary_Click">
                         <Image x:Name="imgBtnPrintSummary" Width="32" Height="32" Source="Resources/printer.png" />
                     </Button>
                     <Label x:Name="lblTotalAmountFiat" Width="140" Margin="25,240,0,20" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total rewards converted" />

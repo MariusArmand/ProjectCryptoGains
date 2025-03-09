@@ -1,6 +1,6 @@
-﻿using LiveCharts;
+﻿using FirebirdSql.Data.FirebirdClient;
+using LiveCharts;
 using LiveCharts.Wpf;
-using Microsoft.Data.Sqlite;
 using ProjectCryptoGains.Common;
 using ProjectCryptoGains.Common.Utils;
 using System;
@@ -15,6 +15,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.DateUtils;
 using static ProjectCryptoGains.Common.Utils.LedgersUtils;
 using static ProjectCryptoGains.Common.Utils.ReaderUtils;
 using static ProjectCryptoGains.Common.Utils.SettingUtils;
@@ -32,8 +33,6 @@ namespace ProjectCryptoGains
         private readonly MainWindow _mainWindow;
 
         private string untilDate = GetTodayAsIsoDate();
-
-        private SqliteConnection? connection;
 
         public string Amount_fiat_header { get; set; } = "AMOUNT__FIAT";
 
@@ -100,89 +99,89 @@ namespace ProjectCryptoGains
 
         private void BindGrid()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             dgBalances.Columns[3].Header = "AMOUNT__" + fiatCurrency;
 
             // Create a collection of BalancesModel objects
-            ObservableCollection<BalancesModel> data = [];
+            ObservableCollection<BalancesModel> BalancesData = [];
 
-            using SqliteConnection connection = new(connectionString);
-
-            try
+            using (FbConnection connection = new(connectionString))
             {
-                connection.Open();
-            }
-            catch (Exception ex)
-            {
-                MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                UnblockUI();
-
-                // Exit function early
-                return;
-            }
-
-            DbCommand command = connection.CreateCommand();
-            command.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_BALANCES_S";
-            DbDataReader reader = command.ExecuteReader();
-
-            int dbLineNumber = 0;
-
-            List<string> currencies = [];
-            List<decimal> amounts_fiat = [];
-
-            string curr = "";
-
-            decimal amnt = 0.00m;
-            decimal amnt_fiat = 0.00m;
-            decimal tot_amnt_fiat = 0.00m;
-
-            try
-            {
-                while (reader.Read())
+                try
                 {
-                    dbLineNumber++;
+                    connection.Open();
+                }
+                catch (Exception ex)
+                {
+                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
-                    curr = reader.GetStringOrEmpty(0);
-                    amnt = reader.GetDecimalOrDefault(1);
-                    amnt_fiat = reader.GetDecimalOrDefault(2, 0.00m);
+                    // Exit function early
+                    return;
+                }
 
-                    data.Add(new BalancesModel
+                using DbCommand selectCommand = connection.CreateCommand();
+                selectCommand.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_BALANCES_S";
+
+                using (DbDataReader reader = selectCommand.ExecuteReader())
+                {
+                    int dbLineNumber = 0;
+
+                    List<string> currencies = [];
+                    List<decimal> amounts_fiat = [];
+
+                    string curr = "";
+
+                    decimal amnt = 0.00m;
+                    decimal amnt_fiat = 0.00m;
+                    decimal tot_amnt_fiat = 0.00m;
+
+                    try
                     {
-                        RowNumber = dbLineNumber,
-                        Currency = curr,
-                        Amount = amnt,
-                        Amount_fiat = amnt_fiat
-                    });
+                        while (reader.Read())
+                        {
+                            dbLineNumber++;
 
-                    tot_amnt_fiat += amnt_fiat;
+                            curr = reader.GetStringOrEmpty(0);
+                            amnt = reader.GetDecimalOrDefault(1);
+                            amnt_fiat = reader.GetDecimalOrDefault(2, 0.00m);
 
-                    currencies.Add(curr); // Add currency to list
-                    amounts_fiat.Add(amnt_fiat);
-                }
+                            BalancesData.Add(new BalancesModel
+                            {
+                                RowNumber = dbLineNumber,
+                                Currency = curr,
+                                Amount = amnt,
+                                Amount_fiat = amnt_fiat
+                            });
 
-                if (chkConvertToFiat.IsChecked == true)
-                {
-                    lblTotalAmountFiatData.Content = tot_amnt_fiat + " " + fiatCurrency;
+                            tot_amnt_fiat += amnt_fiat;
 
-                    RefreshPie([.. currencies], [.. amounts_fiat]); // Spreads collection items into new arrays for method argument
-                    ToggleDataUIVisibility(Visibility.Visible);
-                }
-                else
-                {
-                    ToggleDataUIVisibility(Visibility.Hidden);
+                            currencies.Add(curr); // Add currency to list
+                            amounts_fiat.Add(amnt_fiat);
+                        }
+
+                        if (chkConvertToFiat.IsChecked == true)
+                        {
+                            lblTotalAmountFiatData.Content = tot_amnt_fiat + " " + fiatCurrency;
+
+                            RefreshPie([.. currencies], [.. amounts_fiat]); // Spreads collection items into new arrays for method argument
+                            ToggleDataUIVisibility(Visibility.Visible);
+                        }
+                        else
+                        {
+                            ToggleDataUIVisibility(Visibility.Hidden);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBoxResult result = CustomMessageBox.Show("Exception whilst fetching BalancesData." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                        // Exit function early
+                        return;
+                    }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBoxResult result = CustomMessageBox.Show("Exception whilst fetching data." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
-                // Exit function early
-                return;
-            }
-            reader.Close();
-            connection.Close();
-
-            dgBalances.ItemsSource = data;
+            dgBalances.ItemsSource = BalancesData;
         }
 
         private void UnbindGrid()
@@ -195,7 +194,7 @@ namespace ProjectCryptoGains
         {
             SeriesCollection ??= []; // Initialize if null
 
-            SeriesCollection.Clear(); // Clear the existing series before adding new data
+            SeriesCollection.Clear(); // Clear the existing series before adding new BalancesData
 
             decimal totalValue = amounts_fiat.Sum();
 
@@ -223,11 +222,11 @@ namespace ProjectCryptoGains
 
         private async void Refresh()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
 
             if (!IsValidDateFormat(txtUntilDate.Text, "yyyy-MM-dd"))
             {
-                MessageBoxResult result = CustomMessageBox.Show("Until date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("Until date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
                 return;
@@ -235,166 +234,171 @@ namespace ProjectCryptoGains
 
             BlockUI();
 
-            ConsoleLog(_mainWindow.txtLog, $"[Balances] Refreshing balances");
-
-            bool ledgersRefreshFailed = false;
-            string? ledgersRefreshWarning = null;
-            bool ledgersRefreshWasBusy = false;
-            if (chkRefreshLedgers.IsChecked == true)
+            try
             {
-                await Task.Run(() =>
+                ConsoleLog(_mainWindow.txtLog, $"[Balances] Refreshing balances");
+
+                bool ledgersRefreshFailed = false;
+                string? ledgersRefreshWarning = null;
+                bool ledgersRefreshWasBusy = false;
+                if (chkRefreshLedgers.IsChecked == true)
                 {
-                    try
+                    await Task.Run(() =>
                     {
-                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Balances);
-                    }
-                    catch (Exception)
-                    {
-                        ledgersRefreshFailed = true;
-                    }
-                    ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy after the call
-                });
-            }
-
-            if (!ledgersRefreshWasBusy && !ledgersRefreshFailed)
-            {
-                string? lastError = null;
-
-                connection = new(connectionString);
-
-                try
-                {
-                    connection.Open();
-                }
-                catch (Exception ex)
-                {
-                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    UnblockUI();
-
-                    // Exit function early
-                    return;
-                }
-
-                bool? convertToFiat = chkConvertToFiat.IsChecked;
-
-                await Task.Run(async () =>
-                {
-                    try
-                    {
-                        DbCommand commandDelete = connection.CreateCommand();
-
-                        // Truncate db table
-                        commandDelete.CommandText = "DELETE FROM TB_BALANCES_S";
-                        commandDelete.ExecuteNonQuery();
-
-                        // Insert into db table
-                        using DbCommand command = connection.CreateCommand();
-                        command.CommandText = @"SELECT 
-                                                    catalog.CODE, 
-                                                    catalog.ASSET
-                                                FROM
-                                                    (SELECT CODE, ASSET 
-                                                     FROM TB_ASSET_CATALOG_S) catalog
-                                                    INNER JOIN
-                                                    (SELECT DISTINCT CURRENCY 
-                                                     FROM TB_LEDGERS_S) ledgers
-                                                    ON catalog.ASSET = ledgers.CURRENCY
-                                                ORDER BY 
-                                                    CODE, 
-                                                    ASSET";
-                        using DbDataReader reader = command.ExecuteReader();
-
-                        // For each asset, create balance insert
-
-                        // Rate limiting mechanism //
-                        DateTime lastCallTime = DateTime.Now;
-                        /////////////////////////////
-                        while (reader.Read())
+                        try
                         {
-                            string code = reader.GetStringOrEmpty(0);
-                            string asset = reader.GetStringOrEmpty(1);
+                            ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Balances);
+                        }
+                        catch (Exception)
+                        {
+                            ledgersRefreshFailed = true;
+                        }
+                        ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy after the call
+                    });
+                }
 
-                            using DbCommand commandInsert = connection.CreateCommand();
-                            if (code == fiatCurrency)
+                if (!ledgersRefreshWasBusy && !ledgersRefreshFailed)
+                {
+                    string? lastError = null;
+
+                    using (FbConnection connection = new(connectionString))
+                    {
+                        try
+                        {
+                            connection.Open();
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                            // Exit function early
+                            return;
+                        }
+
+                        bool? convertToFiat = chkConvertToFiat.IsChecked;
+
+                        await Task.Run(async () =>
+                        {
+                            try
                             {
-                                commandInsert.CommandText = CreateFiatBalancesInsert(asset, untilDate);
-                            }
-                            else
-                            {
-                                var (xInFiat, sqlCommand, conversionSource) = CreateCryptoBalancesInsert(asset, code, untilDate, convertToFiat, connection);
-                                commandInsert.CommandText = sqlCommand;
+                                using DbCommand deleteCommand = connection.CreateCommand();
 
-                                if (ConvertStringToDecimal(xInFiat) == 0m)
-                                {
-                                    lastWarning = $"[Balances] Could not calculate balance for currency: {asset}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
-                                    Application.Current.Dispatcher.Invoke(() =>
-                                    {
-                                        ConsoleLog(_mainWindow.txtLog, lastWarning);
-                                    });
-                                }
+                                // Truncate db table
+                                deleteCommand.CommandText = "DELETE FROM TB_BALANCES_S";
+                                deleteCommand.ExecuteNonQuery();
 
-                                // Rate limiting mechanism //
-                                if (conversionSource == "API")
+                                // Insert into db table
+                                using DbCommand selectCommand = connection.CreateCommand();
+                                selectCommand.CommandText = @"SELECT 
+                                                                  catalog.CODE, 
+                                                                  catalog.ASSET
+                                                              FROM
+                                                                  (SELECT CODE, ASSET 
+                                                                   FROM TB_ASSET_CATALOG_S) catalog
+                                                                  INNER JOIN
+                                                                  (SELECT DISTINCT CURRENCY 
+                                                                   FROM TB_LEDGERS_S) ledgers
+                                                                  ON catalog.ASSET = ledgers.CURRENCY
+                                                              ORDER BY 
+                                                                  CODE, 
+                                                                  ASSET";
+
+                                using (DbDataReader reader = selectCommand.ExecuteReader())
                                 {
-                                    if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                                    // For each asset, create balance insert
+
+                                    // Rate limiting mechanism //
+                                    DateTime lastCallTime = DateTime.Now;
+                                    /////////////////////////////
+                                    while (reader.Read())
                                     {
-                                        // Calculate delay to ensure at least 1 seconds have passed
-                                        int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
-                                        await Task.Delay(delay);
+                                        string code = reader.GetStringOrEmpty(0);
+                                        string asset = reader.GetStringOrEmpty(1);
+
+                                        using DbCommand insertCommand = connection.CreateCommand();
+                                        if (code == fiatCurrency)
+                                        {
+                                            insertCommand.CommandText = CreateFiatBalancesInsert(asset, untilDate);
+                                        }
+                                        else
+                                        {
+                                            var (xInFiat, sqlCommand, conversionSource) = CreateCryptoBalancesInsert(asset, code, untilDate, convertToFiat, connection);
+                                            insertCommand.CommandText = sqlCommand;
+
+                                            if (xInFiat == 0m)
+                                            {
+                                                lastWarning = $"[Balances] Could not calculate balance for currency: {asset}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                                Application.Current.Dispatcher.Invoke(() =>
+                                                {
+                                                    ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                                });
+                                            }
+
+                                            // Rate limiting mechanism //
+                                            if (conversionSource == "API")
+                                            {
+                                                if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                                                {
+                                                    // Calculate delay to ensure at least 1 seconds have passed
+                                                    int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
+                                                    await Task.Delay(delay);
+                                                }
+                                                lastCallTime = DateTime.Now;
+                                            }
+                                            /////////////////////////////
+                                        }
+                                        insertCommand.ExecuteNonQuery();
                                     }
-                                    lastCallTime = DateTime.Now;
+                                    if (lastWarning != null)
+                                    {
+                                        Application.Current.Dispatcher.Invoke(() =>
+                                        {
+                                            MessageBoxResult result = CustomMessageBox.Show("There were issues calculating some balances.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                        });
+                                    }
                                 }
-                                /////////////////////////////
                             }
-                            commandInsert.ExecuteNonQuery();
-                        }
-                        if (lastWarning != null)
-                        {
-                            Application.Current.Dispatcher.Invoke(() =>
+                            catch (Exception ex)
                             {
-                                MessageBoxResult result = CustomMessageBox.Show("There were issues calculating some balances", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                            });
-                        }
+                                while (ex.InnerException != null)
+                                {
+                                    ex = ex.InnerException;
+                                }
+                                lastError = ex.Message;
+                            }
+                        });
                     }
-                    catch (Exception ex)
+
+                    UnbindGrid();
+                    BindGrid();
+
+                    if (lastError == null)
                     {
-                        while (ex.InnerException != null)
+                        if (ledgersRefreshWarning == null && lastWarning == null)
                         {
-                            ex = ex.InnerException;
+                            ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh done");
                         }
-                        lastError = ex.Message;
-                    }
-                });
-
-                UnbindGrid();
-                BindGrid();
-
-                connection.Close();
-
-                if (lastError == null)
-                {
-                    if (ledgersRefreshWarning == null && lastWarning == null)
-                    {
-                        ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh done");
+                        else
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh done with warnings");
+                        }
                     }
                     else
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh done with warnings");
+                        ConsoleLog(_mainWindow.txtLog, $"[Balances] " + lastError);
+                        ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh unsuccessful");
                     }
                 }
                 else
                 {
-                    ConsoleLog(_mainWindow.txtLog, $"[Balances] " + lastError);
+                    UnbindGrid();
                     ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh unsuccessful");
                 }
             }
-            else
+            finally
             {
-                UnbindGrid();
-                ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh unsuccessful");
+                UnblockUI();
             }
-
-            UnblockUI();
         }
 
         private void TxtUntilDate_GotFocus(object sender, RoutedEventArgs e)
@@ -429,11 +433,11 @@ namespace ProjectCryptoGains
         {
             if (!dgBalances.HasItems)
             {
-                MessageBoxResult result = CustomMessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBoxResult result = CustomMessageBox.Show("Nothing to print.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Balances] Printing Balances");
+            ConsoleLog(_mainWindow.txtLog, $"[Balances] Printing balances");
 
             BlockUI();
 
@@ -455,7 +459,7 @@ namespace ProjectCryptoGains
 
         private async Task PrintBalancesAsync()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             var balances = dgBalances.ItemsSource.OfType<BalancesModel>();
 
             PrintDialog printDlg = new();
@@ -478,11 +482,11 @@ namespace ProjectCryptoGains
             );
         }
 
-        private static (string xInFiat, string sqlCommand, string conversionSource) CreateCryptoBalancesInsert(string currency, string currency_code, string untilDate, bool? convertToFiat, SqliteConnection connection)
+        private static (decimal xInFiat, string sqlCommand, string conversionSource) CreateCryptoBalancesInsert(string currency, string currency_code, string untilDate, bool? convertToFiat, FbConnection connection)
         {
             try
             {
-                string xInFiat = "0.00";
+                decimal xInFiat = 0.00m;
                 string conversionSource = "";
 
                 if (convertToFiat == true)
@@ -501,21 +505,21 @@ namespace ProjectCryptoGains
                                                (
                                                    SELECT 
                                                        '{currency}' AS CURRENCY,
-                                                       printf('%.10f', SUM(AMNT)) AS AMOUNT,
-                                                       printf('%.2f', {xInFiat} * SUM(AMNT)) AS AMOUNT_FIAT
+                                                       ROUND(SUM(AMNT), 10) AS AMOUNT,
+                                                       ROUND({xInFiat} * SUM(AMNT), 2) AS AMOUNT_FIAT
                                                    FROM (
                                                        SELECT 
                                                            SUM(AMOUNT) AS AMNT
                                                        FROM TB_LEDGERS_S
                                                        WHERE CURRENCY = '{currency}'
                                                            AND TYPE NOT IN ('WITHDRAWAL', 'DEPOSIT')
-                                                           AND strftime('%s', DATE) < strftime('%s', date('{untilDate}', '+1 day'))
+                                                           AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
                                                        UNION ALL
                                                        SELECT 
                                                            -SUM(FEE) AS AMNT
                                                        FROM TB_LEDGERS_S
                                                        WHERE CURRENCY = '{currency}'
-                                                           AND strftime('%s', DATE) < strftime('%s', date('{untilDate}', '+1 day'))
+                                                           AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
                                                    )
                                                )
                                            WHERE CAST(AMOUNT AS REAL) > 0";
@@ -533,20 +537,20 @@ namespace ProjectCryptoGains
             string query = $@"INSERT INTO TB_BALANCES_S (CURRENCY, AMOUNT, AMOUNT_FIAT)
                                   SELECT 
                                       '{fiat_code}' AS CURRENCY,
-                                      printf('%.10f', SUM(AMNT)) AS AMOUNT,
-                                      printf('%.2f', SUM(AMNT)) AS AMOUNT_FIAT
+                                      ROUND(SUM(AMNT), 10) AS AMOUNT,
+                                      ROUND(SUM(AMNT), 2) AS AMOUNT_FIAT
                                   FROM (
                                       SELECT 
                                           SUM(AMOUNT) AS AMNT
                                       FROM TB_LEDGERS_S
                                       WHERE CURRENCY = '{fiat_code}'
-                                          AND strftime('%s', DATE) <= strftime('%s', date('{untilDate}', '+1 day'))
+                                          AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
                                       UNION ALL
                                       SELECT 
                                           -SUM(FEE) AS AMNT
                                       FROM TB_LEDGERS_S
                                       WHERE CURRENCY = '{fiat_code}'
-                                          AND strftime('%s', DATE) <= strftime('%s', date('{untilDate}', '+1 day'))
+                                          AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
                                   )";
             return query;
         }

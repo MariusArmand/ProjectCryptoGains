@@ -61,7 +61,7 @@ namespace ProjectCryptoGains.Common.Utils
             }
             else
             {
-                MessageBoxResult result = CustomMessageBox.Show("The help file does not exist", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("The help file does not exist.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

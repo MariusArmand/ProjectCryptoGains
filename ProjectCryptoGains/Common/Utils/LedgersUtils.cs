@@ -1,9 +1,10 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using FirebirdSql.Data.FirebirdClient;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Windows;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.ExceptionUtils;
 using static ProjectCryptoGains.Common.Utils.SettingUtils;
 using static ProjectCryptoGains.Common.Utils.Utils;
 using static ProjectCryptoGains.Common.Utils.ValidationUtils;
@@ -25,7 +26,7 @@ namespace ProjectCryptoGains.Common.Utils
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        string message = "There is already a ledgers refresh in progress. Please Wait";
+                        string message = "There is already a ledgers refresh in progress. Please Wait.";
                         MessageBoxResult result = CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         if (caller != Caller.Ledgers)
                         {
@@ -41,8 +42,7 @@ namespace ProjectCryptoGains.Common.Utils
             try
             {
                 string? lastWarning = null;
-
-                string? fiatCurrency = SettingFiatCurrency;
+                string fiatCurrency = SettingFiatCurrency;
 
                 if (caller != Caller.Ledgers)
                 {
@@ -52,86 +52,86 @@ namespace ProjectCryptoGains.Common.Utils
                     });
                 }
 
-                using SqliteConnection connection = new(connectionString);
-                connection.Open();
-
-                // Prerequisite validations //
-                List<string> missingAssetsManual = MissingAssetsManual(connection);
-                if (missingAssetsManual.Count > 0)
+                using (FbConnection connection = new(connectionString))
                 {
-                    throw new ValidationException("Manual ledger asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Asset Catalog]");
-                }
+                    connection.Open();
 
-                List<string> missingAssets = MissingAssets(connection);
-                List<string> malconfiguredAssets = MalconfiguredAssets(connection);
-                if (missingAssets.Count > 0 || malconfiguredAssets.Count > 0)
-                {
-                    throw new ValidationException("Kraken asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Kraken Assets]");
-                }
-
-                // Check for unsupported ledger types
-                // Manual Ledgers
-                List<(string RefId, string Type)> unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Manual);
-                if (unsupportedTypes.Count > 0)
-                {
-                    string lastWarningPrefix = $"[{caller}]";
-                    if (caller != Caller.Ledgers)
+                    // Prerequisite validations //
+                    List<string> missingAssetsManual = MissingAssetsManual(connection);
+                    if (missingAssetsManual.Count > 0)
                     {
-                        lastWarningPrefix = $"[{caller}][Ledgers]";
+                        throw new ValidationException("Manual ledger asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Asset Catalog]");
                     }
 
-                    lastWarning = "Unsupported manual ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account";
-                    Application.Current.Dispatcher.Invoke(() =>
+                    List<string> missingAssets = MissingAssets(connection);
+                    List<string> malconfiguredAssets = MalconfiguredAssets(connection);
+                    if (missingAssets.Count > 0 || malconfiguredAssets.Count > 0)
                     {
-                        MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
-                        ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} {lastWarning}");
-
-                        // Log each unsupported ledger type
-                        foreach ((string RefId, string Type) in unsupportedTypes)
-                        {
-                            ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} Unsupported manual ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
-                        }
-                    });
-                }
-
-                // Kraken Ledgers
-                unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Kraken);
-                if (unsupportedTypes.Count > 0)
-                {
-                    string lastWarningPrefix = $"[{caller}]";
-                    if (caller != Caller.Ledgers)
-                    {
-                        lastWarningPrefix = $"[{caller}][Ledgers]";
+                        throw new ValidationException("Kraken asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Kraken AssetCatalogData]");
                     }
 
-                    lastWarning = "Unsupported kraken ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account";
-                    Application.Current.Dispatcher.Invoke(() =>
+                    // Check for unsupported ledger types
+                    // Manual Ledgers
+                    List<(string RefId, string Type)> unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Manual);
+                    if (unsupportedTypes.Count > 0)
                     {
-                        MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
-                        ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} {lastWarning}");
-
-                        // Log each unsupported ledger type
-                        foreach ((string RefId, string Type) in unsupportedTypes)
+                        string lastWarningPrefix = $"[{caller}]";
+                        if (caller != Caller.Ledgers)
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} Unsupported kraken ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                            lastWarningPrefix = $"[{caller}][Ledgers]";
                         }
-                    });
-                }
-                //////////////////////////////
 
-                DbCommand commandDelete = connection.CreateCommand();
+                        lastWarning = "Unsupported manual ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account.";
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
+                            ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} {lastWarning}");
 
-                // Truncate db table
-                commandDelete.CommandText = "DELETE FROM TB_LEDGERS_S";
-                commandDelete.ExecuteNonQuery();
+                            // Log each unsupported ledger type
+                            foreach ((string RefId, string Type) in unsupportedTypes)
+                            {
+                                ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} Unsupported manual ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                            }
+                        });
+                    }
 
-                // Insert into db table
-                DbCommand commandInsert = connection.CreateCommand();
+                    // Kraken Ledgers
+                    unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Kraken);
+                    if (unsupportedTypes.Count > 0)
+                    {
+                        string lastWarningPrefix = $"[{caller}]";
+                        if (caller != Caller.Ledgers)
+                        {
+                            lastWarningPrefix = $"[{caller}][Ledgers]";
+                        }
 
-                commandInsert.CommandText = $@"INSERT INTO TB_LEDGERS_S (REFID, DATE, TYPE_SOURCE, TYPE, EXCHANGE, AMOUNT, CURRENCY, FEE, SOURCE, TARGET, NOTES)
+                        lastWarning = "Unsupported kraken ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account.";
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
+                            ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} {lastWarning}");
+
+                            // Log each unsupported ledger type
+                            foreach ((string RefId, string Type) in unsupportedTypes)
+                            {
+                                ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} Unsupported kraken ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                            }
+                        });
+                    }
+                    //////////////////////////////
+
+                    using DbCommand deleteCommand = connection.CreateCommand();
+
+                    // Truncate db table
+                    deleteCommand.CommandText = "DELETE FROM TB_LEDGERS_S";
+                    deleteCommand.ExecuteNonQuery();
+
+                    // Insert into db table
+                    using DbCommand insertCommand = connection.CreateCommand();
+                    insertCommand.CommandText = $@"INSERT INTO TB_LEDGERS_S (REFID, ""DATE"", TYPE_SOURCE, TYPE, EXCHANGE, AMOUNT, CURRENCY, FEE, SOURCE, TARGET, NOTES)
                                                    SELECT 
                                                        REFID AS REFID,
-                                                       DATETIME(TIME) AS DATE,
+                                                       ""TIME"" AS ""DATE"",
                                                        UPPER(TYPE) AS TYPE_SOURCE,
                                                        CASE
                                                            WHEN UPPER(TYPE) = 'SPEND' THEN 'TRADE'
@@ -140,24 +140,22 @@ namespace ProjectCryptoGains.Common.Utils
                                                            ELSE UPPER(TYPE)
                                                        END AS TYPE,
                                                        'Kraken' AS EXCHANGE,
-                                                       printf('%.10f', AMOUNT) AS AMOUNT,
+                                                       ROUND(AMOUNT, 10) AS AMOUNT,
                                                        assets_kraken.ASSET AS CURRENCY,
-                                                       printf('%.10f', FEE) AS FEE,
+                                                       ROUND(FEE, 10) AS FEE,
                                                        CASE
                                                            WHEN UPPER(TYPE) IN ('STAKING', 'EARN') THEN 'Kraken'
-                                                           WHEN UPPER(TYPE) = 'TRADE' THEN ''
                                                            WHEN UPPER(TYPE) = 'DEPOSIT' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'BANK'
                                                            WHEN UPPER(TYPE) = 'DEPOSIT' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
                                                            WHEN UPPER(TYPE) = 'WITHDRAWAL' THEN 'Kraken'
-                                                           ELSE ''
+                                                           ELSE TRIM('')
                                                        END AS SOURCE,
                                                        CASE
                                                            WHEN UPPER(TYPE) IN ('STAKING', 'EARN') THEN 'Kraken'
-                                                           WHEN UPPER(TYPE) = 'TRADE' THEN ''
                                                            WHEN UPPER(TYPE) = 'DEPOSIT' THEN 'Kraken'
                                                            WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
                                                            WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'BANK'
-                                                           ELSE ''
+                                                           ELSE TRIM('')
                                                        END AS TARGET,
                                                        CASE
                                                            WHEN UPPER(TYPE) IN ('STAKING', 'EARN') THEN assets_kraken.ASSET || ' staking reward'
@@ -165,7 +163,7 @@ namespace ProjectCryptoGains.Common.Utils
                                                            WHEN UPPER(TYPE) = 'DEPOSIT' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From wallet to Kraken'
                                                            WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From Kraken to wallet'
                                                            WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'From Kraken to Bank'
-                                                           ELSE ''
+                                                           ELSE TRIM('')
                                                        END AS NOTES
                                                    FROM TB_LEDGERS_KRAKEN_S ledgers_kraken
                                                    INNER JOIN TB_ASSET_CODES_KRAKEN_S assets_kraken
@@ -176,21 +174,21 @@ namespace ProjectCryptoGains.Common.Utils
                                                    UNION ALL
                                                    SELECT 
                                                        REFID AS REFID,
-                                                       DATETIME(DATE) AS DATE,
+                                                       ""DATE"",
                                                        UPPER(TYPE) AS TYPE_SOURCE,
                                                        UPPER(TYPE) AS TYPE,
                                                        EXCHANGE,
-                                                       printf('%.10f', AMOUNT) AS AMOUNT,
+                                                       ROUND(AMOUNT, 10) AS AMOUNT,
                                                        ASSET AS CURRENCY,
-                                                       printf('%.10f', FEE) AS FEE,
+                                                       ROUND(FEE, 10) AS FEE,
                                                        SOURCE,
                                                        TARGET,
                                                        NOTES
                                                    FROM TB_LEDGERS_MANUAL_S";
 
-                commandInsert.ExecuteNonQuery();
+                    insertCommand.ExecuteNonQuery();
+                }
 
-                connection.Close();
                 if (caller != Caller.Ledgers)
                 {
                     Application.Current.Dispatcher.Invoke(() =>

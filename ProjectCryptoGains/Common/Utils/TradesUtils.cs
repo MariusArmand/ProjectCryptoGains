@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using FirebirdSql.Data.FirebirdClient;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -25,7 +25,7 @@ namespace ProjectCryptoGains.Common.Utils
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        string message = "There is already a trades refresh in progress. Please Wait";
+                        string message = "There is already a trades refresh in progress. Please Wait.";
                         MessageBoxResult result = CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         if (caller != Caller.Trades)
                         {
@@ -41,8 +41,9 @@ namespace ProjectCryptoGains.Common.Utils
             try
             {
                 string? lastWarning = null;
-
-                string? fiatCurrency = SettingFiatCurrency;
+                string fiatCurrency = SettingFiatCurrency;
+                string? exceptionMessage = null;
+                Exception? innerExceptionMessage = null;
 
                 if (caller != Caller.Trades)
                 {
@@ -52,36 +53,34 @@ namespace ProjectCryptoGains.Common.Utils
                     });
                 }
 
-                //System.Threading.Thread.Sleep(5000);
+                using (FbConnection connection = new(connectionString))
+                {
+                    connection.Open();
 
-                using SqliteConnection connection = new(connectionString);
-                connection.Open();
+                    using DbCommand deleteCommand = connection.CreateCommand();
 
-                DbCommand commandDelete = connection.CreateCommand();
+                    // Truncate db table
+                    deleteCommand.CommandText = "DELETE FROM TB_TRADES_S";
+                    deleteCommand.ExecuteNonQuery();
 
-                // Truncate db table
-                commandDelete.CommandText = "DELETE FROM TB_TRADES_S";
-                commandDelete.ExecuteNonQuery();
-
-                // Insert into db table
-                DbCommand commandInsert = connection.CreateCommand();
-
-                commandInsert.CommandText = $@"INSERT INTO TB_TRADES_S (REFID, DATE, TYPE, EXCHANGE, BASE_CURRENCY, BASE_AMOUNT, BASE_FEE, BASE_FEE_FIAT, QUOTE_CURRENCY, QUOTE_AMOUNT, QUOTE_AMOUNT_FIAT, QUOTE_FEE, QUOTE_FEE_FIAT, BASE_UNIT_PRICE, BASE_UNIT_PRICE_FIAT, QUOTE_UNIT_PRICE, QUOTE_UNIT_PRICE_FIAT, TOTAL_FEE_FIAT, COSTS_PROCEEDS)
+                    // Insert into db table
+                    using DbCommand insertCommand = connection.CreateCommand();
+                    insertCommand.CommandText = $@"INSERT INTO TB_TRADES_S (REFID, ""DATE"", TYPE, EXCHANGE, BASE_CURRENCY, BASE_AMOUNT, BASE_FEE, BASE_FEE_FIAT, QUOTE_CURRENCY, QUOTE_AMOUNT, QUOTE_AMOUNT_FIAT, QUOTE_FEE, QUOTE_FEE_FIAT, BASE_UNIT_PRICE, BASE_UNIT_PRICE_FIAT, QUOTE_UNIT_PRICE, QUOTE_UNIT_PRICE_FIAT, TOTAL_FEE_FIAT, COSTS_PROCEEDS)
                                                    SELECT 
                                                         REFID,
-                                                        DATE,
+                                                        ""DATE"",
                                                         TYPE,
                                                         EXCHANGE,
                                                         BASE_CURRENCY,
-                                                        printf('%.10f', ABS(BASE_AMOUNT)) AS BASE_AMOUNT,
+                                                        ROUND(ABS(BASE_AMOUNT), 10) AS BASE_AMOUNT,
                                                         BASE_FEE,
                                                         CASE 
                                                             WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-                                                            ELSE printf('%.10f', BASE_FEE * BASE_UNIT_PRICE_FIAT)
+                                                            ELSE ROUND(BASE_FEE * BASE_UNIT_PRICE_FIAT, 10)
                                                         END AS BASE_FEE_FIAT,
                                                         QUOTE_CURRENCY,
-                                                        printf('%.10f', ABS(QUOTE_AMOUNT)) AS QUOTE_AMOUNT,
-                                                        printf('%.10f', ABS(QUOTE_AMOUNT_FIAT)) AS QUOTE_AMOUNT_FIAT,
+                                                        ROUND(ABS(QUOTE_AMOUNT), 10) AS QUOTE_AMOUNT,
+                                                        ROUND(ABS(QUOTE_AMOUNT_FIAT), 10) AS QUOTE_AMOUNT_FIAT,
                                                         QUOTE_FEE,
                                                         CASE 
                                                             WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
@@ -91,16 +90,16 @@ namespace ProjectCryptoGains.Common.Utils
                                                         BASE_UNIT_PRICE_FIAT,
                                                         QUOTE_UNIT_PRICE,
                                                         QUOTE_UNIT_PRICE_FIAT,
-                                                        printf('%.10f', BASE_FEE_FIAT + QUOTE_FEE_FIAT) AS TOTAL_FEE_FIAT,
+                                                        ROUND(BASE_FEE_FIAT + QUOTE_FEE_FIAT, 10) AS TOTAL_FEE_FIAT,
                                                         CASE 
-                                                            WHEN QUOTE_CURRENCY = '{fiatCurrency}' AND TYPE = 'BUY' THEN printf('%.10f', ABS(QUOTE_AMOUNT) + BASE_FEE_FIAT + QUOTE_FEE_FIAT)
-                                                            WHEN QUOTE_CURRENCY = '{fiatCurrency}' AND TYPE = 'SELL' THEN printf('%.10f', ABS(QUOTE_AMOUNT) - BASE_FEE_FIAT - QUOTE_FEE_FIAT)
+                                                            WHEN QUOTE_CURRENCY = '{fiatCurrency}' AND TYPE = 'BUY' THEN ROUND(ABS(QUOTE_AMOUNT) + BASE_FEE_FIAT + QUOTE_FEE_FIAT, 10)
+                                                            WHEN QUOTE_CURRENCY = '{fiatCurrency}' AND TYPE = 'SELL' THEN ROUND(ABS(QUOTE_AMOUNT) - BASE_FEE_FIAT - QUOTE_FEE_FIAT, 10)
                                                             ELSE NULL
                                                         END AS COSTS_PROCEEDS
                                                     FROM (
                                                         SELECT 
                                                             REFID,
-                                                            DATE,
+                                                            ""DATE"",
                                                             TYPE,
                                                             EXCHANGE,
                                                             BASE_CURRENCY,
@@ -108,7 +107,7 @@ namespace ProjectCryptoGains.Common.Utils
                                                             BASE_FEE,
                                                             CASE 
                                                                 WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-                                                                ELSE printf('%.10f', BASE_FEE * BASE_UNIT_PRICE_FIAT)
+                                                                ELSE ROUND(BASE_FEE * BASE_UNIT_PRICE_FIAT, 10)
                                                             END AS BASE_FEE_FIAT,
                                                             QUOTE_CURRENCY,
                                                             QUOTE_AMOUNT,
@@ -125,7 +124,7 @@ namespace ProjectCryptoGains.Common.Utils
                                                         FROM (
                                                             SELECT 
                                                                 REFID,
-                                                                DATE,
+                                                                ""DATE"",
                                                                 TYPE,
                                                                 EXCHANGE,
                                                                 BASE_CURRENCY,
@@ -138,21 +137,21 @@ namespace ProjectCryptoGains.Common.Utils
                                                                     ELSE QUOTE_AMOUNT
                                                                 END AS QUOTE_AMOUNT_FIAT,
                                                                 QUOTE_FEE,
-                                                                printf('%.10f', ABS(QUOTE_AMOUNT / BASE_AMOUNT)) AS BASE_UNIT_PRICE,
+                                                                ROUND(ABS(QUOTE_AMOUNT / BASE_AMOUNT), 10) AS BASE_UNIT_PRICE,
                                                                 CASE 
                                                                     WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-                                                                    ELSE printf('%.10f', ABS(QUOTE_AMOUNT / BASE_AMOUNT))
+                                                                    ELSE ROUND(ABS(QUOTE_AMOUNT / BASE_AMOUNT), 10)
                                                                 END AS BASE_UNIT_PRICE_FIAT,
-                                                                printf('%.10f', ABS(BASE_AMOUNT / QUOTE_AMOUNT)) AS QUOTE_UNIT_PRICE,
+                                                                ROUND(ABS(BASE_AMOUNT / QUOTE_AMOUNT), 10) AS QUOTE_UNIT_PRICE,
                                                                 CASE 
                                                                     WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
-                                                                    ELSE printf('%.10f', 1)
+                                                                    ELSE 1
                                                                 END AS QUOTE_UNIT_PRICE_FIAT
                                                             FROM (
                                                                 -- BUY => RIGHT = negative FIAT
                                                                 SELECT 
                                                                     b.REFID,
-                                                                    b.DATE,
+                                                                    b.""DATE"",
                                                                     'BUY' AS TYPE,
                                                                     b.EXCHANGE,
                                                                     b.CURRENCY AS BASE_CURRENCY,
@@ -172,7 +171,7 @@ namespace ProjectCryptoGains.Common.Utils
                                                                 -- SELL => RIGHT = positive FIAT
                                                                 SELECT 
                                                                     b.REFID,
-                                                                    b.DATE,
+                                                                    b.""DATE"",
                                                                     'SELL' AS TYPE,
                                                                     b.EXCHANGE,
                                                                     b.CURRENCY AS BASE_CURRENCY,
@@ -192,7 +191,7 @@ namespace ProjectCryptoGains.Common.Utils
                                                                 -- SELL => LEFT != FIAT, RIGHT != FIAT, LEFT negative amount
                                                                 SELECT 
                                                                     b.REFID,
-                                                                    b.DATE,
+                                                                    b.""DATE"",
                                                                     'SELL' AS TYPE,
                                                                     b.EXCHANGE,
                                                                     b.CURRENCY AS BASE_CURRENCY,
@@ -210,143 +209,140 @@ namespace ProjectCryptoGains.Common.Utils
                                                         )
                                                     )";
 
-                commandInsert.ExecuteNonQuery();
+                    insertCommand.ExecuteNonQuery();
 
-                // Update crypto-only entries
-                string? exceptionMessage = null;
-                Exception? innerExceptionMessage = null;
-                try
-                {
-                    DbCommand command = connection.CreateCommand();
-                    command.CommandText = $@"SELECT 
-                                                trades.REFID,
-                                                trades.DATE,
-                                                catalog_base.CODE AS BASE_CODE,
-                                                trades.BASE_FEE,
-                                                catalog_quote.CODE AS QUOTE_CODE,
-                                                trades.QUOTE_AMOUNT,
-                                                trades.QUOTE_FEE
-                                            FROM TB_TRADES_S trades
-                                                LEFT JOIN TB_ASSET_CATALOG_S catalog_base
-                                                    ON trades.BASE_CURRENCY = catalog_base.ASSET
-                                                LEFT JOIN TB_ASSET_CATALOG_S catalog_quote
-                                                    ON trades.QUOTE_CURRENCY = catalog_quote.ASSET
-                                            WHERE trades.BASE_CURRENCY != '{fiatCurrency}'
-                                                AND trades.QUOTE_CURRENCY != '{fiatCurrency}'";
-
-                    List<(string RefId, Dictionary<string, string> UpdateData)> updates = [];
-
-                    using (DbDataReader reader = command.ExecuteReader())
-                    {
-                        // Rate limiting mechanism //
-                        DateTime lastCallTime = DateTime.Now;
-                        /////////////////////////////
-                        while (reader.Read())
-                        {
-                            string refid = reader.GetStringOrEmpty(0);
-                            string date = reader.GetStringOrEmpty(1);
-                            string base_code = reader.GetStringOrEmpty(2);
-                            string base_fee = reader.GetStringOrEmpty(3);
-                            string quote_code = reader.GetStringOrEmpty(4);
-                            string quote_amount = reader.GetStringOrEmpty(5);
-                            string quote_fee = reader.GetStringOrEmpty(6);
-
-                            DateTime datetime = ConvertStringToIsoDateTime(date);
-                            // Calculate base_fee_fiat
-                            var (base_unit_price_fiat, baseConversionSource) = ConvertXToFiat(base_code, 1m, datetime.Date, connection);
-
-                            string lastWarningPrefix = $"[{caller}]";
-                            if (caller != Caller.Trades)
-                            {
-                                lastWarningPrefix = $"[{caller}][Trades]";
-                            }
-
-                            if (ConvertStringToDecimal(base_unit_price_fiat) == 0m)
-                            {
-                                lastWarning = $"{lastWarningPrefix} Could not calculate BASE_UNIT_PRICE_{fiatCurrency} for asset: {base_code}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
-                                Application.Current.Dispatcher.Invoke(() =>
-                                {
-                                    ConsoleLog(_mainWindow.txtLog, lastWarning);
-                                });
-                            }
-
-                            string base_fee_fiat = (ConvertStringToDecimal(base_unit_price_fiat) * ConvertStringToDecimal(base_fee)).ToString("F10");
-
-                            // Rate limiting mechanism //
-                            if (baseConversionSource == "API")
-                            {
-                                if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
-                                {
-                                    // Calculate delay to ensure at least 1 seconds have passed
-                                    int delay = Math.Max(0, (int)(lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds);
-                                    await Task.Delay(delay);
-                                }
-                            }
-                            lastCallTime = DateTime.Now;
-                            /////////////////////////////
-
-                            var (quote_unit_price_fiat, quoteConversionSource) = ConvertXToFiat(quote_code, 1m, datetime.Date, connection);
-
-                            if (ConvertStringToDecimal(quote_unit_price_fiat) == 0m)
-                            {
-                                lastWarning = $"{lastWarningPrefix} Could not calculate QUOTE_UNIT_PRICE_{fiatCurrency} for asset: {quote_code}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
-                                Application.Current.Dispatcher.Invoke(() =>
-                                {
-                                    ConsoleLog(_mainWindow.txtLog, lastWarning);
-                                });
-                            }
-
-                            string quote_fee_fiat = (ConvertStringToDecimal(quote_unit_price_fiat) * ConvertStringToDecimal(quote_fee)).ToString("F10");
-
-                            // Rate limiting mechanism //
-                            if (quoteConversionSource == "API")
-                            {
-                                if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
-                                {
-                                    // Calculate delay to ensure at least 1 seconds have passed
-                                    int delay = Math.Max(0, (int)(lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds);
-                                    await Task.Delay(delay);
-                                }
-                            }
-                            lastCallTime = DateTime.Now;
-                            /////////////////////////////
-
-                            string total_fee_fiat = (ConvertStringToDecimal(base_fee_fiat) + ConvertStringToDecimal(quote_fee_fiat)).ToString("F10");
-
-                            string quote_amount_fiat = (ConvertStringToDecimal(quote_unit_price_fiat) * ConvertStringToDecimal(quote_amount)).ToString("F10");
-                            string costs_proceeds = (Math.Abs(ConvertStringToDecimal(quote_amount_fiat)) - ConvertStringToDecimal(base_fee_fiat) - ConvertStringToDecimal(quote_fee_fiat)).ToString("F10");
-
-                            var updateData = new Dictionary<string, string>
-                            {
-                                { "BASE_FEE_FIAT", base_fee_fiat },
-                                { "QUOTE_AMOUNT_FIAT", quote_amount_fiat },
-                                { "QUOTE_FEE_FIAT", quote_fee_fiat },
-                                { "BASE_UNIT_PRICE_FIAT", base_unit_price_fiat },
-                                { "QUOTE_UNIT_PRICE_FIAT", quote_unit_price_fiat },
-                                { "TOTAL_FEE_FIAT", total_fee_fiat },
-                                { "COSTS_PROCEEDS", costs_proceeds }
-                            };
-
-                            updates.Add((refid, updateData));
-                        }
-                        if (lastWarning != null)
-                        {
-                            Application.Current.Dispatcher.Invoke(() =>
-                            {
-                                MessageBoxResult result = CustomMessageBox.Show($"There were issues calculating some unit prices in {fiatCurrency}", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                            });
-                        }
-                    }
-
-                    // Perform the updates
-                    using var transaction = connection.BeginTransaction();
+                    // Update crypto-only entries
                     try
                     {
-                        foreach (var (RefId, UpdateData) in updates)
+                        using DbCommand selectCommand = connection.CreateCommand();
+                        selectCommand.CommandText = $@"SELECT 
+                                                           trades.REFID,
+                                                           trades.""DATE"",
+                                                           catalog_base.CODE AS BASE_CODE,
+                                                           trades.BASE_FEE,
+                                                           catalog_quote.CODE AS QUOTE_CODE,
+                                                           trades.QUOTE_AMOUNT,
+                                                           trades.QUOTE_FEE
+                                                       FROM TB_TRADES_S trades
+                                                           LEFT JOIN TB_ASSET_CATALOG_S catalog_base
+                                                               ON trades.BASE_CURRENCY = catalog_base.ASSET
+                                                           LEFT JOIN TB_ASSET_CATALOG_S catalog_quote
+                                                               ON trades.QUOTE_CURRENCY = catalog_quote.ASSET
+                                                       WHERE trades.BASE_CURRENCY != '{fiatCurrency}'
+                                                           AND trades.QUOTE_CURRENCY != '{fiatCurrency}'";
+
+                        List<(string RefId, Dictionary<string, decimal> UpdateData)> updates = [];
+
+                        using (DbDataReader reader = selectCommand.ExecuteReader())
                         {
-                            using var commandUpdate = connection.CreateCommand();
-                            commandUpdate.Transaction = transaction; // Assign the transaction to the command
-                            commandUpdate.CommandText = @"UPDATE TB_TRADES_S 
+                            // Rate limiting mechanism //
+                            DateTime lastCallTime = DateTime.Now;
+                            /////////////////////////////
+                            while (reader.Read())
+                            {
+                                string refid = reader.GetStringOrEmpty(0);
+                                DateTime date = reader.GetDateTime(1);
+                                string base_code = reader.GetStringOrEmpty(2);
+                                decimal base_fee = reader.GetDecimalOrDefault(3);
+                                string quote_code = reader.GetStringOrEmpty(4);
+                                decimal quote_amount = reader.GetDecimalOrDefault(5);
+                                decimal quote_fee = reader.GetDecimalOrDefault(6);
+
+                                // Calculate base fiat
+                                var (base_unit_price_fiat, baseConversionSource) = ConvertXToFiat(base_code, 1m, date.Date, connection);
+
+                                string lastWarningPrefix = $"[{caller}]";
+                                if (caller != Caller.Trades)
+                                {
+                                    lastWarningPrefix = $"[{caller}][Trades]";
+                                }
+
+                                if (base_unit_price_fiat == 0m)
+                                {
+                                    lastWarning = $"{lastWarningPrefix} Could not calculate BASE_UNIT_PRICE_{fiatCurrency} for asset: {base_code}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
+                                        ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                    });
+                                }
+
+                                decimal base_fee_fiat = base_unit_price_fiat * base_fee;
+
+                                // Rate limiting mechanism //
+                                if (baseConversionSource == "API")
+                                {
+                                    if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                                    {
+                                        // Calculate delay to ensure at least 1 seconds have passed
+                                        int delay = Math.Max(0, (int)(lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds);
+                                        await Task.Delay(delay);
+                                    }
+                                }
+                                lastCallTime = DateTime.Now;
+                                /////////////////////////////
+
+                                // Calculate quote fiat
+                                var (quote_unit_price_fiat, quoteConversionSource) = ConvertXToFiat(quote_code, 1m, date.Date, connection);
+
+                                if (quote_unit_price_fiat == 0m)
+                                {
+                                    lastWarning = $"{lastWarningPrefix} Could not calculate QUOTE_UNIT_PRICE_{fiatCurrency} for asset: {quote_code}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
+                                        ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                    });
+                                }
+
+                                decimal quote_fee_fiat = quote_unit_price_fiat * quote_fee;
+
+                                // Rate limiting mechanism //
+                                if (quoteConversionSource == "API")
+                                {
+                                    if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                                    {
+                                        // Calculate delay to ensure at least 1 seconds have passed
+                                        int delay = Math.Max(0, (int)(lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds);
+                                        await Task.Delay(delay);
+                                    }
+                                }
+                                lastCallTime = DateTime.Now;
+                                /////////////////////////////
+
+                                decimal total_fee_fiat = base_fee_fiat + quote_fee_fiat;
+
+                                decimal quote_amount_fiat = quote_unit_price_fiat * quote_amount;
+                                decimal costs_proceeds = Math.Abs(quote_amount_fiat - base_fee_fiat - quote_fee_fiat);
+
+                                var updateData = new Dictionary<string, decimal>
+                                {
+                                    { "BASE_FEE_FIAT", base_fee_fiat },
+                                    { "QUOTE_AMOUNT_FIAT", quote_amount_fiat },
+                                    { "QUOTE_FEE_FIAT", quote_fee_fiat },
+                                    { "BASE_UNIT_PRICE_FIAT", base_unit_price_fiat },
+                                    { "QUOTE_UNIT_PRICE_FIAT", quote_unit_price_fiat },
+                                    { "TOTAL_FEE_FIAT", total_fee_fiat },
+                                    { "COSTS_PROCEEDS", costs_proceeds }
+                                };
+
+                                updates.Add((refid, updateData));
+                            }
+                            if (lastWarning != null)
+                            {
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    MessageBoxResult result = CustomMessageBox.Show($"There were issues calculating some unit prices in {fiatCurrency}.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                });
+                            }
+                        }
+
+                        // Perform the updates
+                        using var transaction = connection.BeginTransaction(); // Start a database transaction
+                        try
+                        {
+                            // Create a single command object for updating records, reused across all iterations
+                            using DbCommand updateCommand = connection.CreateCommand();
+                            updateCommand.Transaction = transaction; // Assign the transaction to the command
+                            updateCommand.CommandText = @"UPDATE TB_TRADES_S 
                                                           SET 
                                                               BASE_FEE_FIAT = @BASE_FEE_FIAT,
                                                               QUOTE_AMOUNT_FIAT = @QUOTE_AMOUNT_FIAT,
@@ -358,29 +354,43 @@ namespace ProjectCryptoGains.Common.Utils
                                                           WHERE 
                                                               REFID = @REFID";
 
-                            commandUpdate.Parameters.AddWithValue("@REFID", RefId);
-                            foreach (var kvp in UpdateData) // kvp = Key-Value Pair
+                            // Define all parameters once before the loop to avoid repeated creation, initialized with placeholders
+                            AddParameterWithValue(updateCommand, "@REFID", DBNull.Value);
+                            AddParameterWithValue(updateCommand, "@BASE_FEE_FIAT", DBNull.Value);
+                            AddParameterWithValue(updateCommand, "@QUOTE_AMOUNT_FIAT", DBNull.Value);
+                            AddParameterWithValue(updateCommand, "@QUOTE_FEE_FIAT", DBNull.Value);
+                            AddParameterWithValue(updateCommand, "@BASE_UNIT_PRICE_FIAT", DBNull.Value);
+                            AddParameterWithValue(updateCommand, "@QUOTE_UNIT_PRICE_FIAT", DBNull.Value);
+                            AddParameterWithValue(updateCommand, "@TOTAL_FEE_FIAT", DBNull.Value);
+                            AddParameterWithValue(updateCommand, "@COSTS_PROCEEDS", DBNull.Value);
+
+                            // Iterate over the list of updates, where each item contains a RefId and a dictionary of column-value pairs
+                            foreach (var (RefId, UpdateData) in updates)
                             {
-                                commandUpdate.Parameters.AddWithValue("@" + kvp.Key, kvp.Value);
+                                updateCommand.Parameters["@REFID"].Value = RefId;
+                                // Update parameter values based on the key-value pairs in UpdateData
+                                foreach (var kvp in UpdateData) // kvp = Key-Value Pair from the dictionary
+                                {
+                                    updateCommand.Parameters["@" + kvp.Key].Value = kvp.Value;
+                                }
+                                updateCommand.ExecuteNonQuery();
                             }
 
-                            commandUpdate.ExecuteNonQuery();
+                            transaction.Commit();
                         }
-                        transaction.Commit();
+                        catch (Exception)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        transaction.Rollback();
-                        throw;
+                        innerExceptionMessage = ex;
+                        exceptionMessage = "Updating crypto-only entries failed.";
                     }
-                }
-                catch (Exception ex)
-                {
-                    innerExceptionMessage = ex;
-                    exceptionMessage = "Updating crypto-only entries failed";
                 }
 
-                connection.Close();
                 if (caller != Caller.Trades)
                 {
                     if (exceptionMessage != null)

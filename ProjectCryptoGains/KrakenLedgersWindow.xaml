@@ -65,7 +65,7 @@
                             <DataGridTextColumn Binding="{Binding RowNumber}" Header="ROW__NR" />
                             <DataGridTextColumn Binding="{Binding Txid}" Header="TXID" />
                             <DataGridTextColumn Binding="{Binding Refid}" Header="REFID" />
-                            <DataGridTextColumn Binding="{Binding Time}" Header="TIME" />
+                            <DataGridTextColumn Binding="{Binding Time, StringFormat=yyyy-MM-dd HH:mm:ss}" Header="TIME" />
                             <DataGridTextColumn Binding="{Binding Type}" Header="TYPE" />
                             <DataGridTextColumn Binding="{Binding Subtype}" Header="SUBTYPE" />
                             <DataGridTextColumn Binding="{Binding Aclass}" Header="ACLASS" />

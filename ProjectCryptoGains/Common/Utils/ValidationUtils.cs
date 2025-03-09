@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using FirebirdSql.Data.FirebirdClient;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -8,18 +8,18 @@ namespace ProjectCryptoGains.Common.Utils
 {
     public static class ValidationUtils
     {
-        public static List<string> MissingAssets(SqliteConnection connection)
+        public static List<string> MissingAssets(FbConnection connection)
         {
             List<string> missingAssets = [];
 
-            DbCommand command = connection.CreateCommand();
-            command.CommandText = @"SELECT DISTINCT(ledgers_kraken.ASSET) AS ASSET
-                                    FROM TB_LEDGERS_KRAKEN_S ledgers_kraken
-                                        LEFT OUTER JOIN TB_ASSET_CODES_KRAKEN_S assets_kraken
-                                            ON ledgers_kraken.ASSET = assets_kraken.CODE
-                                    WHERE assets_kraken.ASSET IS NULL";
+            using DbCommand selectCommand = connection.CreateCommand();
+            selectCommand.CommandText = @"SELECT DISTINCT ledgers_kraken.ASSET
+                                          FROM TB_LEDGERS_KRAKEN_S ledgers_kraken
+                                              LEFT OUTER JOIN TB_ASSET_CODES_KRAKEN_S assets_kraken
+                                                  ON ledgers_kraken.ASSET = assets_kraken.CODE
+                                          WHERE assets_kraken.ASSET IS NULL";
 
-            using (DbDataReader reader = command.ExecuteReader())
+            using (DbDataReader reader = selectCommand.ExecuteReader())
             {
                 while (reader.Read())
                 {
@@ -33,18 +33,18 @@ namespace ProjectCryptoGains.Common.Utils
             return missingAssets;
         }
 
-        public static List<string> MalconfiguredAssets(SqliteConnection connection)
+        public static List<string> MalconfiguredAssets(FbConnection connection)
         {
             List<string> malfconfiguredAsset = [];
 
-            DbCommand command = connection.CreateCommand();
-            command.CommandText = @"SELECT assets_kraken.CODE 
-                                    FROM TB_ASSET_CODES_KRAKEN_S assets_kraken
-									    LEFT OUTER JOIN TB_ASSET_CATALOG_S catalog
-									        ON assets_kraken.ASSET = catalog.ASSET
-									WHERE catalog.CODE IS NULL";
+            using DbCommand selectCommand = connection.CreateCommand();
+            selectCommand.CommandText = @"SELECT assets_kraken.CODE 
+                                          FROM TB_ASSET_CODES_KRAKEN_S assets_kraken
+									          LEFT OUTER JOIN TB_ASSET_CATALOG_S catalog
+									              ON assets_kraken.ASSET = catalog.ASSET
+									      WHERE catalog.CODE IS NULL";
 
-            using (DbDataReader reader = command.ExecuteReader())
+            using (DbDataReader reader = selectCommand.ExecuteReader())
             {
                 while (reader.Read())
                 {
@@ -58,18 +58,18 @@ namespace ProjectCryptoGains.Common.Utils
             return malfconfiguredAsset;
         }
 
-        public static List<string> MissingAssetsManual(SqliteConnection connection)
+        public static List<string> MissingAssetsManual(FbConnection connection)
         {
             List<string> missingAssets = [];
 
-            DbCommand command = connection.CreateCommand();
-            command.CommandText = @"SELECT ledgers_manual.ASSET 
-                                    FROM TB_LEDGERS_MANUAL_S ledgers_manual
-                                        LEFT OUTER JOIN TB_ASSET_CATALOG_S catalog
-                                            ON ledgers_manual.ASSET = catalog.ASSET
-                                    WHERE catalog.CODE IS NULL";
+            using DbCommand selectCommand = connection.CreateCommand();
+            selectCommand.CommandText = @"SELECT DISTINCT ledgers_manual.ASSET 
+                                          FROM TB_LEDGERS_MANUAL_S ledgers_manual
+                                              LEFT OUTER JOIN TB_ASSET_CATALOG_S catalog
+                                                  ON ledgers_manual.ASSET = catalog.ASSET
+                                          WHERE catalog.CODE IS NULL";
 
-            using (DbDataReader reader = command.ExecuteReader())
+            using (DbDataReader reader = selectCommand.ExecuteReader())
             {
                 while (reader.Read())
                 {
@@ -83,31 +83,31 @@ namespace ProjectCryptoGains.Common.Utils
             return missingAssets;
         }
 
-        public static List<(string RefId, string Type)> UnsupportedTypes(SqliteConnection connection, LedgerSource ledgerSource)
+        public static List<(string RefId, string Type)> UnsupportedTypes(FbConnection connection, LedgerSource ledgerSource)
         {
             List<(string RefId, string Type)> unsupportedTypes = [];
 
-            DbCommand command = connection.CreateCommand();
+            using DbCommand selectCommand = connection.CreateCommand();
 
             switch (ledgerSource)
             {
                 case LedgerSource.Kraken:
-                    command.CommandText = @"SELECT REFID, TYPE
-                                            FROM TB_LEDGERS_KRAKEN_S
-                                            WHERE UPPER(TYPE) NOT IN ('DEPOSIT', 'WITHDRAWAL', 'TRADE', 'SPEND', 'RECEIVE', 'STAKING', 'EARN', 'TRANSFER')";
+                    selectCommand.CommandText = @"SELECT REFID, TYPE
+                                                  FROM TB_LEDGERS_KRAKEN_S
+                                                  WHERE UPPER(TYPE) NOT IN ('DEPOSIT', 'WITHDRAWAL', 'TRADE', 'SPEND', 'RECEIVE', 'STAKING', 'EARN', 'TRANSFER')";
                     break;
 
                 case LedgerSource.Manual:
-                    command.CommandText = @"SELECT REFID, TYPE
-                                            FROM TB_LEDGERS_MANUAL_S
-                                            WHERE TYPE NOT IN ('DEPOSIT', 'WITHDRAWAL', 'TRADE', 'STAKING', 'AIRDROP')";
+                    selectCommand.CommandText = @"SELECT REFID, TYPE
+                                                  FROM TB_LEDGERS_MANUAL_S
+                                                  WHERE TYPE NOT IN ('DEPOSIT', 'WITHDRAWAL', 'TRADE', 'STAKING', 'AIRDROP')";
                     break;
 
                 default:
                     throw new ArgumentException($"Unsupported ledger source: {ledgerSource}.");
             }
 
-            using (DbDataReader reader = command.ExecuteReader())
+            using (DbDataReader reader = selectCommand.ExecuteReader())
             {
                 while (reader.Read())
                 {

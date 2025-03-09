@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using FirebirdSql.Data.FirebirdClient;
 using ProjectCryptoGains.Common;
 using System;
 using System.Collections.ObjectModel;
@@ -25,8 +25,6 @@ namespace ProjectCryptoGains
     {
         private readonly MainWindow _mainWindow;
 
-        private SqliteConnection? connection;
-
         private string? lastError = null;
 
         private string? lastWarning = null;
@@ -38,32 +36,8 @@ namespace ProjectCryptoGains
 
             _mainWindow = mainWindow;
 
-            if (!OpenDatabaseConnection())
-            {
-                return;
-            }
-
             BindLabels();
             BindGrid();
-
-            connection?.Close();
-        }
-
-        private bool OpenDatabaseConnection()
-        {
-            try
-            {
-                connection = new(connectionString);
-                connection.Open();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                btnRefresh.IsEnabled = true;
-                Cursor = Cursors.Arrow;
-                return false;
-            }
         }
 
         private void ButtonHelp_Click(object sender, RoutedEventArgs e)
@@ -87,42 +61,52 @@ namespace ProjectCryptoGains
 
         private void BindLabels()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
 
-            if (connection != null)
+            using (FbConnection connection = new(connectionString))
             {
                 try
                 {
-                    // Total Invested
-                    DbCommand command = connection.CreateCommand();
-                    command.CommandText = @"SELECT VALUE FROM TB_METRICS_S
-											WHERE METRIC = 'TOTAL_INVESTED'";
-
-                    DbDataReader reader = command.ExecuteReader();
-
-                    decimal totalInvested = 0.00m;
-                    if (reader.HasRows)
+                    try
                     {
-                        reader.Read();
-                        totalInvested = reader.GetDecimalOrDefault(0, 0.00m);
+                        connection.Open();
                     }
-                    lblTotalInvestedData.Content = totalInvested.ToString("F2") + " " + fiatCurrency;
-                    reader.Close();
+                    catch (Exception ex)
+                    {
+                        MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                        // Exit function early
+                        return;
+                    }
+
+                    // Total Invested
+                    using DbCommand selectCommand = connection.CreateCommand();
+                    selectCommand.CommandText = @"SELECT ""VALUE"" FROM TB_METRICS_S
+											      WHERE METRIC = 'TOTAL_INVESTED'";
+
+                    using (DbDataReader reader = selectCommand.ExecuteReader())
+                    {
+                        decimal totalInvested = 0.00m;
+                        if (reader.Read())
+                        {
+                            totalInvested = reader.GetDecimalOrDefault(0, 0.00m);
+                        }
+                        lblTotalInvestedData.Content = totalInvested.ToString("F2") + " " + fiatCurrency;
+                    }
 
                     // Last Invested
-                    command.CommandText = @"SELECT VALUE FROM TB_METRICS_S
-											WHERE METRIC = 'LAST_INVESTED'";
+                    selectCommand.CommandText = @"SELECT ""VALUE"" FROM TB_METRICS_S
+											      WHERE METRIC = 'LAST_INVESTED'";
 
-                    reader = command.ExecuteReader();
-
-                    string lastInvested = "";
-                    if (reader.HasRows)
+                    using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
-                        reader.Read();
-                        lastInvested = reader.GetStringOrEmpty(0);
+                        string lastInvested = "";
+                        if (reader.Read())
+                        {
+                            lastInvested = reader.GetStringOrEmpty(0);
+                        }
+                        lblLastInvestedData.Content = lastInvested;
                     }
-                    lblLastInvestedData.Content = lastInvested;
-                    reader.Close();
                 }
                 catch (Exception ex)
                 {
@@ -138,21 +122,33 @@ namespace ProjectCryptoGains
 
         private void UnbindLabels()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             lblTotalInvestedData.Content = "0.00 " + fiatCurrency;
             lblLastInvestedData.Content = "";
         }
 
         private void BindGrid()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             dgAvgBuyPrice.Columns[2].Header = "AMOUNT__" + fiatCurrency;
             dgRewardsSummary.Columns[3].Header = "AMOUNT__" + fiatCurrency;
 
             lblTotalAmountFiatData.Content = "0.00 " + fiatCurrency;
 
-            if (connection != null)
+            using (FbConnection connection = new(connectionString))
             {
+                try
+                {
+                    connection.Open();
+                }
+                catch (Exception ex)
+                {
+                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                    // Exit function early
+                    return;
+                }
+
                 int dbLineNumber = 0;
                 decimal amnt_fiat;
 
@@ -160,30 +156,29 @@ namespace ProjectCryptoGains
                 try
                 {
                     // Create a collection of Model objects
-                    ObservableCollection<AvgBuyPriceModel> dataAvgBuyPrice = [];
+                    ObservableCollection<AvgBuyPriceModel> AvgBuyPriceData = [];
 
-                    DbCommand command = connection.CreateCommand();
+                    using DbCommand selectCommand = connection.CreateCommand();
+                    selectCommand.CommandText = "SELECT CURRENCY, COALESCE(AMOUNT_FIAT, 0.00) FROM TB_AVG_BUY_PRICE_S";
 
-                    command.CommandText = "SELECT CURRENCY, COALESCE(AMOUNT_FIAT, 0.00) FROM TB_AVG_BUY_PRICE_S";
-                    DbDataReader reader = command.ExecuteReader();
-
-                    dbLineNumber = 0;
-                    while (reader.Read())
+                    using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
-                        dbLineNumber++;
-
-                        amnt_fiat = reader.GetDecimalOrDefault(1);
-                        dataAvgBuyPrice.Add(new AvgBuyPriceModel
+                        dbLineNumber = 0;
+                        while (reader.Read())
                         {
-                            RowNumber = dbLineNumber,
-                            Currency = reader.GetStringOrEmpty(0),
-                            Amount_fiat = amnt_fiat
-                        });
+                            dbLineNumber++;
+
+                            amnt_fiat = reader.GetDecimalOrDefault(1);
+                            AvgBuyPriceData.Add(new AvgBuyPriceModel
+                            {
+                                RowNumber = dbLineNumber,
+                                Currency = reader.GetStringOrEmpty(0),
+                                Amount_fiat = amnt_fiat
+                            });
+                        }
                     }
 
-                    reader.Close();
-
-                    dgAvgBuyPrice.ItemsSource = dataAvgBuyPrice;
+                    dgAvgBuyPrice.ItemsSource = AvgBuyPriceData;
                 }
                 catch (Exception ex)
                 {
@@ -192,8 +187,6 @@ namespace ProjectCryptoGains
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
 
-                    UnblockUI();
-
                     // Exit function early
                     return;
                 }
@@ -201,35 +194,34 @@ namespace ProjectCryptoGains
                 // Rewards
                 try
                 {
-                    // Create a collection of RewardsSummaryModel objects
-                    ObservableCollection<RewardsSummaryModel> dataRewards = [];
+                    // Create a collection of MetricsRewardsSummaryModel objects
+                    ObservableCollection<MetricsRewardsSummaryModel> MetricsRewardsSummaryData = [];
 
-                    DbCommand command = connection.CreateCommand();
+                    using DbCommand selectCommand = connection.CreateCommand();
+                    selectCommand.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_REWARDS_SUMMARY_S where AMOUNT > 0";
 
-                    command.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_REWARDS_SUMMARY_S where CAST(AMOUNT AS REAL) > 0";
-                    DbDataReader reader = command.ExecuteReader();
-
-                    decimal tot_amnt_fiat = 0.00m;
-                    dbLineNumber = 0;
-                    while (reader.Read())
+                    using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
-                        dbLineNumber++;
-
-                        amnt_fiat = reader.GetDecimalOrDefault(2);
-                        dataRewards.Add(new RewardsSummaryModel
+                        decimal tot_amnt_fiat = 0.00m;
+                        dbLineNumber = 0;
+                        while (reader.Read())
                         {
-                            RowNumber = dbLineNumber,
-                            Currency = reader.GetStringOrEmpty(0),
-                            Amount = reader.GetDecimalOrDefault(1),
-                            Amount_fiat = amnt_fiat
-                        });
-                        tot_amnt_fiat += amnt_fiat;
+                            dbLineNumber++;
+
+                            amnt_fiat = reader.GetDecimalOrDefault(2);
+                            MetricsRewardsSummaryData.Add(new MetricsRewardsSummaryModel
+                            {
+                                RowNumber = dbLineNumber,
+                                Currency = reader.GetStringOrEmpty(0),
+                                Amount = reader.GetDecimalOrDefault(1),
+                                Amount_fiat = amnt_fiat
+                            });
+                            tot_amnt_fiat += amnt_fiat;
+                        }
+                        lblTotalAmountFiatData.Content = tot_amnt_fiat.ToString("F2") + " " + fiatCurrency;
                     }
-                    lblTotalAmountFiatData.Content = tot_amnt_fiat.ToString("F2") + " " + fiatCurrency;
 
-                    reader.Close();
-
-                    dgRewardsSummary.ItemsSource = dataRewards;
+                    dgRewardsSummary.ItemsSource = MetricsRewardsSummaryData;
                 }
                 catch (Exception ex)
                 {
@@ -237,8 +229,6 @@ namespace ProjectCryptoGains
 
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
-
-                    UnblockUI();
 
                     // Exit function early
                     return;
@@ -248,7 +238,7 @@ namespace ProjectCryptoGains
 
         private void UnbindGrid()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             lblTotalAmountFiatData.Content = "0.00 " + fiatCurrency;
             dgAvgBuyPrice.ItemsSource = null;
             dgRewardsSummary.ItemsSource = null;
@@ -256,203 +246,45 @@ namespace ProjectCryptoGains
 
         private async void Refresh()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             lastError = null;
 
             BlockUI();
 
-            ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refreshing metrics");
-
-            bool ledgersRefreshFailed = false;
-            string? ledgersRefreshWarning = null;
-            bool ledgersRefreshWasBusy = false;
-            if (chkRefreshLedgers.IsChecked == true)
+            try
             {
-                await Task.Run(() =>
-                {
-                    try
-                    {
-                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Metrics);
-                    }
-                    catch (Exception)
-                    {
-                        ledgersRefreshFailed = true;
-                    }
-                    ledgersRefreshWasBusy = LedgersRefreshBusy;
-                });
-            }
+                ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refreshing metrics");
 
-            string? tradesRefreshError = null;
-            string? tradesRefreshWarning = null;
-            bool tradesRefreshWasBusy = false;
-            if (chkRefreshTrades.IsChecked == true && !ledgersRefreshWasBusy && !ledgersRefreshFailed)
-            {
-                await Task.Run(async () =>
+                bool ledgersRefreshFailed = false;
+                string? ledgersRefreshWarning = null;
+                bool ledgersRefreshWasBusy = false;
+                if (chkRefreshLedgers.IsChecked == true)
                 {
-                    try
+                    await Task.Run(() =>
                     {
-                        tradesRefreshWarning = await RefreshTrades(_mainWindow, Caller.Metrics);
-                        tradesRefreshWasBusy = TradesRefreshBusy;
-                    }
-                    catch (Exception ex)
-                    {
-                        while (ex.InnerException != null)
+                        try
                         {
-                            ex = ex.InnerException;
+                            ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Metrics);
                         }
-                        tradesRefreshError = ex.Message;
-                    }
-                });
-            }
-
-            if (!ledgersRefreshWasBusy && !tradesRefreshWasBusy && tradesRefreshError == null && !ledgersRefreshFailed)
-            {
-                if (!OpenDatabaseConnection())
-                {
-                    return;
+                        catch (Exception)
+                        {
+                            ledgersRefreshFailed = true;
+                        }
+                        ledgersRefreshWasBusy = LedgersRefreshBusy;
+                    });
                 }
 
-                if (connection != null)
+                string? tradesRefreshError = null;
+                string? tradesRefreshWarning = null;
+                bool tradesRefreshWasBusy = false;
+                if (chkRefreshTrades.IsChecked == true && !ledgersRefreshWasBusy && !ledgersRefreshFailed)
                 {
-                    DbCommand commandDelete = connection.CreateCommand();
-
-                    /// Metrics
-                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating metrics");
-                    await Task.Run(() =>
-                    {
-                        // Truncate standard DB table
-                        commandDelete.CommandText = "DELETE FROM TB_METRICS_S";
-                        commandDelete.ExecuteNonQuery();
-
-                        // Total Invested
-                        DbCommand commandInsert = connection.CreateCommand();
-
-                        commandInsert.CommandText = $@"INSERT INTO TB_METRICS_S (METRIC, VALUE)
-                                                           SELECT 
-                                                               'TOTAL_INVESTED' AS METRIC,
-                                                               printf('%.2f', SUM(CAST(AMOUNT AS NUMERIC))) AS VALUE
-                                                           FROM TB_LEDGERS_S
-                                                           WHERE CURRENCY = '{fiatCurrency}'
-                                                               AND TYPE = 'DEPOSIT'";
-
-                        commandInsert.ExecuteNonQuery();
-
-                        // Last Invested
-                        commandInsert.CommandText = $@"INSERT INTO TB_METRICS_S (METRIC, VALUE)
-													       SELECT 
-                                                               'LAST_INVESTED' AS METRIC,
-													           MAX(DATE) AS VALUE
-													       FROM TB_LEDGERS_S
-                                                           WHERE CURRENCY = '{fiatCurrency}'
-                                                               AND TYPE = 'DEPOSIT'";
-
-                        commandInsert.ExecuteNonQuery();
-                    });
-
-                    if (ledgersRefreshWarning == null)
-                    {
-                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating metrics done");
-                    }
-                    else
-                    {
-                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating metrics done with warnings");
-                    }
-
-                    /// Average Buy Price
-                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating average buy price");
-                    await Task.Run(() =>
-                    {
-                        // Truncate standard DB table
-                        commandDelete.CommandText = "DELETE FROM TB_AVG_BUY_PRICE_S";
-                        commandDelete.ExecuteNonQuery();
-
-                        // Insert into standard DB table for each asset
-                        using DbCommand command = connection.CreateCommand();
-                        command.CommandText = $"SELECT CODE, ASSET FROM TB_ASSET_CATALOG_S WHERE CODE != '{fiatCurrency}' ORDER BY CODE, ASSET";
-                        using DbDataReader reader = command.ExecuteReader();
-                        while (reader.Read())
-                        {
-                            string code = reader.GetStringOrEmpty(0);
-                            string asset = reader.GetStringOrEmpty(1);
-
-                            using DbCommand commandIns = connection.CreateCommand();
-                            commandIns.CommandText = CreateAvgBuyPriceInsert(asset);
-                            commandIns.ExecuteNonQuery();
-                        }
-                    });
-                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating average buy price done");
-
-                    /// Rewards
-                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards");
-                    DateTime date = DateTime.Today;
-
                     await Task.Run(async () =>
                     {
                         try
                         {
-                            // Truncate standard DB table
-                            commandDelete.CommandText = "DELETE FROM TB_REWARDS_SUMMARY_S";
-                            commandDelete.ExecuteNonQuery();
-
-                            // Insert into standard DB table
-                            using DbCommand command = connection.CreateCommand();
-                            command.CommandText = @"SELECT 
-                                                        catalog.CODE,
-                                                        catalog.ASSET
-                                                    FROM
-                                                        (SELECT CODE, ASSET FROM TB_ASSET_CATALOG_S) catalog
-                                                        INNER JOIN
-                                                            (SELECT DISTINCT CURRENCY FROM TB_LEDGERS_S) ledgers
-                                                            ON catalog.ASSET = ledgers.CURRENCY
-                                                    ORDER BY CODE, ASSET";
-
-                            using DbDataReader reader = command.ExecuteReader();
-
-                            // For each asset, create rewards summary insert
-
-                            // Rate limiting mechanism //
-                            DateTime lastCallTime = DateTime.Now;
-                            /////////////////////////////
-                            while (reader.Read())
-                            {
-                                string code = reader.GetStringOrEmpty(0);
-                                string asset = reader.GetStringOrEmpty(1);
-
-                                using DbCommand commandIns = connection.CreateCommand();
-
-                                var (xInFiat, sqlCommand, conversionSource) = CreateRewardsSummaryInsert(asset, code, date, connection);
-                                commandIns.CommandText = sqlCommand;
-
-                                if (ConvertStringToDecimal(xInFiat) == 0m)
-                                {
-                                    lastWarning = $"[Metrics] Could not calculate AMOUNT_{fiatCurrency} for currency: {asset}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
-                                    Application.Current.Dispatcher.Invoke(() =>
-                                    {
-                                        ConsoleLog(_mainWindow.txtLog, lastWarning);
-                                    });
-                                }
-
-                                // Rate limiting mechanism //
-                                if (conversionSource == "API")
-                                {
-                                    if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
-                                    {
-                                        // Calculate delay to ensure at least 1 seconds have passed
-                                        int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
-                                        await Task.Delay(delay);
-                                    }
-                                }
-                                lastCallTime = DateTime.Now;
-                                /////////////////////////////
-                                commandIns.ExecuteNonQuery();
-                            }
-                            if (lastWarning != null)
-                            {
-                                Application.Current.Dispatcher.Invoke(() =>
-                                {
-                                    MessageBoxResult result = CustomMessageBox.Show($"There were issues calculating some reward amounts in {fiatCurrency}", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                                });
-                            }
+                            tradesRefreshWarning = await RefreshTrades(_mainWindow, Caller.Metrics);
+                            tradesRefreshWasBusy = TradesRefreshBusy;
                         }
                         catch (Exception ex)
                         {
@@ -460,64 +292,235 @@ namespace ProjectCryptoGains
                             {
                                 ex = ex.InnerException;
                             }
-                            lastError = ex.Message;
+                            tradesRefreshError = ex.Message;
                         }
                     });
+                }
 
-                    if (lastError == null)
+                if (!ledgersRefreshWasBusy && !tradesRefreshWasBusy && tradesRefreshError == null && !ledgersRefreshFailed)
+                {
+                    using (FbConnection connection = new(connectionString))
                     {
-                        if (ledgersRefreshWarning == null && lastWarning == null)
+                        try
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards done");
+                            connection.Open();
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                            // Exit function early
+                            return;
+                        }
+
+                        using DbCommand deleteCommand = connection.CreateCommand();
+
+                        /// Metrics
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating metrics");
+                        await Task.Run(() =>
+                        {
+                            // Truncate standard DB table
+                            deleteCommand.CommandText = "DELETE FROM TB_METRICS_S";
+                            deleteCommand.ExecuteNonQuery();
+
+                            using DbCommand insertCommand = connection.CreateCommand();
+                            // Total Invested
+                            insertCommand.CommandText = $@"INSERT INTO TB_METRICS_S (METRIC, ""VALUE"")
+                                                           SELECT 
+                                                               'TOTAL_INVESTED' AS METRIC,
+                                                               ROUND(SUM(AMOUNT), 2) AS ""VALUE""
+                                                           FROM TB_LEDGERS_S
+                                                           WHERE CURRENCY = '{fiatCurrency}'
+                                                               AND TYPE = 'DEPOSIT'";
+
+                            insertCommand.ExecuteNonQuery();
+
+                            // Last Invested
+                            insertCommand.CommandText = $@"INSERT INTO TB_METRICS_S (METRIC, ""VALUE"")
+													       SELECT 
+                                                               'LAST_INVESTED' AS METRIC,
+													           SUBSTRING(CAST(MAX(""DATE"") AS VARCHAR(50)) FROM 1 FOR 19) AS ""VALUE""
+													       FROM TB_LEDGERS_S
+                                                           WHERE CURRENCY = '{fiatCurrency}'
+                                                               AND TYPE = 'DEPOSIT'";
+
+                            insertCommand.ExecuteNonQuery();
+                        });
+
+                        if (ledgersRefreshWarning == null)
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating metrics done");
                         }
                         else
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards done with warnings");
+                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating metrics done with warnings");
+                        }
+
+                        /// Average Buy Price
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating average buy price");
+                        await Task.Run(() =>
+                        {
+                            // Truncate standard DB table
+                            deleteCommand.CommandText = "DELETE FROM TB_AVG_BUY_PRICE_S";
+                            deleteCommand.ExecuteNonQuery();
+
+                            // Insert into standard DB table for each asset
+                            using DbCommand selectCommand = connection.CreateCommand();
+                            selectCommand.CommandText = $"SELECT CODE, ASSET FROM TB_ASSET_CATALOG_S WHERE CODE != '{fiatCurrency}' ORDER BY CODE, ASSET";
+
+                            using (DbDataReader reader = selectCommand.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    string code = reader.GetStringOrEmpty(0);
+                                    string asset = reader.GetStringOrEmpty(1);
+
+                                    using DbCommand insertCommand = connection.CreateCommand();
+                                    insertCommand.CommandText = CreateAvgBuyPriceInsert(asset);
+                                    insertCommand.ExecuteNonQuery();
+                                }
+                            }
+                        });
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating average buy price done");
+
+                        /// Rewards
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards");
+                        DateTime date = DateTime.Today;
+
+                        await Task.Run(async () =>
+                        {
+                            try
+                            {
+                                // Truncate standard DB table
+                                deleteCommand.CommandText = "DELETE FROM TB_REWARDS_SUMMARY_S";
+                                deleteCommand.ExecuteNonQuery();
+
+                                // Insert into standard DB table
+                                using DbCommand selectCommand = connection.CreateCommand();
+                                selectCommand.CommandText = @"SELECT 
+                                                                  catalog.CODE,
+                                                                  catalog.ASSET
+                                                              FROM
+                                                                  (SELECT CODE, ASSET FROM TB_ASSET_CATALOG_S) catalog
+                                                                  INNER JOIN
+                                                                      (SELECT DISTINCT CURRENCY FROM TB_LEDGERS_S) ledgers
+                                                                      ON catalog.ASSET = ledgers.CURRENCY
+                                                              ORDER BY CODE, ASSET";
+
+                                using (DbDataReader reader = selectCommand.ExecuteReader())
+                                {
+                                    // For each asset, create rewards summary insert
+
+                                    // Rate limiting mechanism //
+                                    DateTime lastCallTime = DateTime.Now;
+                                    /////////////////////////////
+                                    while (reader.Read())
+                                    {
+                                        string code = reader.GetStringOrEmpty(0);
+                                        string asset = reader.GetStringOrEmpty(1);
+
+                                        using DbCommand insertCommand = connection.CreateCommand();
+
+                                        var (xInFiat, sqlCommand, conversionSource) = CreateRewardsSummaryInsert(asset, code, date, connection);
+                                        insertCommand.CommandText = sqlCommand;
+
+                                        if (xInFiat == 0m)
+                                        {
+                                            lastWarning = $"[Metrics] Could not calculate AMOUNT_{fiatCurrency} for currency: {asset}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                            Application.Current.Dispatcher.Invoke(() =>
+                                            {
+                                                ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                            });
+                                        }
+
+                                        // Rate limiting mechanism //
+                                        if (conversionSource == "API")
+                                        {
+                                            if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
+                                            {
+                                                // Calculate delay to ensure at least 1 seconds have passed
+                                                int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
+                                                await Task.Delay(delay);
+                                            }
+                                        }
+                                        lastCallTime = DateTime.Now;
+                                        /////////////////////////////
+                                        insertCommand.ExecuteNonQuery();
+                                    }
+                                    if (lastWarning != null)
+                                    {
+                                        Application.Current.Dispatcher.Invoke(() =>
+                                        {
+                                            MessageBoxResult result = CustomMessageBox.Show($"There were issues calculating some reward amounts in {fiatCurrency}.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                        });
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                while (ex.InnerException != null)
+                                {
+                                    ex = ex.InnerException;
+                                }
+                                lastError = ex.Message;
+                            }
+                        });
+
+                        if (lastError == null)
+                        {
+                            if (ledgersRefreshWarning == null && lastWarning == null)
+                            {
+                                ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards done");
+                            }
+                            else
+                            {
+                                ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards done with warnings");
+                            }
+                        }
+                        else
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] " + lastError);
+                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards unsuccessful");
+                        }
+                    }
+
+                    BindLabels();
+                    BindGrid();
+
+                    if (lastError == null)
+                    {
+                        if (ledgersRefreshWarning == null && tradesRefreshWarning == null && lastWarning == null)
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh done");
+                        }
+                        else
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh done with warnings");
                         }
                     }
                     else
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] " + lastError);
-                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards unsuccessful");
-                    }
-                }
-
-                BindLabels();
-                BindGrid();
-
-                connection?.Close();
-
-                if (lastError == null)
-                {
-                    if (ledgersRefreshWarning == null && tradesRefreshWarning == null && lastWarning == null)
-                    {
-                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh done");
-                    }
-                    else
-                    {
-                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh done with warnings");
+                        UnbindLabels();
+                        UnbindGrid();
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh unsuccessful");
                     }
                 }
                 else
                 {
                     UnbindLabels();
                     UnbindGrid();
+                    if (tradesRefreshError != null)
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] " + tradesRefreshError);
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refreshing trades unsuccessful");
+                    }
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh unsuccessful");
                 }
             }
-            else
+            finally
             {
-                UnbindLabels();
-                UnbindGrid();
-                if (tradesRefreshError != null)
-                {
-                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] " + tradesRefreshError);
-                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refreshing trades unsuccessful");
-                }
-                ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh unsuccessful");
+                UnblockUI();
             }
-
-            UnblockUI();
         }
 
         private static string CreateAvgBuyPriceInsert(string currency)
@@ -525,7 +528,7 @@ namespace ProjectCryptoGains
             return $@"INSERT INTO TB_AVG_BUY_PRICE_S (CURRENCY, AMOUNT_FIAT)
                           SELECT 
                               CURRENCY,
-                              printf('%.2f', AMOUNT_FIAT) AS AMOUNT_FIAT
+                              ROUND(AMOUNT_FIAT, 2) AS AMOUNT_FIAT
                           FROM (
                               SELECT 
                                   '{currency}' AS CURRENCY,
@@ -546,30 +549,30 @@ namespace ProjectCryptoGains
                                       AND QUOTE_CURRENCY = '{currency}'
                               )
                           )
-                          WHERE AMOUNT_FIAT != ''";
+                          WHERE AMOUNT_FIAT IS NOT NULL";
         }
 
-        private static (string xInFiat, string sqlCommand, string conversionSource) CreateRewardsSummaryInsert(string currency, string currency_code, DateTime date, SqliteConnection connection)
+        private static (decimal xInFiat, string sqlCommand, string conversionSource) CreateRewardsSummaryInsert(string currency, string currency_code, DateTime date, FbConnection connection)
         {
             try
             {
                 var (fiatAmount, source) = ConvertXToFiat(currency_code, 1m, date.Date, connection);
-                string xInFiat = fiatAmount;
+                decimal xInFiat = fiatAmount;
                 string conversionSource = source;
 
-                string sqlCommand = $@"WITH cas AS (
+                string sqlCommand = $@"INSERT INTO TB_REWARDS_SUMMARY_S (CURRENCY, AMOUNT, AMOUNT_FIAT)
+                                       WITH cas AS (
                                            SELECT 
-                                               printf('%.10f', SUM(CAST(AMOUNT AS NUMERIC)) - SUM(CAST(FEE AS NUMERIC))) AS REWARD_SUM
+                                               ROUND(SUM(AMOUNT) - SUM(FEE), 10) AS REWARD_SUM
                                            FROM TB_LEDGERS_S
                                            WHERE TYPE IN ('EARN', 'STAKING', 'AIRDROP')
                                                AND CURRENCY IN ('{currency}')
                                        )
-                                       INSERT INTO TB_REWARDS_SUMMARY_S (CURRENCY, AMOUNT, AMOUNT_FIAT)
-                                           SELECT 
-                                               '{currency_code}' AS CURRENCY,
-                                               IFNULL(cas.REWARD_SUM, 0.00) AS AMOUNT,
-                                               printf('%.2f', IFNULL({xInFiat} * cas.REWARD_SUM, 0.00)) AS AMOUNT_FIAT
-                                           FROM cas";
+                                       SELECT 
+                                           '{currency_code}' AS CURRENCY,
+                                           COALESCE(cas.REWARD_SUM, 0.00) AS AMOUNT,
+                                           ROUND(COALESCE({xInFiat} * cas.REWARD_SUM, 0.00), 2) AS AMOUNT_FIAT
+                                       FROM cas";
 
                 return (xInFiat, sqlCommand, conversionSource);
             }

@@ -1,11 +1,10 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using FirebirdSql.Data.FirebirdClient;
 using ProjectCryptoGains.Common;
 using ProjectCryptoGains.Common.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data.Common;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -14,6 +13,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.DateUtils;
+using static ProjectCryptoGains.Common.Utils.ExceptionUtils;
 using static ProjectCryptoGains.Common.Utils.LedgersUtils;
 using static ProjectCryptoGains.Common.Utils.ReaderUtils;
 using static ProjectCryptoGains.Common.Utils.SettingUtils;
@@ -81,123 +82,126 @@ namespace ProjectCryptoGains
 
         private void BindGrid()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             dgGains.Columns[8].Header = "BASE__UNIT__PRICE__" + fiatCurrency;
 
-            ObservableCollection<GainsModel> dataGains = [];
-            ObservableCollection<GainsSummaryModel> dataGainsSummary = [];
-
-            using SqliteConnection connection = new(connectionString);
-            try
-            {
-                connection.Open();
-            }
-            catch (Exception ex)
-            {
-                // code to handle the exception
-                MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                UnblockUI();
-
-                // Exit function early
-                return;
-            }
-
-            DbCommand command = connection.CreateCommand();
-
-            command.CommandText = $@"SELECT 
-                                         trades.REFID,
-                                         trades.DATE,
-                                         trades.TYPE,
-                                         trades.BASE_CURRENCY,
-                                         trades.BASE_AMOUNT,
-                                         trades.QUOTE_CURRENCY,
-                                         trades.QUOTE_AMOUNT,
-                                         trades.BASE_UNIT_PRICE_FIAT,
-                                         trades.COSTS_PROCEEDS,
-                                         CASE 
-                                             WHEN trades.TYPE = 'SELL' THEN NULL
-                                             ELSE gains.TX_BALANCE_REMAINING
-                                         END AS TX_BALANCE_REMAINING,
-                                         CASE 
-                                             WHEN trades.TYPE = 'BUY' THEN NULL
-                                             ELSE gains.GAIN
-                                         END AS GAIN
-                                     FROM TB_GAINS_S gains
-                                         INNER JOIN TB_TRADES_S trades
-                                             ON gains.REFID = trades.REFID
-                                     WHERE trades.BASE_CURRENCY LIKE '%{baseCurrency}%'
-                                     ORDER BY DATE ASC";
-
-            DbDataReader reader = command.ExecuteReader();
-
-            int dbLineNumber = 0;
-            while (reader.Read())
-            {
-                dbLineNumber++;
-
-                dataGains.Add(new GainsModel
-                {
-                    RowNumber = dbLineNumber,
-                    Refid = reader.GetStringOrEmpty(0),
-                    Date = reader.GetStringOrEmpty(1),
-                    Type = reader.GetStringOrEmpty(2),
-                    Base_currency = reader.GetStringOrEmpty(3),
-                    Base_amount = reader.GetDecimalOrDefault(4),
-                    Quote_currency = reader.GetStringOrEmpty(5),
-                    Quote_amount = reader.GetDecimalOrDefault(6),
-                    Base_unit_price_fiat = reader.GetDecimalOrNull(7),
-                    Costs_proceeds = reader.GetDecimalOrNull(8),
-                    Tx_balance_remaining = reader.GetDecimalOrNull(9),
-                    Gain = reader.GetDecimalOrNull(10)
-                });
-            }
-            reader.Close();
-
-            dgGains.ItemsSource = dataGains;
-
-            /////////////////////////////////
-
-            command.CommandText = $@"SELECT 
-                                         trades.BASE_CURRENCY AS CURRENCY,
-                                         printf('%.10f', SUM(CAST(gains.GAIN AS REAL))) AS GAIN
-                                     FROM TB_GAINS_S gains
-                                         INNER JOIN TB_TRADES_S trades
-                                             ON gains.REFID = trades.REFID
-                                     WHERE gains.GAIN != ''
-                                         AND trades.BASE_CURRENCY LIKE '%{baseCurrency}%'
-                                         AND strftime('%s', trades.DATE) BETWEEN strftime('%s', '{fromDate}') AND strftime('%s', date('{toDate}', '+1 day'))
-                                     GROUP BY trades.BASE_CURRENCY
-                                     ORDER BY trades.BASE_CURRENCY";
-
-            reader = command.ExecuteReader();
-
-            dbLineNumber = 0;
+            ObservableCollection<GainsModel> GainsData = [];
+            ObservableCollection<GainsSummaryModel> GainsSummaryData = [];
 
             decimal tot_gain = 0.00m;
-            decimal gain = 0.00m;
-            while (reader.Read())
+
+            using (FbConnection connection = new(connectionString))
             {
-                dbLineNumber++;
-
-                gain = reader.GetDecimalOrDefault(1);
-                dataGainsSummary.Add(new GainsSummaryModel
+                try
                 {
-                    RowNumber = dbLineNumber,
-                    Currency = reader.GetStringOrEmpty(0),
-                    Gain = reader.GetDecimalOrDefault(1)
-                });
-                tot_gain += gain;
-            }
-            reader.Close();
-            connection.Close();
+                    connection.Open();
+                }
+                catch (Exception ex)
+                {
+                    // code to handle the exception
+                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
+                    // Exit function early
+                    return;
+                }
+
+                using DbCommand selectCommand = connection.CreateCommand();
+                selectCommand.CommandText = $@"SELECT 
+                                                   trades.REFID,
+                                                   trades.""DATE"",
+                                                   trades.TYPE,
+                                                   trades.BASE_CURRENCY,
+                                                   trades.BASE_AMOUNT,
+                                                   trades.QUOTE_CURRENCY,
+                                                   trades.QUOTE_AMOUNT,
+                                                   trades.BASE_UNIT_PRICE_FIAT,
+                                                   trades.COSTS_PROCEEDS,
+                                                   CASE 
+                                                       WHEN trades.TYPE = 'SELL' THEN NULL
+                                                       ELSE gains.TX_BALANCE_REMAINING
+                                                   END AS TX_BALANCE_REMAINING,
+                                                   CASE 
+                                                       WHEN trades.TYPE = 'BUY' THEN NULL
+                                                       ELSE gains.GAIN
+                                                   END AS GAIN
+                                               FROM TB_GAINS_S gains
+                                                   INNER JOIN TB_TRADES_S trades
+                                                       ON gains.REFID = trades.REFID
+                                               WHERE trades.BASE_CURRENCY LIKE '%{baseCurrency}%'
+                                               ORDER BY ""DATE"" ASC";
+
+                using (DbDataReader reader = selectCommand.ExecuteReader())
+                {
+                    int dbLineNumber = 0;
+                    while (reader.Read())
+                    {
+                        dbLineNumber++;
+
+                        GainsData.Add(new GainsModel
+                        {
+                            RowNumber = dbLineNumber,
+                            Refid = reader.GetStringOrEmpty(0),
+                            Date = reader.GetDateTime(1),
+                            Type = reader.GetStringOrEmpty(2),
+                            Base_currency = reader.GetStringOrEmpty(3),
+                            Base_amount = reader.GetDecimalOrDefault(4),
+                            Quote_currency = reader.GetStringOrEmpty(5),
+                            Quote_amount = reader.GetDecimalOrDefault(6),
+                            Base_unit_price_fiat = reader.GetDecimal(7),
+                            Costs_proceeds = reader.GetDecimal(8),
+                            Tx_balance_remaining = reader.GetDecimalOrNull(9),
+                            Gain = reader.GetDecimalOrNull(10)
+                        });
+                    }
+                }
+
+                dgGains.ItemsSource = GainsData;
+
+                /////////////////////////////////
+
+                selectCommand.CommandText = $@"SELECT 
+                                                   trades.BASE_CURRENCY AS CURRENCY,
+                                                   ROUND(SUM(gains.GAIN), 10) AS GAIN
+                                               FROM TB_GAINS_S gains
+                                                   INNER JOIN TB_TRADES_S trades
+                                                       ON gains.REFID = trades.REFID
+                                               WHERE gains.GAIN IS NOT NULL
+                                                   AND trades.BASE_CURRENCY LIKE @BASE_CURRENCY
+                                                   AND trades.""DATE"" BETWEEN @FROM_DATE AND @TO_DATE
+                                               GROUP BY trades.BASE_CURRENCY
+                                               ORDER BY trades.BASE_CURRENCY";
+
+                AddParameterWithValue(selectCommand, "@BASE_CURRENCY", $"%{baseCurrency}%");
+                AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(fromDate));
+                AddParameterWithValue(selectCommand, "@TO_DATE", ConvertStringToIsoDate(toDate).AddDays(1));
+
+                using (DbDataReader reader = selectCommand.ExecuteReader())
+                {
+                    int dbLineNumber = 0;
+
+                    decimal gain = 0.00m;
+                    while (reader.Read())
+                    {
+                        dbLineNumber++;
+
+                        gain = reader.GetDecimalOrDefault(1);
+                        GainsSummaryData.Add(new GainsSummaryModel
+                        {
+                            RowNumber = dbLineNumber,
+                            Currency = reader.GetStringOrEmpty(0),
+                            Gain = reader.GetDecimalOrDefault(1)
+                        });
+                        tot_gain += gain;
+                    }
+                }
+            }
             lblTotalGainsData.Content = tot_gain.ToString("F2") + " " + fiatCurrency;
-            dgGainsSummary.ItemsSource = dataGainsSummary;
+            dgGainsSummary.ItemsSource = GainsSummaryData;
         }
 
         private void UnbindGrid()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             lblTotalGainsData.Content = "0.00 " + fiatCurrency;
             dgGains.ItemsSource = null;
             dgGainsSummary.ItemsSource = null;
@@ -209,190 +213,219 @@ namespace ProjectCryptoGains
 
             if (!IsValidDateFormat(txtFromDate.Text, "yyyy-MM-dd"))
             {
-                MessageBoxResult result = CustomMessageBox.Show("From date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("From date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
             if (!IsValidDateFormat(txtToDate.Text, "yyyy-MM-dd"))
             {
-                MessageBoxResult result = CustomMessageBox.Show("To date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("To date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
             BlockUI();
 
-            ConsoleLog(_mainWindow.txtLog, $"[Gains] Refreshing gains");
-
-            bool ledgersRefreshFailed = false;
-            string? ledgersRefreshWarning = null;
-            bool ledgersRefreshWasBusy = false;
-            if (chkRefreshLedgers.IsChecked == true)
+            try
             {
-                await Task.Run(() =>
-                {
-                    try
-                    {
-                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Gains);
-                    }
-                    catch (Exception)
-                    {
-                        ledgersRefreshFailed = true;
-                    }
-                    ledgersRefreshWasBusy = LedgersRefreshBusy;
-                });
-            }
 
-            string? tradesRefreshError = null;
-            string? tradesRefreshWarning = null;
-            bool tradesRefreshWasBusy = false;
-            if (chkRefreshTrades.IsChecked == true && !ledgersRefreshWasBusy && !ledgersRefreshFailed)
-            {
-                await Task.Run(async () =>
+                ConsoleLog(_mainWindow.txtLog, $"[Gains] Refreshing gains");
+
+                bool ledgersRefreshFailed = false;
+                string? ledgersRefreshWarning = null;
+                bool ledgersRefreshWasBusy = false;
+                if (chkRefreshLedgers.IsChecked == true)
                 {
-                    try
+                    await Task.Run(() =>
                     {
-                        tradesRefreshWarning = await RefreshTrades(_mainWindow, Caller.Gains);
-                        tradesRefreshWasBusy = TradesRefreshBusy;
-                    }
-                    catch (Exception ex)
-                    {
-                        while (ex.InnerException != null)
+                        try
                         {
-                            ex = ex.InnerException;
+                            ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Gains);
                         }
-                        tradesRefreshError = ex.Message;
-                    }
-                });
-            }
-
-            // LIFO processing
-            if (!ledgersRefreshWasBusy && !tradesRefreshWasBusy && tradesRefreshError == null && !ledgersRefreshFailed)
-            {
-                await Task.Run(() =>
-                {
-                    using SqliteConnection connection = new(connectionString);
-                    try
-                    {
-                        connection.Open();
-                        // Clear the table before inserting new data
-                        using DbCommand commandClear = connection.CreateCommand();
-                        commandClear.CommandText = "DELETE FROM TB_GAINS_S";
-                        commandClear.ExecuteNonQuery();
-                        connection.Close();
-
-                        // Read the assets into a list
-                        connection.Open();
-                        using DbCommand command = connection.CreateCommand();
-                        command.CommandText = $@"SELECT ASSET FROM TB_ASSET_CATALOG_S WHERE ASSET like '%{baseCurrency}%'";
-
-                        List<string> assets = [];
-
-                        using (DbDataReader reader = command.ExecuteReader())
+                        catch (Exception)
                         {
-                            while (reader.Read())
+                            ledgersRefreshFailed = true;
+                        }
+                        ledgersRefreshWasBusy = LedgersRefreshBusy;
+                    });
+                }
+
+                string? tradesRefreshError = null;
+                string? tradesRefreshWarning = null;
+                bool tradesRefreshWasBusy = false;
+                if (chkRefreshTrades.IsChecked == true && !ledgersRefreshWasBusy && !ledgersRefreshFailed)
+                {
+                    await Task.Run(async () =>
+                    {
+                        try
+                        {
+                            tradesRefreshWarning = await RefreshTrades(_mainWindow, Caller.Gains);
+                            tradesRefreshWasBusy = TradesRefreshBusy;
+                        }
+                        catch (Exception ex)
+                        {
+                            while (ex.InnerException != null)
                             {
-                                string asset = reader.GetStringOrEmpty(0);
-                                assets.Add(asset);
+                                ex = ex.InnerException;
+                            }
+                            tradesRefreshError = ex.Message;
+                        }
+                    });
+                }
+
+                // LIFO processing
+                if (!ledgersRefreshWasBusy && !tradesRefreshWasBusy && tradesRefreshError == null && !ledgersRefreshFailed)
+                {
+                    await Task.Run(() =>
+                    {
+                        using (FbConnection connection = new(connectionString))
+                        {
+                            try
+                            {
+                                connection.Open();
+                                // Clear the table before inserting new data
+                                using DbCommand deleteCommand = connection.CreateCommand();
+                                deleteCommand.CommandText = "DELETE FROM TB_GAINS_S";
+                                deleteCommand.ExecuteNonQuery();
+
+                                // Read the assets into a list
+                                using DbCommand selectCommand = connection.CreateCommand();
+                                selectCommand.CommandText = $@"SELECT ASSET FROM TB_ASSET_CATALOG_S WHERE ASSET like '%{baseCurrency}%'";
+
+                                List<string> assets = [];
+
+                                using (DbDataReader reader = selectCommand.ExecuteReader())
+                                {
+                                    while (reader.Read())
+                                    {
+                                        string asset = reader.GetStringOrEmpty(0);
+                                        assets.Add(asset);
+                                    }
+                                }
+                                connection.Close();
+
+                                // For each asset do LIFO processing
+                                foreach (string asset in assets)
+                                {
+                                    List<TransactionsModel> sellTransactions = ReadTransactionsFromDB(asset, "SELL", "ASC");
+                                    List<TransactionsModel> buyTransactions = ReadTransactionsFromDB(asset, "BUY");
+                                    CalculateLIFOGains(asset, sellTransactions, buyTransactions);
+                                    WriteTransactionsToDB(sellTransactions, buyTransactions, connectionString);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    string errorMessage;
+                                    switch (ex)
+                                    {
+                                        case DatabaseReadException dbREx:
+                                            errorMessage = BuildErrorMessage(dbREx);
+                                            break;
+
+                                        case DatabaseWriteException dbWEx:
+                                            errorMessage = BuildErrorMessage(dbWEx);
+                                            break;
+
+                                        default:
+                                            errorMessage = $"Gains could not be calculated.{Environment.NewLine}{ex.Message}";
+                                            break;
+                                    }
+
+                                    MessageBoxResult result = CustomMessageBox.Show(errorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                });
+                                return;
                             }
                         }
-                        connection.Close();
+                    });
 
-                        // For each asset do LIFO processing
-                        foreach (string asset in assets)
+                    if (errors == 0)
+                    {
+                        BindGrid();
+                        if (ledgersRefreshWarning == null && tradesRefreshWarning == null)
                         {
-                            List<TransactionsModel> sellTransactions = ReadTransactionsFromDB(asset, "SELL", "ASC");
-                            List<TransactionsModel> buyTransactions = ReadTransactionsFromDB(asset, "BUY");
-                            CalculateLIFOGains(asset, sellTransactions, buyTransactions);
-                            WriteTransactionsToDB(sellTransactions, buyTransactions, connectionString);
+                            ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh done");
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Application.Current.Dispatcher.Invoke(() =>
+                        else
                         {
-                            MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        });
-                        return;
-                    }
-                });
-
-                if (errors == 0)
-                {
-                    BindGrid();
-                    if (ledgersRefreshWarning == null && tradesRefreshWarning == null)
-                    {
-                        ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh done");
+                            ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh done with warnings");
+                        }
                     }
                     else
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh done with warnings");
+                        UnbindGrid();
+                        ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh unsuccessful");
                     }
                 }
                 else
                 {
                     UnbindGrid();
+                    if (tradesRefreshError != null)
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[Gains] " + tradesRefreshError);
+                        ConsoleLog(_mainWindow.txtLog, $"[Gains] Refreshing trades unsuccessful");
+                    }
                     ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh unsuccessful");
                 }
             }
-            else
+            finally
             {
-                UnbindGrid();
-                if (tradesRefreshError != null)
-                {
-                    ConsoleLog(_mainWindow.txtLog, $"[Gains] " + tradesRefreshError);
-                    ConsoleLog(_mainWindow.txtLog, $"[Gains] Refreshing trades unsuccessful");
-                }
-                ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh unsuccessful");
+                UnblockUI();
             }
-
-            UnblockUI();
         }
 
         private static List<TransactionsModel> ReadTransactionsFromDB(String asset, String tx_type, string orderBy = "DESC")
         {
             List<TransactionsModel> transactions = [];
 
-            using (SqliteConnection connection = new(connectionString))
+            using (FbConnection connection = new(connectionString))
             {
                 try
                 {
                     connection.Open();
-                    using DbCommand command = connection.CreateCommand();
-                    command.CommandText = $@"SELECT 
-                                                 REFID,
-                                                 DATE,
-                                                 BASE_AMOUNT AS AMOUNT,
-                                                 BASE_UNIT_PRICE_FIAT AS UNIT_PRICE,
-                                                 COSTS_PROCEEDS,
-                                                 BASE_AMOUNT AS TX_BALANCE_REMAINING
-                                             FROM TB_TRADES_S
-                                             WHERE BASE_CURRENCY = '{asset}'
-                                                 AND TYPE = '{tx_type}'
-                                             ORDER BY DATE {orderBy}";
 
-                    using DbDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
+                    using DbCommand selectCommand = connection.CreateCommand();
+                    selectCommand.CommandText = $@"SELECT 
+                                                       REFID,
+                                                       ""DATE"",
+                                                       BASE_AMOUNT AS AMOUNT,
+                                                       BASE_UNIT_PRICE_FIAT AS UNIT_PRICE,
+                                                       COSTS_PROCEEDS,
+                                                       BASE_AMOUNT AS TX_BALANCE_REMAINING
+                                                   FROM TB_TRADES_S
+                                                   WHERE BASE_CURRENCY = '{asset}'
+                                                       AND TYPE = '{tx_type}'
+                                                   ORDER BY ""DATE"" {orderBy}";
+
+                    using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
-                        transactions.Add(new TransactionsModel
+                        while (reader.Read())
                         {
-                            RefId = reader.GetStringOrEmpty(0),
-                            Date = reader.GetStringOrNull(1),
-                            Amount = reader.GetDecimalOrDefault(2),
-                            Unit_price = reader.GetDecimalOrNull(3),
-                            Costs_Proceeds = reader.GetDecimalOrNull(4),
-                            Tx_Balance_Remaining = reader.GetDecimalOrNull(5)
-                        });
+                            decimal? txBalanceRemaining;
+                            if (tx_type == "SELL")
+                            {
+                                txBalanceRemaining = null; // We don't need to keep track of remaining balances for sell transactions
+                            }
+                            else
+                            {
+                                txBalanceRemaining = reader.GetDecimal(5);
+                            }
+
+                            transactions.Add(new TransactionsModel
+                            {
+                                RefId = reader.GetStringOrEmpty(0),
+                                Date = reader.GetDateTime(1),
+                                Amount = reader.GetDecimalOrDefault(2),
+                                Unit_price = reader.GetDecimal(3),
+                                Costs_Proceeds = reader.GetDecimal(4),
+                                Tx_Balance_Remaining = txBalanceRemaining
+                            });
+                        }
                     }
-                    reader.Close();
-                    connection.Close();
                 }
                 catch (Exception ex)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    });
-                    return [];
+                    throw new DatabaseReadException("Transaction could not be read.", ex);
                 }
             }
 
@@ -404,24 +437,21 @@ namespace ProjectCryptoGains
             foreach (var stx in sellTransactions)
             {
                 // Initialize the amount we need to sell for this sell transaction
-                decimal? amountToSell = stx.Amount;
+                decimal amountToSell = stx.Amount;
 
-                decimal? proceeds = stx.Costs_Proceeds;
-                decimal? costs = 0;
+                decimal proceeds = stx.Costs_Proceeds;
+                decimal costs = 0;
 
                 // Parse the sell transaction date if it's not null
-                DateTime? sellDate = stx.Date != null ? DateTime.ParseExact(stx.Date, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : null;
+                DateTime sellDate = stx.Date;
 
                 // Filter buy transactions to only those on or before the sell date
-                var relevantBuyTransactions = buyTransactions.Where(btx =>
-                {
-                    if (btx.Date == null || sellDate == null) return true; // Handle cases where date might be missing
-                    DateTime buyDate = ConvertStringToIsoDateTime(btx.Date);
-                    return buyDate <= sellDate.Value;
-                }).ToList();
+                var relevantBuyTransactions = buyTransactions
+                    .Where(btx => btx.Date <= sellDate)
+                    .ToList();
 
                 // Calculate the sum of amounts in relevant buy transactions
-                decimal? totalRelevantAmountBought = relevantBuyTransactions.Sum(btx => btx.Amount);
+                decimal totalRelevantAmountBought = relevantBuyTransactions.Sum(btx => btx.Amount);
 
                 if (totalRelevantAmountBought < amountToSell)
                 {
@@ -429,7 +459,7 @@ namespace ProjectCryptoGains
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         errors += 1;
-                        string lastError = "Not enough buy transactions to cover this sell transaction" +
+                        string lastError = "Not enough buy transactions to cover this sell transaction." +
                                            Environment.NewLine + $"RefId: {stx.RefId}" +
                                            Environment.NewLine + $"Base currency: {asset}" +
                                            Environment.NewLine + $"Amount missing: {amountToSell - totalRelevantAmountBought}";
@@ -447,7 +477,7 @@ namespace ProjectCryptoGains
                     {
                         if (btx.Tx_Balance_Remaining > 0)
                         {
-                            decimal? soldAmount = Math.Min((decimal)btx.Tx_Balance_Remaining, (decimal)amountToSell);
+                            decimal soldAmount = Math.Min((decimal)btx.Tx_Balance_Remaining, amountToSell);
 
                             // Add the cost of the sold amount
                             costs += btx.Unit_price * soldAmount;
@@ -466,60 +496,61 @@ namespace ProjectCryptoGains
 
         private static void WriteTransactionsToDB(List<TransactionsModel> sellTransactions, List<TransactionsModel> buyTransactions, string connectionString)
         {
-            using SqliteConnection connection = new(connectionString);
-            try
+            using (FbConnection connection = new(connectionString))
             {
-                connection.Open();
-                using var commandInsert = connection.CreateCommand();
-                commandInsert.CommandText = @"INSERT INTO TB_GAINS_S (
-                                                  REFID,
-                                                  TX_BALANCE_REMAINING,
-                                                  GAIN
-                                              ) VALUES (
-                                                  @REFID,
-                                                  printf('%.10f', @TX_BALANCE_REMAINING),
-                                                  CASE 
-                                                      WHEN @GAIN != '' 
-                                                      THEN printf('%.10f', @GAIN) 
-                                                      ELSE '' 
-                                                  END
-                                              )";
-
-                foreach (var tx in sellTransactions)
+                try
                 {
-                    if (tx.RefId != null) // Ensure REFID isn't null before adding
+                    connection.Open();
+
+                    using DbCommand insertCommand = connection.CreateCommand();
+                    insertCommand.CommandText = @"INSERT INTO TB_GAINS_S (
+                                                      REFID,
+                                                      TX_BALANCE_REMAINING,
+                                                      GAIN
+                                                  ) VALUES (
+                                                      @REFID,
+                                                      ROUND(@TX_BALANCE_REMAINING, 10),
+                                                      CASE 
+                                                          WHEN @GAIN IS NOT NULL
+                                                          THEN ROUND(@GAIN, 10) 
+                                                          ELSE NULL
+                                                      END
+                                                  )";
+
+                    foreach (var tx in sellTransactions)
                     {
-                        // Clear parameters from previous iteration
-                        commandInsert.Parameters.Clear();
+                        if (tx.RefId != null) // Ensure REFID isn't null before adding
+                        {
+                            // Clear parameters from previous iteration
+                            insertCommand.Parameters.Clear();
 
-                        commandInsert.Parameters.AddWithValue("@REFID", tx.RefId);
-                        commandInsert.Parameters.AddWithValue("@TX_BALANCE_REMAINING", tx.Tx_Balance_Remaining.ToString());
-                        commandInsert.Parameters.AddWithValue("@GAIN", tx.Gain.ToString());
+                            AddParameterWithValue(insertCommand, "@REFID", tx.RefId);
+                            AddParameterWithValue(insertCommand, "@TX_BALANCE_REMAINING", tx.Tx_Balance_Remaining);
+                            AddParameterWithValue(insertCommand, "@GAIN", tx.Gain);
 
-                        commandInsert.ExecuteNonQuery();
+                            insertCommand.ExecuteNonQuery();
+                        }
+                    }
+
+                    foreach (var tx in buyTransactions)
+                    {
+                        if (tx.RefId != null) // Ensure REFID isn't null before adding
+                        {
+                            // Clear parameters from previous iteration
+                            insertCommand.Parameters.Clear();
+
+                            AddParameterWithValue(insertCommand, "@REFID", tx.RefId);
+                            AddParameterWithValue(insertCommand, "@TX_BALANCE_REMAINING", tx.Tx_Balance_Remaining);
+                            AddParameterWithValue(insertCommand, "@GAIN", tx.Gain);
+
+                            insertCommand.ExecuteNonQuery();
+                        }
                     }
                 }
-
-                foreach (var tx in buyTransactions)
+                catch (Exception ex)
                 {
-                    if (tx.RefId != null) // Ensure REFID isn't null before adding
-                    {
-                        // Clear parameters from previous iteration
-                        commandInsert.Parameters.Clear();
-
-                        commandInsert.Parameters.AddWithValue("@REFID", tx.RefId);
-                        commandInsert.Parameters.AddWithValue("@TX_BALANCE_REMAINING", tx.Tx_Balance_Remaining.ToString());
-                        commandInsert.Parameters.AddWithValue("@GAIN", tx.Gain.ToString());
-
-                        commandInsert.ExecuteNonQuery();
-                    }
+                    throw new DatabaseWriteException("Error writing to database.", ex);
                 }
-
-                connection.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBoxResult result = CustomMessageBox.Show("Error writing to database." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -598,11 +629,11 @@ namespace ProjectCryptoGains
         {
             if (!dgGains.HasItems)
             {
-                MessageBoxResult result = CustomMessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBoxResult result = CustomMessageBox.Show("Nothing to print.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Gains] Printing Gains");
+            ConsoleLog(_mainWindow.txtLog, $"[Gains] Printing gains");
 
             BlockUI();
 
@@ -624,7 +655,7 @@ namespace ProjectCryptoGains
 
         private async Task PrintGainsAsync()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             var gains = dgGains.ItemsSource.OfType<GainsModel>();
 
             PrintDialog printDlg = new();
@@ -639,7 +670,7 @@ namespace ProjectCryptoGains
                 dataItems: gains,
                 dataExtractor: item => new[]
                 {
-                    (item.Date ?? "", TextAlignment.Left, 1),
+                    (ConvertDateTimeToString(item.Date) ?? "", TextAlignment.Left, 1),
                     (item.Refid ?? "", TextAlignment.Left, 2),
                     (item.Type ?? "", TextAlignment.Left, 1),
                     (item.Base_currency ?? "", TextAlignment.Left, 1),
@@ -664,11 +695,11 @@ namespace ProjectCryptoGains
         {
             if (!dgGainsSummary.HasItems)
             {
-                MessageBoxResult result = CustomMessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBoxResult result = CustomMessageBox.Show("Nothing to print.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Gains] Printing Gains Summary");
+            ConsoleLog(_mainWindow.txtLog, $"[Gains] Printing gains summary");
 
             BlockUI();
 
@@ -690,7 +721,7 @@ namespace ProjectCryptoGains
 
         private async Task PrintGainsSummaryAsync(string totalGains)
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             var gainsSummary = dgGainsSummary.ItemsSource.OfType<GainsSummaryModel>();
 
             PrintDialog printDlg = new();

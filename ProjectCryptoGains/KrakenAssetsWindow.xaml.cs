@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using FirebirdSql.Data.FirebirdClient;
 using ProjectCryptoGains.Common;
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ namespace ProjectCryptoGains
     public partial class KrakenAssetsWindow : SubwindowBase
     {
         private readonly MainWindow _mainWindow;
-        public ObservableCollection<KrakenAssetsModel>? KrakenAssets { get; set; }
+        public ObservableCollection<AssetCodesKrakenModel> AssetCodesKrakenData { get; set; }
 
         public KrakenAssetsWindow(MainWindow mainWindow)
         {
@@ -30,8 +30,7 @@ namespace ProjectCryptoGains
             TitleBarElement = TitleBar;
 
             _mainWindow = mainWindow;
-
-            KrakenAssets = [];
+            AssetCodesKrakenData = [];
 
             BindGrid();
         }
@@ -59,23 +58,23 @@ namespace ProjectCryptoGains
 
         private void RefreshFromSource_Click(object sender, RoutedEventArgs e)
         {
-            ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Refreshing from source");
+            ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Refreshing from source");
             BindGrid();
-            ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Refresh done");
+            ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Refresh done");
         }
 
         private async void Save_Click(object sender, RoutedEventArgs e)
         {
-            ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Saving assets");
+            ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Saving assets");
 
             int errors = 0;
             string? lastInfo = null;
             string? lastError = null;
 
-            if (KrakenAssets == null || KrakenAssets.Count == 0)
+            if (AssetCodesKrakenData == null || AssetCodesKrakenData.Count == 0)
             {
-                lastInfo = "No data to save";
-                ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastInfo}");
+                lastInfo = "No data to save.";
+                ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] {lastInfo}");
                 MessageBoxResult result = CustomMessageBox.Show(lastInfo, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Exit function early
@@ -84,140 +83,150 @@ namespace ProjectCryptoGains
 
             BlockUI();
 
-            await Task.Run(() =>
+            try
             {
-                foreach (var asset in KrakenAssets)
-                {
-                    if (string.IsNullOrWhiteSpace(asset.Code) || string.IsNullOrWhiteSpace(asset.Asset))
-                    {
-                        errors += 1;
-                    }
-                }
-            });
 
-            if (errors > 0)
-            {
-                lastError = "CODE and ASSET cannot be empty";
-                ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
-                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            else
-            {
-                // Save assets to db
                 await Task.Run(() =>
                 {
-                    using var connection = new SqliteConnection(connectionString);
-                    connection.Open();
-                    using var command = connection.CreateCommand();
-                    command.CommandText = "DELETE FROM TB_ASSET_CODES_KRAKEN_S";
-                    command.ExecuteNonQuery();
-
-                    foreach (var krakenAsset in KrakenAssets)
+                    foreach (var asset in AssetCodesKrakenData)
                     {
-                        command.CommandText = "INSERT INTO TB_ASSET_CODES_KRAKEN_S (CODE, ASSET) VALUES (@CODE, @ASSET)";
-                        command.Parameters.Clear();
-
-                        command.Parameters.AddWithValue("@CODE", (object?)krakenAsset.Code ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@ASSET", (object?)krakenAsset.Asset ?? DBNull.Value);
-
-                        try
+                        if (string.IsNullOrWhiteSpace(asset.Code) || string.IsNullOrWhiteSpace(asset.Asset))
                         {
-                            command.ExecuteNonQuery();
-                        }
-                        catch (Exception ex)
-                        {
-                            lastError = "Failed to insert data." + Environment.NewLine + ex.Message;
+                            errors += 1;
                         }
                     }
                 });
 
-                if (lastError != null)
+                if (errors > 0)
                 {
+                    lastError = "CODE and ASSET cannot be empty.";
+                    ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] {lastError}");
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
                 }
-            }
-
-            // Check for malconfigured assets
-            using (var connection = new SqliteConnection(connectionString))
-            {
-                connection.Open();
-
-                List<string> malconfiguredAssets = MalconfiguredAssets(connection);
-
-                if (malconfiguredAssets.Count > 0)
+                else
                 {
-                    lastError = "Malconfigured asset(s) detected";
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
-
-                    // Log each malconfigured asset
-                    foreach (string code in malconfiguredAssets)
+                    // Save assets to db
+                    await Task.Run(() =>
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Malconfigured asset for code: {code}");
+                        using (FbConnection connection = new(connectionString))
+                        {
+                            connection.Open();
+
+                            using DbCommand deleteCommand = connection.CreateCommand();
+                            deleteCommand.CommandText = "DELETE FROM TB_ASSET_CODES_KRAKEN_S";
+                            deleteCommand.ExecuteNonQuery();
+
+                            using DbCommand insertCommand = connection.CreateCommand();
+                            foreach (var krakenAsset in AssetCodesKrakenData)
+                            {
+                                insertCommand.CommandText = "INSERT INTO TB_ASSET_CODES_KRAKEN_S (CODE, ASSET) VALUES (@CODE, @ASSET)";
+                                insertCommand.Parameters.Clear();
+
+                                AddParameterWithValue(insertCommand, "@CODE", (object?)krakenAsset.Code ?? DBNull.Value);
+                                AddParameterWithValue(insertCommand, "@ASSET", (object?)krakenAsset.Asset ?? DBNull.Value);
+
+                                try
+                                {
+                                    insertCommand.ExecuteNonQuery();
+                                }
+                                catch (Exception ex)
+                                {
+                                    lastError = "Failed to insert data." + Environment.NewLine + ex.Message;
+                                }
+                            }
+                        }
+                    });
+
+                    if (lastError != null)
+                    {
+                        MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] {lastError}");
                     }
                 }
-            }
 
-            if (lastError == null)
-            {
-                ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Saving successful");
-            }
-            else
-            {
-                ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Saving unsuccessful");
-            }
+                // Check for malconfigured assets
+                using (FbConnection connection = new(connectionString))
+                {
+                    connection.Open();
 
-            UnblockUI();
+                    List<string> malconfiguredAssets = MalconfiguredAssets(connection);
+
+                    if (malconfiguredAssets.Count > 0)
+                    {
+                        lastError = "Malconfigured asset(s) detected.";
+                        MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] {lastError}");
+
+                        // Log each malconfigured asset
+                        foreach (string code in malconfiguredAssets)
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Malconfigured asset for code: {code}");
+                        }
+                    }
+                }
+
+                if (lastError == null)
+                {
+                    ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Saving successful");
+                }
+                else
+                {
+                    ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Saving unsuccessful");
+                }
+            }
+            finally
+            {
+                UnblockUI();
+            }
         }
 
         public void BindGrid()
         {
             // Clear existing data
-            KrakenAssets?.Clear();
+            AssetCodesKrakenData?.Clear();
 
-            if (KrakenAssets == null) return; // Add a null check
+            if (AssetCodesKrakenData == null) return; // Add a null check
 
-            using SqliteConnection connection = new(connectionString);
-            try
+            using (FbConnection connection = new(connectionString))
             {
-                connection.Open();
-            }
-            catch (Exception ex)
-            {
-                MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                UnblockUI();
-
-                // Exit function early
-                return;
-            }
-
-            DbCommand command = connection.CreateCommand();
-            command.CommandText = @"SELECT 
-                                        ledgers_kraken.ASSET AS CODE,
-                                        asset_codes.ASSET
-                                    FROM 
-                                        (SELECT DISTINCT ASSET FROM TB_LEDGERS_KRAKEN_S) ledgers_kraken
-                                        LEFT OUTER JOIN TB_ASSET_CODES_KRAKEN_S asset_codes
-                                            ON ledgers_kraken.ASSET = asset_codes.CODE";
-
-            DbDataReader reader = command.ExecuteReader();
-
-            int dbLineNumber = 0;
-            while (reader.Read())
-            {
-                dbLineNumber++;
-
-                KrakenAssets.Add(new KrakenAssetsModel
+                try
                 {
-                    Code = reader.GetStringOrEmpty(0),
-                    Asset = reader.GetStringOrEmpty(1)
-                });
-            }
-            reader.Close();
-            connection.Close();
+                    connection.Open();
+                }
+                catch (Exception ex)
+                {
+                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
-            dgKrakenAssets.ItemsSource = KrakenAssets;
+                    // Exit function early
+                    return;
+                }
+
+                using DbCommand selectCommand = connection.CreateCommand();
+                selectCommand.CommandText = @"SELECT 
+                                                  ledgers_kraken.ASSET AS CODE,
+                                                  asset_codes.ASSET
+                                              FROM 
+                                                  (SELECT DISTINCT ASSET FROM TB_LEDGERS_KRAKEN_S) ledgers_kraken
+                                                  LEFT OUTER JOIN TB_ASSET_CODES_KRAKEN_S asset_codes
+                                                      ON ledgers_kraken.ASSET = asset_codes.CODE";
+
+                using (DbDataReader reader = selectCommand.ExecuteReader())
+                {
+                    int dbLineNumber = 0;
+                    while (reader.Read())
+                    {
+                        dbLineNumber++;
+
+                        AssetCodesKrakenData.Add(new AssetCodesKrakenModel
+                        {
+                            Code = reader.GetStringOrEmpty(0),
+                            Asset = reader.GetStringOrEmpty(1)
+                        });
+                    }
+                }
+            }
+
+            dgKrakenAssets.ItemsSource = AssetCodesKrakenData;
         }
     }
 }

@@ -1,231 +1,174 @@
-﻿using System.ComponentModel;
+﻿using System;
 
 namespace ProjectCryptoGains
 {
     public static partial class Models
     {
-        public partial class AssetsModel : INotifyPropertyChanged
+        public class AssetCatalogModel
         {
-            private string? _code;
-            private string? _asset;
-
-            public string? Code
-            {
-                get => _code;
-                set
-                {
-                    if (_code != value)
-                    {
-                        _code = value;
-                        OnPropertyChanged(nameof(Code));
-                    }
-                }
-            }
-
-            public string? Asset
-            {
-                get => _asset;
-                set
-                {
-                    if (_asset != value)
-                    {
-                        _asset = value;
-                        OnPropertyChanged(nameof(Asset));
-                    }
-                }
-            }
-
-            public event PropertyChangedEventHandler? PropertyChanged;
-
-            protected virtual void OnPropertyChanged(string propertyName)
-            {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            }
+            public required string Code { get; set; }
+            public required string Asset { get; set; }
         }
 
-        public partial class KrakenAssetsModel : INotifyPropertyChanged
+        public class AssetCodesKrakenModel
         {
-            private string? _code;
-            private string? _asset;
-
-            public string? Code
-            {
-                get => _code;
-                set
-                {
-                    if (_code != value)
-                    {
-                        _code = value;
-                        OnPropertyChanged(nameof(Code));
-                    }
-                }
-            }
-
-            public string? Asset
-            {
-                get => _asset;
-                set
-                {
-                    if (_asset != value)
-                    {
-                        _asset = value;
-                        OnPropertyChanged(nameof(Asset));
-                    }
-                }
-            }
-
-            public event PropertyChangedEventHandler? PropertyChanged;
-
-            protected virtual void OnPropertyChanged(string propertyName)
-            {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
-
-        public class ManualLedgersModel
-        {
-            public int RowNumber { get; set; }
-            public string? Refid { get; set; }
-            public string? Date { get; set; }
-            public string? Type { get; set; }
-            public string? Exchange { get; set; }
-            public string? Asset { get; set; }
-            public decimal? Amount { get; set; }
-            public decimal? Fee { get; set; }
-            public string? Source { get; set; }
-            public string? Target { get; set; }
-            public string? Notes { get; set; }
-        }
-
-        public class KrakenLedgersModel
-        {
-            public int RowNumber { get; set; }
-            public string? Txid { get; set; }
-            public string? Refid { get; set; }
-            public string? Time { get; set; }
-            public string? Type { get; set; }
-            public string? Subtype { get; set; }
-            public string? Aclass { get; set; }
-            public string? Asset { get; set; }
-            public string? Wallet { get; set; }
-            public decimal? Amount { get; set; }
-            public decimal? Fee { get; set; }
-            public decimal? Balance { get; set; }
-        }
-
-        public class LedgersModel
-        {
-            public int RowNumber { get; set; }
-            public string? Refid { get; set; }
-            public string? Date { get; set; }
-            public string? Type { get; set; }
-            public string? Exchange { get; set; }
-            public decimal? Amount { get; set; }
-            public string? Currency { get; set; }
-            public decimal? Fee { get; set; }
-            public string? Source { get; set; }
-            public string? Target { get; set; }
-            public string? Notes { get; set; }
-        }
-
-        public class RewardsModel
-        {
-            public int RowNumber { get; set; }
-            public string? Refid { get; set; }
-            public string? Date { get; set; }
-            public string? Type { get; set; }
-            public string? Exchange { get; set; }
-            public string? Currency { get; set; }
-            public decimal? Amount { get; set; }
-            public decimal? Amount_fiat { get; set; }
-            public decimal? Tax { get; set; }
-            public decimal? Unit_price { get; set; }
-            public decimal? Unit_price_break_even { get; set; }
-            public decimal? Amount_sell_break_even { get; set; }
-        }
-
-        public class TradesModel
-        {
-            public int RowNumber { get; set; }
-            public string? Refid { get; set; }
-            public string? Date { get; set; }
-            public string? Type { get; set; }
-            public string? Exchange { get; set; }
-            public string? Base_currency { get; set; }
-            public decimal? Base_amount { get; set; }
-            public decimal? Base_fee { get; set; }
-            public decimal? Base_fee_fiat { get; set; }
-            public string? Quote_currency { get; set; }
-            public decimal? Quote_amount { get; set; }
-            public decimal? Quote_amount_fiat { get; set; }
-            public decimal? Quote_fee { get; set; }
-            public decimal? Quote_fee_fiat { get; set; }
-            public decimal? Base_unit_price { get; set; }
-            public decimal? Base_unit_price_fiat { get; set; }
-            public decimal? Quote_unit_price { get; set; }
-            public decimal? Quote_unit_price_fiat { get; set; }
-            public decimal? Total_fee_fiat { get; set; }
-            public decimal? Costs_proceeds { get; set; }
-        }
-        public class GainsModel
-        {
-            public int RowNumber { get; set; }
-            public string? Refid { get; set; }
-            public string? Date { get; set; }
-            public string? Type { get; set; }
-            public string? Base_currency { get; set; }
-            public decimal? Base_amount { get; set; }
-            public string? Quote_currency { get; set; }
-            public decimal? Quote_amount { get; set; }
-            public decimal? Base_unit_price_fiat { get; set; }
-            public decimal? Costs_proceeds { get; set; }
-            public decimal? Tx_balance_remaining { get; set; }
-            public decimal? Gain { get; set; }
-        }
-
-        public class GainsSummaryModel
-        {
-            public int RowNumber { get; set; }
-            public string? Currency { get; set; }
-            public decimal? Gain { get; set; }
-        }
-
-        public class RewardsSummaryModel
-        {
-            public int RowNumber { get; set; }
-            public string? Currency { get; set; }
-            public decimal? Amount { get; set; }
-            public decimal? Amount_fiat { get; set; }
-            public decimal? Tax { get; set; }
-            public decimal? Unit_price { get; set; }
-            public decimal? Unit_price_break_even { get; set; }
-            public decimal? Amount_sell_break_even { get; set; }
+            public required string Code { get; set; }
+            public required string Asset { get; set; }
         }
 
         public class AvgBuyPriceModel
         {
-            public int RowNumber { get; set; }
-            public string? Currency { get; set; }
-            public decimal? Amount_fiat { get; set; }
+            public required int RowNumber { get; set; }
+            public required string Currency { get; set; }
+            public required decimal Amount_fiat { get; set; }
         }
 
         public class BalancesModel
         {
-            public int RowNumber { get; set; }
-            public string? Currency { get; set; }
-            public decimal? Amount { get; set; }
-            public decimal? Amount_fiat { get; set; }
+            public required int RowNumber { get; set; }
+            public required string Currency { get; set; }
+            public required decimal Amount { get; set; }
+            public required decimal Amount_fiat { get; set; }
+        }
+
+        public class GainsModel
+        {
+            public required int RowNumber { get; set; }
+            public required string Refid { get; set; }
+            public required DateTime Date { get; set; }
+            public required string Type { get; set; }
+            public required string Base_currency { get; set; }
+            public required decimal Base_amount { get; set; }
+            public required string Quote_currency { get; set; }
+            public required decimal Quote_amount { get; set; }
+            public required decimal Base_unit_price_fiat { get; set; }
+            public required decimal Costs_proceeds { get; set; }
+            public decimal? Tx_balance_remaining { get; set; }
+            public decimal? Gain { get; set; }
         }
 
         public class TransactionsModel
         {
             public required string RefId { get; set; }
-            public string? Date { get; set; }
+            public required DateTime Date { get; set; }
             public required decimal Amount { get; set; }
-            public decimal? Unit_price { get; set; }
-            public decimal? Costs_Proceeds { get; set; }
+            public required decimal Unit_price { get; set; }
+            public required decimal Costs_Proceeds { get; set; }
             public decimal? Tx_Balance_Remaining { get; set; }
             public decimal? Gain { get; set; }
+        }
+
+        public class GainsSummaryModel
+        {
+            public required int RowNumber { get; set; }
+            public required string Currency { get; set; }
+            public required decimal Gain { get; set; }
+        }
+
+        public class LedgersKrakenModel
+        {
+            public required int RowNumber { get; set; }
+            public required string Txid { get; set; }
+            public required string Refid { get; set; }
+            public required DateTime Time { get; set; }
+            public required string Type { get; set; }
+            public required string Subtype { get; set; }
+            public required string Aclass { get; set; }
+            public required string Asset { get; set; }
+            public required string Wallet { get; set; }
+            public required decimal Amount { get; set; }
+            public required decimal Fee { get; set; }
+            public required decimal Balance { get; set; }
+        }
+
+        public class LedgersManualModel
+        {
+            public required int RowNumber { get; set; }
+            public required string Refid { get; set; }
+            public required DateTime Date { get; set; }
+            public required string Type { get; set; }
+            public string? Exchange { get; set; }
+            public required string Asset { get; set; }
+            public required decimal Amount { get; set; }
+            public required decimal Fee { get; set; }
+            public string? Source { get; set; }
+            public string? Target { get; set; }
+            public string? Notes { get; set; }
+        }
+
+        public class LedgersModel
+        {
+            public required int RowNumber { get; set; }
+            public required string Refid { get; set; }
+            public required DateTime Date { get; set; }
+            public required string Type { get; set; }
+            public required string Exchange { get; set; }
+            public required decimal Amount { get; set; }
+            public required string Currency { get; set; }
+            public required decimal Fee { get; set; }
+            public required string Source { get; set; }
+            public required string Target { get; set; }
+            public required string Notes { get; set; }
+        }
+
+        public class RewardsModel
+        {
+            public required int RowNumber { get; set; }
+            public required string Refid { get; set; }
+            public required DateTime Date { get; set; }
+            public required string Type { get; set; }
+            public required string Exchange { get; set; }
+            public required string Currency { get; set; }
+            public required decimal Amount { get; set; }
+            public required decimal Amount_fiat { get; set; }
+            public required decimal Tax { get; set; }
+            public required decimal Unit_price { get; set; }
+            public required decimal Unit_price_break_even { get; set; }
+            public required decimal Amount_sell_break_even { get; set; }
+        }
+
+        public class RewardsSummaryModel
+        {
+            public required int RowNumber { get; set; }
+            public required string Currency { get; set; }
+            public required decimal Amount { get; set; }
+            public required decimal Amount_fiat { get; set; }
+            public required decimal Tax { get; set; }
+            public required decimal Unit_price { get; set; }
+            public required decimal Unit_price_break_even { get; set; }
+            public required decimal Amount_sell_break_even { get; set; }
+        }
+
+        public class MetricsRewardsSummaryModel
+        {
+            public required int RowNumber { get; set; }
+            public required string Currency { get; set; }
+            public required decimal Amount { get; set; }
+            public required decimal Amount_fiat { get; set; }
+        }
+
+        public class TradesModel
+        {
+            public required int RowNumber { get; set; }
+            public required string Refid { get; set; }
+            public required DateTime Date { get; set; }
+            public required string Type { get; set; }
+            public required string Exchange { get; set; }
+            public required string Base_currency { get; set; }
+            public required decimal Base_amount { get; set; }
+            public required decimal Base_fee { get; set; }
+            public decimal? Base_fee_fiat { get; set; }
+            public required string Quote_currency { get; set; }
+            public required decimal Quote_amount { get; set; }
+            public decimal? Quote_amount_fiat { get; set; }
+            public required decimal Quote_fee { get; set; }
+            public decimal? Quote_fee_fiat { get; set; }
+            public required decimal Base_unit_price { get; set; }
+            public decimal? Base_unit_price_fiat { get; set; }
+            public required decimal Quote_unit_price { get; set; }
+            public decimal? Quote_unit_price_fiat { get; set; }
+            public decimal? Total_fee_fiat { get; set; }
+            public decimal? Costs_proceeds { get; set; }
         }
     }
 }

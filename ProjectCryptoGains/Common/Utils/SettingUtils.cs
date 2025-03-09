@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using FirebirdSql.Data.FirebirdClient;
 using System;
 using System.Data.Common;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
@@ -26,26 +26,23 @@ namespace ProjectCryptoGains.Common.Utils
         {
             try
             {
-                using var connection = new SqliteConnection(connectionString);
-                connection.Open();
-
-                // First, delete any existing setting with the same name
-                using (var deleteCommand = connection.CreateCommand())
+                using (FbConnection connection = new FbConnection(connectionString))
                 {
+                    connection.Open();
+
+                    // First, delete any existing setting with the same name
+                    using DbCommand deleteCommand = connection.CreateCommand();
                     deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @NAME";
-                    deleteCommand.Parameters.AddWithValue("@NAME", "COINDESKDATA_API_KEY");
+                    AddParameterWithValue(deleteCommand, "@NAME", "COINDESKDATA_API_KEY");
                     deleteCommand.ExecuteNonQuery();
-                }
 
-                // Then, insert the new setting
-                using (var insertCommand = connection.CreateCommand())
-                {
-                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, VALUE) VALUES (@NAME, @VALUE)";
-                    insertCommand.Parameters.AddWithValue("@NAME", "COINDESKDATA_API_KEY");
-                    insertCommand.Parameters.AddWithValue("@VALUE", value);
+                    // Then, insert the new setting
+                    using DbCommand insertCommand = connection.CreateCommand();
+                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, \"VALUE\") VALUES (@NAME, @VALUE)";
+                    AddParameterWithValue(insertCommand, "@NAME", "COINDESKDATA_API_KEY");
+                    AddParameterWithValue(insertCommand, "@VALUE", value);
                     insertCommand.ExecuteNonQuery();
                 }
-                connection.Close();
             }
             catch (Exception ex)
             {
@@ -57,25 +54,26 @@ namespace ProjectCryptoGains.Common.Utils
         {
             try
             {
-                using SqliteConnection connection = new(connectionString);
-                connection.Open();
-                DbCommand command = connection.CreateCommand();
-                command.CommandText = @"SELECT VALUE 
-                                        FROM TB_SETTINGS_S
-										WHERE NAME = 'COINDESKDATA_API_KEY'";
-
-                using (DbDataReader reader = command.ExecuteReader())
+                using (FbConnection connection = new(connectionString))
                 {
-                    if (reader.Read())
+                    connection.Open();
+                    using DbCommand selectCommand = connection.CreateCommand();
+                    selectCommand.CommandText = @"SELECT ""VALUE"" 
+                                              FROM TB_SETTINGS_S
+								              WHERE NAME = 'COINDESKDATA_API_KEY'";
+
+                    using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
-                        _settingCoinDeskDataApiKey = reader.GetStringOrNull(0);
-                    }
-                    else
-                    {
-                        _settingCoinDeskDataApiKey = null; // No setting found in the database
+                        if (reader.Read())
+                        {
+                            _settingCoinDeskDataApiKey = reader.GetStringOrNull(0);
+                        }
+                        else
+                        {
+                            _settingCoinDeskDataApiKey = null; // No setting found in the database
+                        }
                     }
                 }
-                connection.Close();
             }
             catch (Exception ex)
             {
@@ -84,9 +82,9 @@ namespace ProjectCryptoGains.Common.Utils
             }
         }
 
-        private static string? _settingFiatCurrency;
+        private static string _settingFiatCurrency = "NONE";
 
-        public static string? SettingFiatCurrency
+        public static string SettingFiatCurrency
         {
             get
             {
@@ -106,26 +104,23 @@ namespace ProjectCryptoGains.Common.Utils
         {
             try
             {
-                using var connection = new SqliteConnection(connectionString);
-                connection.Open();
-
-                // First, delete any existing setting with the same name
-                using (var deleteCommand = connection.CreateCommand())
+                using (FbConnection connection = new FbConnection(connectionString))
                 {
+                    connection.Open();
+
+                    // First, delete any existing setting with the same name
+                    using DbCommand deleteCommand = connection.CreateCommand();
                     deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @NAME";
-                    deleteCommand.Parameters.AddWithValue("@NAME", "FIAT_CURRENCY");
+                    AddParameterWithValue(deleteCommand, "@NAME", "FIAT_CURRENCY");
                     deleteCommand.ExecuteNonQuery();
-                }
 
-                // Then, insert the new setting
-                using (var insertCommand = connection.CreateCommand())
-                {
-                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, VALUE) VALUES (@NAME, @VALUE)";
-                    insertCommand.Parameters.AddWithValue("@NAME", "FIAT_CURRENCY");
-                    insertCommand.Parameters.AddWithValue("@VALUE", value);
+                    // Then, insert the new setting
+                    using DbCommand insertCommand = connection.CreateCommand();
+                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, \"VALUE\") VALUES (@NAME, @VALUE)";
+                    AddParameterWithValue(insertCommand, "@NAME", "FIAT_CURRENCY");
+                    AddParameterWithValue(insertCommand, "@VALUE", value);
                     insertCommand.ExecuteNonQuery();
                 }
-                connection.Close();
             }
             catch (Exception ex)
             {
@@ -137,30 +132,31 @@ namespace ProjectCryptoGains.Common.Utils
         {
             try
             {
-                using SqliteConnection connection = new(connectionString);
-                connection.Open();
-
-                DbCommand command = connection.CreateCommand();
-                command.CommandText = @"SELECT VALUE 
-                                        FROM TB_SETTINGS_S
-										WHERE NAME = 'FIAT_CURRENCY'";
-
-                using (DbDataReader reader = command.ExecuteReader())
+                using (FbConnection connection = new(connectionString))
                 {
-                    if (reader.Read())
+                    connection.Open();
+
+                    using DbCommand selectCommand = connection.CreateCommand();
+                    selectCommand.CommandText = @"SELECT ""VALUE""
+                                              FROM TB_SETTINGS_S
+										      WHERE NAME = 'FIAT_CURRENCY'";
+
+                    using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
-                        _settingFiatCurrency = reader.GetStringOrNull(0);
-                    }
-                    else
-                    {
-                        _settingFiatCurrency = null; // No setting found in the database
+                        if (reader.Read())
+                        {
+                            _settingFiatCurrency = reader.GetStringOrNull(0) ?? "NONE";
+                        }
+                        else
+                        {
+                            _settingFiatCurrency = "NONE"; // No setting found in the database
+                        }
                     }
                 }
-                connection.Close();
             }
             catch (Exception ex)
             {
-                _settingFiatCurrency = null;
+                _settingFiatCurrency = "NONE";
                 throw new InvalidOperationException("Failed to load fiat currency from database", ex);
             }
         }
@@ -192,26 +188,23 @@ namespace ProjectCryptoGains.Common.Utils
         {
             try
             {
-                using var connection = new SqliteConnection(connectionString);
-                connection.Open();
-
-                // First, delete any existing setting with the same name
-                using (var deleteCommand = connection.CreateCommand())
+                using (FbConnection connection = new FbConnection(connectionString))
                 {
+                    connection.Open();
+
+                    // First, delete any existing setting with the same name
+                    using DbCommand deleteCommand = connection.CreateCommand();
                     deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @NAME";
-                    deleteCommand.Parameters.AddWithValue("@NAME", "REWARDS_TAX_PERCENTAGE");
+                    AddParameterWithValue(deleteCommand, "@NAME", "REWARDS_TAX_PERCENTAGE");
                     deleteCommand.ExecuteNonQuery();
-                }
 
-                // Then, insert the new setting
-                using (var insertCommand = connection.CreateCommand())
-                {
-                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, VALUE) VALUES (@NAME, @VALUE)";
-                    insertCommand.Parameters.AddWithValue("@NAME", "REWARDS_TAX_PERCENTAGE");
-                    insertCommand.Parameters.AddWithValue("@VALUE", value);
+                    // Then, insert the new setting
+                    using DbCommand insertCommand = connection.CreateCommand();
+                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, \"VALUE\") VALUES (@NAME, @VALUE)";
+                    AddParameterWithValue(insertCommand, "@NAME", "REWARDS_TAX_PERCENTAGE");
+                    AddParameterWithValue(insertCommand, "@VALUE", value);
                     insertCommand.ExecuteNonQuery();
                 }
-                connection.Close();
             }
             catch (Exception ex)
             {
@@ -223,26 +216,27 @@ namespace ProjectCryptoGains.Common.Utils
         {
             try
             {
-                using SqliteConnection connection = new(connectionString);
-                connection.Open();
-
-                DbCommand command = connection.CreateCommand();
-                command.CommandText = @"SELECT VALUE 
-                                        FROM TB_SETTINGS_S
-										WHERE NAME = 'REWARDS_TAX_PERCENTAGE'";
-
-                using (DbDataReader reader = command.ExecuteReader())
+                using (FbConnection connection = new(connectionString))
                 {
-                    if (reader.Read())
+                    connection.Open();
+
+                    using DbCommand selectCommand = connection.CreateCommand();
+                    selectCommand.CommandText = @"SELECT ""VALUE"" 
+                                                  FROM TB_SETTINGS_S
+										          WHERE NAME = 'REWARDS_TAX_PERCENTAGE'";
+
+                    using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
-                        _settingRewardsTaxPercentage = reader.GetDecimalOrDefault(0, 0m);
-                    }
-                    else
-                    {
-                        _settingRewardsTaxPercentage = 0m; // No setting found in the database
+                        if (reader.Read())
+                        {
+                            _settingRewardsTaxPercentage = reader.GetDecimalOrDefault(0, 0m);
+                        }
+                        else
+                        {
+                            _settingRewardsTaxPercentage = 0m; // No setting found in the database
+                        }
                     }
                 }
-                connection.Close();
             }
             catch (Exception ex)
             {

@@ -79,7 +79,7 @@ namespace ProjectCryptoGains
             try
             {
                 LoadSettingFiatCurrencyFromDB();
-                if (string.IsNullOrEmpty(SettingFiatCurrency))
+                if (SettingFiatCurrency == "NONE")
                 {
                     SettingFiatCurrency = "EUR";
                 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using FirebirdSql.Data.FirebirdClient;
 using ProjectCryptoGains.Common;
 using ProjectCryptoGains.Common.Utils;
 using System;
@@ -12,6 +12,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.DateUtils;
 using static ProjectCryptoGains.Common.Utils.LedgersUtils;
 using static ProjectCryptoGains.Common.Utils.ReaderUtils;
 using static ProjectCryptoGains.Common.Utils.SettingUtils;
@@ -72,7 +73,7 @@ namespace ProjectCryptoGains
 
         private void BindGrid()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             dgTrades.Columns[8].Header = "BASE__FEE__" + fiatCurrency;
             dgTrades.Columns[11].Header = "QUOTE__AMOUNT__" + fiatCurrency;
             dgTrades.Columns[13].Header = "QUOTE__FEE__" + fiatCurrency;
@@ -81,85 +82,87 @@ namespace ProjectCryptoGains
             dgTrades.Columns[18].Header = "TOTAL__FEE__" + fiatCurrency;
 
             // Create a collection of TradesModel objects
-            ObservableCollection<TradesModel> data = [];
+            ObservableCollection<TradesModel> TradesData = [];
 
-            using SqliteConnection connection = new(connectionString);
-
-            try
+            using (FbConnection connection = new(connectionString))
             {
-                connection.Open();
-            }
-            catch (Exception ex)
-            {
-                MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                UnblockUI();
 
-                // Exit function early
-                return;
-            }
-
-            DbCommand command = connection.CreateCommand();
-
-            command.CommandText = $@"SELECT 
-                                         REFID,
-                                         DATE,
-                                         TYPE,
-                                         EXCHANGE,
-                                         BASE_CURRENCY,
-                                         BASE_AMOUNT,
-                                         BASE_FEE,
-                                         BASE_FEE_FIAT,
-                                         QUOTE_CURRENCY,
-                                         QUOTE_AMOUNT,
-                                         QUOTE_AMOUNT_FIAT,
-                                         QUOTE_FEE,
-                                         QUOTE_FEE_FIAT,
-                                         BASE_UNIT_PRICE,
-                                         BASE_UNIT_PRICE_FIAT,
-                                         QUOTE_UNIT_PRICE,
-                                         QUOTE_UNIT_PRICE_FIAT,
-                                         TOTAL_FEE_FIAT,
-                                         COSTS_PROCEEDS
-                                     FROM TB_TRADES_S
-                                     WHERE strftime('%s', DATE) BETWEEN strftime('%s', '{fromDate}')
-                                         AND strftime('%s', date('{toDate}', '+1 day'))
-                                     ORDER BY DATE ASC";
-
-            DbDataReader reader = command.ExecuteReader();
-
-            int dbLineNumber = 0;
-            while (reader.Read())
-            {
-                dbLineNumber++;
-
-                data.Add(new TradesModel
+                try
                 {
-                    RowNumber = dbLineNumber,
-                    Refid = reader.GetStringOrEmpty(0),
-                    Date = reader.GetStringOrEmpty(1),
-                    Type = reader.GetStringOrEmpty(2),
-                    Exchange = reader.GetStringOrEmpty(3),
-                    Base_currency = reader.GetStringOrEmpty(4),
-                    Base_amount = reader.GetDecimalOrDefault(5),
-                    Base_fee = reader.GetDecimalOrDefault(6),
-                    Base_fee_fiat = reader.GetDecimalOrNull(7),
-                    Quote_currency = reader.GetStringOrEmpty(8),
-                    Quote_amount = reader.GetDecimalOrDefault(9),
-                    Quote_amount_fiat = reader.GetDecimalOrNull(10),
-                    Quote_fee = reader.GetDecimalOrDefault(11),
-                    Quote_fee_fiat = reader.GetDecimalOrNull(12),
-                    Base_unit_price = reader.GetDecimalOrDefault(13),
-                    Base_unit_price_fiat = reader.GetDecimalOrNull(14),
-                    Quote_unit_price = reader.GetDecimalOrDefault(15),
-                    Quote_unit_price_fiat = reader.GetDecimalOrNull(16),
-                    Total_fee_fiat = reader.GetDecimalOrNull(17),
-                    Costs_proceeds = reader.GetDecimalOrNull(18)
-                });
-            }
-            reader.Close();
-            connection.Close();
+                    connection.Open();
+                }
+                catch (Exception ex)
+                {
+                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
-            dgTrades.ItemsSource = data;
+                    // Exit function early
+                    return;
+                }
+
+                using DbCommand selectCommand = connection.CreateCommand();
+                selectCommand.CommandText = $@"SELECT 
+                                                   REFID,
+                                                   ""DATE"",
+                                                   TYPE,
+                                                   EXCHANGE,
+                                                   BASE_CURRENCY,
+                                                   BASE_AMOUNT,
+                                                   BASE_FEE,
+                                                   BASE_FEE_FIAT,
+                                                   QUOTE_CURRENCY,
+                                                   QUOTE_AMOUNT,
+                                                   QUOTE_AMOUNT_FIAT,
+                                                   QUOTE_FEE,
+                                                   QUOTE_FEE_FIAT,
+                                                   BASE_UNIT_PRICE,
+                                                   BASE_UNIT_PRICE_FIAT,
+                                                   QUOTE_UNIT_PRICE,
+                                                   QUOTE_UNIT_PRICE_FIAT,
+                                                   TOTAL_FEE_FIAT,
+                                                   COSTS_PROCEEDS
+                                               FROM TB_TRADES_S
+                                               WHERE ""DATE"" BETWEEN @FROM_DATE AND @TO_DATE
+                                               ORDER BY ""DATE"" ASC";
+
+                // Convert string dates to DateTime and add parameters
+                AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(fromDate));
+                AddParameterWithValue(selectCommand, "@TO_DATE", ConvertStringToIsoDate(toDate).AddDays(1));
+
+                using (DbDataReader reader = selectCommand.ExecuteReader())
+                {
+                    int dbLineNumber = 0;
+                    while (reader.Read())
+                    {
+                        dbLineNumber++;
+
+                        TradesData.Add(new TradesModel
+                        {
+                            RowNumber = dbLineNumber,
+                            Refid = reader.GetStringOrEmpty(0),
+                            Date = reader.GetDateTime(1),
+                            Type = reader.GetStringOrEmpty(2),
+                            Exchange = reader.GetStringOrEmpty(3),
+                            Base_currency = reader.GetStringOrEmpty(4),
+                            Base_amount = reader.GetDecimalOrDefault(5),
+                            Base_fee = reader.GetDecimalOrDefault(6),
+                            Base_fee_fiat = reader.GetDecimal(7),
+                            Quote_currency = reader.GetStringOrEmpty(8),
+                            Quote_amount = reader.GetDecimalOrDefault(9),
+                            Quote_amount_fiat = reader.GetDecimal(10),
+                            Quote_fee = reader.GetDecimalOrDefault(11),
+                            Quote_fee_fiat = reader.GetDecimal(12),
+                            Base_unit_price = reader.GetDecimalOrDefault(13),
+                            Base_unit_price_fiat = reader.GetDecimal(14),
+                            Quote_unit_price = reader.GetDecimalOrDefault(15),
+                            Quote_unit_price_fiat = reader.GetDecimal(16),
+                            Total_fee_fiat = reader.GetDecimal(17),
+                            Costs_proceeds = reader.GetDecimal(18)
+                        });
+                    }
+                }
+            }
+
+            dgTrades.ItemsSource = TradesData;
         }
 
         private void UnbindGrid()
@@ -171,7 +174,7 @@ namespace ProjectCryptoGains
         {
             if (!IsValidDateFormat(txtFromDate.Text, "yyyy-MM-dd"))
             {
-                MessageBoxResult result = CustomMessageBox.Show("From date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("From date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
                 return;
@@ -179,7 +182,7 @@ namespace ProjectCryptoGains
 
             if (!IsValidDateFormat(txtToDate.Text, "yyyy-MM-dd"))
             {
-                MessageBoxResult result = CustomMessageBox.Show("To date does not have a correct YYYY-MM-DD format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult result = CustomMessageBox.Show("To date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
                 return;
@@ -187,84 +190,89 @@ namespace ProjectCryptoGains
 
             BlockUI();
 
-            ConsoleLog(_mainWindow.txtLog, $"[Trades] Refreshing trades");
-
-            bool ledgersRefreshFailed = false;
-            string? ledgersRefreshWarning = null;
-            bool ledgersRefreshWasBusy = false;
-            if (chkRefreshLedgers.IsChecked == true)
+            try
             {
-                await Task.Run(() =>
-                {
-                    try
-                    {
-                        ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Trades);
-                    }
-                    catch (Exception)
-                    {
-                        ledgersRefreshFailed = true;
-                    }
-                    ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy after the call
-                });
-            }
+                ConsoleLog(_mainWindow.txtLog, $"[Trades] Refreshing trades");
 
-            if (!ledgersRefreshWasBusy && !ledgersRefreshFailed)
-            {
-                // Load the db table
-                string? tradesRefreshError = null;
-                string? tradesRefreshWarning = null;
-                bool tradesRefreshWasBusy = false;
-                await Task.Run(async () =>
+                bool ledgersRefreshFailed = false;
+                string? ledgersRefreshWarning = null;
+                bool ledgersRefreshWasBusy = false;
+                if (chkRefreshLedgers.IsChecked == true)
                 {
-                    try
+                    await Task.Run(() =>
                     {
-                        tradesRefreshWarning = await RefreshTrades(_mainWindow, Caller.Trades);
-                        tradesRefreshWasBusy = TradesRefreshBusy;
-                    }
-                    catch (Exception ex)
-                    {
-                        while (ex.InnerException != null)
+                        try
                         {
-                            ex = ex.InnerException;
+                            ledgersRefreshWarning = RefreshLedgers(_mainWindow, Caller.Trades);
                         }
-                        tradesRefreshError = ex.Message;
-                    }
-                });
-
-                if (!tradesRefreshWasBusy)
-                {
-                    if (tradesRefreshError == null)
-                    {
-                        BindGrid();
-                        if (ledgersRefreshWarning == null && tradesRefreshWarning == null)
+                        catch (Exception)
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh done");
+                            ledgersRefreshFailed = true;
+                        }
+                        ledgersRefreshWasBusy = LedgersRefreshBusy; // Check if it was busy after the call
+                    });
+                }
+
+                if (!ledgersRefreshWasBusy && !ledgersRefreshFailed)
+                {
+                    // Load the db table
+                    string? tradesRefreshError = null;
+                    string? tradesRefreshWarning = null;
+                    bool tradesRefreshWasBusy = false;
+                    await Task.Run(async () =>
+                    {
+                        try
+                        {
+                            tradesRefreshWarning = await RefreshTrades(_mainWindow, Caller.Trades);
+                            tradesRefreshWasBusy = TradesRefreshBusy;
+                        }
+                        catch (Exception ex)
+                        {
+                            while (ex.InnerException != null)
+                            {
+                                ex = ex.InnerException;
+                            }
+                            tradesRefreshError = ex.Message;
+                        }
+                    });
+
+                    if (!tradesRefreshWasBusy)
+                    {
+                        if (tradesRefreshError == null)
+                        {
+                            BindGrid();
+                            if (ledgersRefreshWarning == null && tradesRefreshWarning == null)
+                            {
+                                ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh done");
+                            }
+                            else
+                            {
+                                ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh done with warnings");
+                            }
                         }
                         else
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh done with warnings");
+                            ConsoleLog(_mainWindow.txtLog, $"[Trades] " + tradesRefreshError);
+                            ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh unsuccessful");
                         }
                     }
                     else
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Trades] " + tradesRefreshError);
+                        UnbindGrid();
+                        ConsoleLog(_mainWindow.txtLog, $"[Trades] There is already a trades refresh in progress. Please Wait");
                         ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh unsuccessful");
                     }
                 }
                 else
                 {
                     UnbindGrid();
-                    ConsoleLog(_mainWindow.txtLog, $"[Trades] There is already a trades refresh in progress. Please Wait");
                     ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh unsuccessful");
                 }
             }
-            else
+            finally
             {
-                UnbindGrid();
-                ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh unsuccessful");
+                UnblockUI();
             }
-
-            UnblockUI();
         }
 
         private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
@@ -332,11 +340,11 @@ namespace ProjectCryptoGains
         {
             if (!dgTrades.HasItems)
             {
-                MessageBoxResult result = CustomMessageBox.Show("Nothing to print", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBoxResult result = CustomMessageBox.Show("Nothing to print.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Trades] Printing Trades");
+            ConsoleLog(_mainWindow.txtLog, $"[Trades] Printing trades");
 
             BlockUI();
 
@@ -358,7 +366,7 @@ namespace ProjectCryptoGains
 
         private async Task PrintTradesAsync()
         {
-            string? fiatCurrency = SettingFiatCurrency;
+            string fiatCurrency = SettingFiatCurrency;
             var trades = dgTrades.ItemsSource.OfType<TradesModel>();
 
             PrintDialog printDlg = new();
@@ -373,7 +381,7 @@ namespace ProjectCryptoGains
                 dataItems: trades,
                 dataExtractor: item => new[]
                 {
-                    (item.Date ?? "", TextAlignment.Left, 1),
+                    (ConvertDateTimeToString(item.Date) ?? "", TextAlignment.Left, 1),
                     (item.Refid ?? "", TextAlignment.Left, 2),
                     (item.Type ?? "", TextAlignment.Left, 1),
                     (item.Exchange ?? "", TextAlignment.Left, 1),
