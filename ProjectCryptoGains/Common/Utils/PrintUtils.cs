@@ -21,6 +21,7 @@ namespace ProjectCryptoGains.Common.Utils
         /// <param name="dataItems">Collection of data items for the table</param>
         /// <param name="dataExtractor">Function to extract values, alignments, and optional column spans from each item</param>
         /// <param name="printDlg">PrintDialog instance for printing, created on the UI thread</param>
+        /// <param name="titlePage">If true, places title and subtitle on a separate first page (default: false)</param>
         /// <param name="title">Document title, displayed at the top</param>
         /// <param name="subtitle">Subtitle, displayed below the title (optional)</param>
         /// <param name="summaryText">Text for a summary section below the table (optional)</param>
@@ -29,27 +30,27 @@ namespace ProjectCryptoGains.Common.Utils
         /// <param name="footerHeight">Height reserved for the footer with page numbers (default: 60)</param>
         /// <param name="fontFamily">Font family for the document (default: Fixedsys)</param>
         /// <param name="fontSize">Font size for the document (default: 8)</param>
-        /// <param name="maxColumnsPerRow">Maximum number of columns per row before splitting(default: 7), based on column count rather than spanned slots</param>
+        /// <param name="maxColumnsPerRow">Maximum number of columns per row before splitting (default: 7), based on total spanned slots rather than individual columns</param>
         /// <param name="repeatHeadersPerItem">Repeat headers per item if true, otherwise once at the top</param>
-        /// <param name="virtualColumnCount">Number of virtual columns for width distribution (defaults to maxColumnsPerRow or adjusted dynamically)</param>
         /// <param name="itemsPerPage">Number of items per page (default: 100)</param>
         public static async Task PrintFlowDocumentAsync<T>(
             string[] columnHeaders,
             IEnumerable<T> dataItems,
             Func<T, (string Value, TextAlignment Alignment, int ColumnSpan)[]> dataExtractor,
             PrintDialog printDlg,
-            string title,
+            bool titlePage = false,
+            string title = "",
             string? subtitle = null,
             string? summaryText = null,
             double pageWidth = 793,
             double pageHeight = 1123,
-            double footerHeight = 60,
+            double footerHeight = 50,
             string fontFamily = "Fixedsys",
             double fontSize = 8,
             int maxColumnsPerRow = 7,
             bool repeatHeadersPerItem = false,
-            int? virtualColumnCount = null,
-            int itemsPerPage = 100)
+            int itemsPerPage = 100
+            )
         {
             await Task.Run(() =>
             {
@@ -59,7 +60,7 @@ namespace ProjectCryptoGains.Common.Utils
                 Thickness pagePadding = new Thickness(20, 20, 20, 20 + footerHeight);
 
                 // Create a new FlowDocument with the specified dimensions and styling
-                FlowDocument flowDoc = new()
+                FlowDocument flowDocument = new()
                 {
                     PageWidth = pageWidth,
                     PageHeight = effectivePageHeight, // Adjust height to leave space for footer
@@ -76,95 +77,145 @@ namespace ProjectCryptoGains.Common.Utils
                     FontWeight = FontWeights.Bold,
                     TextAlignment = TextAlignment.Center
                 };
-                flowDoc.Blocks.Add(titleParagraph);
-                flowDoc.Blocks.Add(new Paragraph(new Run("\n")));
 
-                // Set up the initial table structure for subtitle or spacing
-                Table initialTable = new();
-                TableRowGroup initialRowGroup = new TableRowGroup();
-                initialTable.RowGroups.Add(initialRowGroup);
+                // Handle title and subtitle placement based on titlePage parameter
+                if (titlePage)
+                {
+                    // Create a separate section for the title page when titlePage is true
+                    Section titleSection = new Section();
 
-                // Check subtitle status and add appropriate rows to the document
-                if (subtitle == null)
-                {
-                    initialRowGroup.Rows.Add(new TableRow { Cells = { new TableCell(new Paragraph(new Run("\n"))) } });
-                }
-                else
-                {
-                    TableRow subtitleRow = new();
-                    TableCell subtitleCell = new(new Paragraph(new Run(subtitle)))
+                    // Add empty paragraphs to push the title down further on the page
+                    Paragraph spacer = new Paragraph(new Run("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"))
                     {
-                        ColumnSpan = Math.Min(maxColumnsPerRow, columnHeaders.Length), // Limit span based on column constraints
-                        TextAlignment = TextAlignment.Left
+                        TextAlignment = TextAlignment.Center // Match title alignment
                     };
-                    subtitleRow.Cells.Add(subtitleCell);
-                    initialRowGroup.Rows.Add(subtitleRow);
-                    initialRowGroup.Rows.Add(new TableRow { Cells = { new TableCell(new Paragraph(new Run("\n"))) } });
-                }
-                flowDoc.Blocks.Add(initialTable);
+                    titleSection.Blocks.Add(spacer);
 
-                // Perform calculations for column layout
-                int totalColumns = columnHeaders.Length; // Total number of actual data columns
-                int adjustedVirtualColumnCount; // Adjusted number of virtual columns to handle span overflow and prevent margin issues
-                if (virtualColumnCount.HasValue)
-                {
-                    adjustedVirtualColumnCount = virtualColumnCount.Value;
+                    titleSection.Blocks.Add(titleParagraph);
+
+                    // Add subtitle with reduced spacing and aligned to title's left edge if provided
+                    if (subtitle != null)
+                    {
+                        // Measure the title's width to calculate its left edge
+                        FormattedText titleText = new FormattedText(
+                            title,
+                            System.Globalization.CultureInfo.CurrentCulture,
+                            FlowDirection.LeftToRight,
+                            new Typeface(flowDocument.FontFamily, FontStyles.Normal, FontWeights.Bold, FontStretches.Normal),
+                            fontSize * 2, // Title font size
+                            Brushes.Black,
+                            1.0
+                        );
+
+                        // Calculate the usable width for the title page
+                        double titleUsableWidth = pageWidth - (flowDocument.PagePadding.Left + flowDocument.PagePadding.Right);
+                        // Calculate the left offset: (usable width - title width) / 2
+                        double titleLeftOffset = (titleUsableWidth - titleText.WidthIncludingTrailingWhitespace) / 2;
+
+                        // Create subtitle paragraph with a left margin to match the title's left edge
+                        Paragraph subtitleParagraph = new Paragraph(new Run(subtitle))
+                        {
+                            TextAlignment = TextAlignment.Left,
+                            Margin = new Thickness(titleLeftOffset, 0, 0, 0) // Shift subtitle to align with title's left edge
+                        };
+                        titleSection.Blocks.Add(subtitleParagraph);
+                    }
+
+                    flowDocument.Blocks.Add(titleSection);
+                    // No page break before the first section (title page)
+                    titleSection.BreakPageBefore = false;
                 }
                 else
                 {
-                    // Calculate total effective column span count from the first item's extractor (assumes consistent spans across items)
-                    int totalColumnSpanCount = dataItems.Any() ? dataExtractor(dataItems.First()).Sum(x => x.ColumnSpan) : 0;
+                    // Add title and subtitle to the main document flow when titlePage is false
+                    flowDocument.Blocks.Add(titleParagraph);
+                    flowDocument.Blocks.Add(new Paragraph(new Run("\n")));
 
-                    // Adjust adjustedVirtualColumnCount based on total span to prevent margin overflow
-                    if (totalColumnSpanCount > totalColumns)
+                    // Set up the initial table structure for subtitle or spacing
+                    Table initialTable = new();
+                    TableRowGroup initialRowGroup = new TableRowGroup();
+                    initialTable.RowGroups.Add(initialRowGroup);
+
+                    // Check subtitle status and add appropriate rows to the document
+                    if (subtitle == null)
                     {
-                        adjustedVirtualColumnCount = Math.Max(1, maxColumnsPerRow - (totalColumnSpanCount - totalColumns)); // Reduce virtual columns to compensate for extra span width
+                        initialRowGroup.Rows.Add(new TableRow { Cells = { new TableCell(new Paragraph(new Run("\n"))) } });
                     }
                     else
                     {
-                        adjustedVirtualColumnCount = maxColumnsPerRow;
+                        TableRow subtitleRow = new();
+                        TableCell subtitleCell = new(new Paragraph(new Run(subtitle)))
+                        {
+                            ColumnSpan = Math.Min(maxColumnsPerRow, columnHeaders.Length), // Limit span based on column constraints
+                            TextAlignment = TextAlignment.Left
+                        };
+                        subtitleRow.Cells.Add(subtitleCell);
+                        initialRowGroup.Rows.Add(subtitleRow);
+                        initialRowGroup.Rows.Add(new TableRow { Cells = { new TableCell(new Paragraph(new Run("\n"))) } });
+                    }
+                    flowDocument.Blocks.Add(initialTable);
+                }
+
+                // Perform calculations for column layout
+                int totalColumns = columnHeaders.Length; // Total number of actual data columns
+                double usableWidth = pageWidth - (flowDocument.PagePadding.Left + flowDocument.PagePadding.Right); // Width available for content after accounting for padding
+
+                // Calculate the effective number of columns for width distribution based on the maximum columns per row
+                // This ensures consistent column widths across prints, regardless of the total number of columns
+                int effectiveColumnCount = maxColumnsPerRow;
+
+                // Calculate the total spanned slots to determine the minimum number of TableColumn objects needed,
+                // accounting for ColumnSpan values to prevent layout issues; Use a safe default if dataItems is empty
+                int totalSpannedSlots = totalColumns; // Default to totalColumns assuming ColumnSpan = 1 for each if no data
+                foreach (var item in dataItems)
+                {
+                    if (item is T validItem)
+                    {
+                        totalSpannedSlots = dataExtractor(validItem).Sum(v => v.ColumnSpan);
+                        break; // Use the first valid item
                     }
                 }
-                double usableWidth = pageWidth - (flowDoc.PagePadding.Left + flowDoc.PagePadding.Right); // Width available for content after accounting for padding
-                int maxVirtualColumns = Math.Max(totalColumns, adjustedVirtualColumnCount); // Maximum number of virtual columns used for width distribution
-                double columnWeight = 1.0 / maxVirtualColumns; // Proportional weight for each virtual column's width
+                int actualColumnCount = Math.Max(totalSpannedSlots, effectiveColumnCount); // Ensure enough columns for all spanned slots
 
-                // Split dataItems into chunks of itemsPerPage, adjusting for title on first page
+                // Add a minimum padding between columns to improve readability
+                double minPaddingPerColumn = 5.0; // Padding between columns
+                double adjustedUsableWidth = usableWidth - (minPaddingPerColumn * (effectiveColumnCount - 1)); // Use effectiveColumnCount for padding consistency
+                double columnWeight = 1.0 / effectiveColumnCount; // Proportional width of each column, dividing adjusted width by effectiveColumnCount
+                double columnWidth = adjustedUsableWidth * columnWeight; // Width of a single column in the table
+
+                // Split dataItems into chunks of itemsPerPage, adjusting for title on first page or separate title page
                 var dataList = dataItems.ToList();
                 int totalItems = dataList.Count;
-                int initialPageItemCount = Math.Max(1, itemsPerPage - 2); // Adjusted item count for first page, accounting for title/subtitle space
+                int initialPageItemCount = titlePage ? 0 : Math.Max(1, itemsPerPage - 2); // No items on first page if titlePage is true, otherwise adjust for title/subtitle space
                 int remainingItems = totalItems - initialPageItemCount;
 
                 // Calculate how many additional pages are needed after the first page
                 // If there are remaining items (> 0), divide them by itemsPerPage and round up; otherwise, set to 0
                 int subsequentPages = remainingItems > 0 ? (int)Math.Ceiling((double)remainingItems / itemsPerPage) : 0;
 
-                // Total pages is 1 (first page with reduced items) plus any subsequent full pages
-                int pageCount = 1 + subsequentPages;
+                // Total pages includes a title page (if titlePage is true) plus content pages
+                int pageCount = (titlePage ? 1 : 0) + (initialPageItemCount > 0 || remainingItems > 0 ? 1 + subsequentPages : 0);
 
                 for (int page = 0; page < pageCount; page++)
                 {
-                    // Decide how many items this page gets:
-                    // If it’s the first page (page == 0), use the reduced count (firstPageItems); otherwise, use full itemsPerPage
-                    int itemsPerPageThisPage = (page == 0) ? initialPageItemCount : itemsPerPage;
+                    // Skip content generation for the first page if it’s a title page
+                    if (titlePage && page == 0) continue;
 
-                    // Calculate how many items to skip based on the page number
-                    int skipCount;
-                    if (page == 0)
-                    {
-                        skipCount = 0; // No skipping for the first page
-                    }
-                    else
-                    {
-                        skipCount = initialPageItemCount + (page - 1) * itemsPerPage; // Skip past first page and prior pages' items
-                    }
+                    // Adjust page index for content pages when titlePage is true
+                    int adjustedPageIndex = titlePage ? page - 1 : page;
+                    // Decide how many items this page gets based on whether it’s the first content page
+                    int itemsPerPageThisPage = (adjustedPageIndex == 0 && !titlePage) ? initialPageItemCount : itemsPerPage;
+
+                    // Calculate how many items to skip based on the adjusted page number
+                    int skipCount = (adjustedPageIndex == 0 && !titlePage) ? 0 : initialPageItemCount + (adjustedPageIndex - 1) * itemsPerPage;
                     // Get the items for the current page by skipping and taking
                     var pageItems = dataList.Skip(skipCount)
                                             .Take(itemsPerPageThisPage);
 
                     // Create a new Section for this page's chunk
                     Section pageSection = new Section();
-                    if (page > 0) // Force page break before all but the first section
+                    // Force page break before all content sections when titlePage is true, or before all but the first section otherwise
+                    if (titlePage ? page > 0 : page > 0)
                     {
                         pageSection.BreakPageBefore = true;
                     }
@@ -174,37 +225,34 @@ namespace ProjectCryptoGains.Common.Utils
                     TableRowGroup rowGroup = new TableRowGroup();
                     table.RowGroups.Add(rowGroup);
 
-                    // Add columns to the table
-                    for (int i = 0; i < totalColumns; i++)
+                    // Add columns to the table, ensuring enough columns to match actualColumnCount for proper layout
+                    for (int i = 0; i < actualColumnCount; i++)
                     {
                         table.Columns.Add(new TableColumn { Width = new GridLength(columnWeight, GridUnitType.Star) });
                     }
-                    if (adjustedVirtualColumnCount > totalColumns)
-                    {
-                        for (int i = totalColumns; i < adjustedVirtualColumnCount; i++)
-                        {
-                            table.Columns.Add(new TableColumn { Width = new GridLength(columnWeight, GridUnitType.Star) });
-                        }
-                    }
 
-                    int rowsNeeded = (int)Math.Ceiling((double)totalColumns / Math.Min(maxColumnsPerRow, totalColumns)); // Calculate the number of rows required
+                    int rowsNeeded = (int)Math.Ceiling((double)totalColumns / Math.Min(maxColumnsPerRow, totalColumns)); // Calculate the number of rows required (used when headers are not repeated per item)
 
-                    // Add headers if not repeating per item and columns fit in one row
-                    if (!repeatHeadersPerItem && totalColumns <= Math.Min(maxColumnsPerRow, totalColumns))
+                    // Add a single header row if headers are not set to repeat for each item
+                    // (repeating headers are handled per item in the data loop below)
+                    if (!repeatHeadersPerItem)
                     {
                         TableRow headerRow = new() { FontWeight = FontWeights.Bold };
                         var firstItem = pageItems.FirstOrDefault() ?? dataItems.FirstOrDefault();
-                        (string Value, TextAlignment Alignment, int ColumnSpan)[] sampleValues = firstItem != null ? dataExtractor(firstItem) : new (string, TextAlignment, int)[totalColumns];
+                        (string Value, TextAlignment Alignment, int ColumnSpan)[] headerSampleValues = firstItem != null
+                            ? dataExtractor(firstItem)
+                            : Enumerable.Range(0, totalColumns).Select(_ => ("", TextAlignment.Left, 1)).ToArray(); // Default if no item available
                         for (int i = 0; i < totalColumns; i++)
                         {
                             var cell = new TableCell(new Paragraph(new Run(columnHeaders[i])))
                             {
-                                TextAlignment = i < sampleValues.Length ? sampleValues[i].Alignment : TextAlignment.Left,
-                                ColumnSpan = i < sampleValues.Length ? sampleValues[i].ColumnSpan : 1 // Apply ColumnSpan to headers
+                                TextAlignment = i < headerSampleValues.Length ? headerSampleValues[i].Alignment : TextAlignment.Left,
+                                ColumnSpan = i < headerSampleValues.Length ? headerSampleValues[i].ColumnSpan : 1 // Apply ColumnSpan to headers
                             };
                             headerRow.Cells.Add(cell);
                         }
-                        for (int i = totalColumns; i < adjustedVirtualColumnCount; i++)
+                        // Fill remaining columns with empty cells to match actualColumnCount
+                        for (int i = totalColumns; i < actualColumnCount; i++)
                         {
                             headerRow.Cells.Add(new TableCell(new Paragraph(new Run(""))));
                         }
@@ -214,87 +262,154 @@ namespace ProjectCryptoGains.Common.Utils
                     // Iterate over each data item in this page's chunk
                     foreach (var item in pageItems)
                     {
+                        if (item == null) continue; // Skip null items to avoid null reference issues in dataExtractor
+
                         (string Value, TextAlignment Alignment, int ColumnSpan)[] values = dataExtractor(item);
 
-                        // If columns fit in one row and headers should not repeat
-                        if (totalColumns <= Math.Min(maxColumnsPerRow, totalColumns) && !repeatHeadersPerItem)
-                        {
-                            TableRow dataRow = new();
-                            for (int i = 0; i < totalColumns; i++)
-                            {
-                                var cell = new TableCell(new Paragraph(new Run(values[i].Value)))
-                                {
-                                    TextAlignment = values[i].Alignment,
-                                    ColumnSpan = values[i].ColumnSpan // Apply ColumnSpan from tuple
-                                };
-                                dataRow.Cells.Add(cell);
-                            }
-                            for (int i = totalColumns; i < adjustedVirtualColumnCount; i++)
-                            {
-                                dataRow.Cells.Add(new TableCell(new Paragraph(new Run(""))));
-                            }
-                            rowGroup.Rows.Add(dataRow);
-                        }
-                        // Handle case where columns span multiple rows or headers should repeat
-                        else
-                        {
-                            TableRowGroup itemGroup = new TableRowGroup();
-                            table.RowGroups.Add(itemGroup);
+                        // Calculate the total spanned width for this item
+                        int totalSpan = values.Sum(v => v.ColumnSpan);
+                        int rowsNeededDynamic = (int)Math.Ceiling((double)totalSpan / maxColumnsPerRow); // Dynamically calculate rows based on total span
 
-                            for (int rowIndex = 0; rowIndex < rowsNeeded; rowIndex++)
-                            {
-                                int startIndex = rowIndex * Math.Min(maxColumnsPerRow, totalColumns); // Calculate the starting index for the current row
-                                int columnsInThisRow = Math.Min(Math.Min(maxColumnsPerRow, totalColumns), totalColumns - startIndex); // Determine the number of columns for this row
+                        TableRowGroup itemGroup = new TableRowGroup();
+                        table.RowGroups.Add(itemGroup);
 
-                                // Check if headers should repeat or columns span multiple rows
-                                if (repeatHeadersPerItem || totalColumns > Math.Min(maxColumnsPerRow, totalColumns))
+                        int currentColumnIndex = 0; // Track the current column index across rows
+
+                        for (int rowIndex = 0; rowIndex < rowsNeededDynamic; rowIndex++)
+                        {
+                            int startColumnIndex = currentColumnIndex; // Starting column for this row
+
+                            // Check if headers should repeat or columns span multiple rows
+                            if (repeatHeadersPerItem || totalSpan > maxColumnsPerRow)
+                            {
+                                TableRow headerRow = new() { FontWeight = FontWeights.Bold };
+                                int headerIndex = startColumnIndex;
+                                int headerSpanFilled = 0;
+                                while (headerIndex < columnHeaders.Length && headerSpanFilled < maxColumnsPerRow)
                                 {
-                                    TableRow headerRow = new() { FontWeight = FontWeights.Bold };
-                                    for (int i = 0; i < columnsInThisRow; i++)
+                                    int span = headerIndex < values.Length ? values[headerIndex].ColumnSpan : 1;
+                                    if (headerSpanFilled + span <= maxColumnsPerRow)
                                     {
-                                        int headerIndex = startIndex + i;
                                         var cell = new TableCell(new Paragraph(new Run(columnHeaders[headerIndex])))
                                         {
                                             TextAlignment = headerIndex < values.Length ? values[headerIndex].Alignment : TextAlignment.Left,
-                                            ColumnSpan = headerIndex < values.Length ? values[headerIndex].ColumnSpan : 1 // Apply ColumnSpan to headers
+                                            ColumnSpan = span
                                         };
                                         headerRow.Cells.Add(cell);
+                                        headerSpanFilled += span;
+                                        headerIndex++;
                                     }
-                                    for (int i = columnsInThisRow; i < adjustedVirtualColumnCount; i++)
+                                    else
                                     {
-                                        headerRow.Cells.Add(new TableCell(new Paragraph(new Run(""))));
+                                        break; // Move to the next row
                                     }
-                                    itemGroup.Rows.Add(headerRow);
                                 }
-
-                                TableRow dataRow = new();
-                                for (int i = 0; i < columnsInThisRow; i++)
+                                // Fill remaining columns with empty cells up to maxColumnsPerRow
+                                for (int i = headerSpanFilled; i < maxColumnsPerRow; i++)
                                 {
-                                    int valueIndex = startIndex + i;
-                                    var cell = new TableCell(new Paragraph(new Run(values[valueIndex].Value)))
+                                    headerRow.Cells.Add(new TableCell(new Paragraph(new Run(""))));
+                                }
+                                itemGroup.Rows.Add(headerRow);
+                                currentColumnIndex = headerIndex; // Update the column index for the next row
+                            }
+
+                            // Add data row
+                            TableRow dataRow = new();
+                            int valueIndex = startColumnIndex;
+                            int dataSpanFilled = 0;
+                            while (valueIndex < values.Length && dataSpanFilled < maxColumnsPerRow)
+                            {
+                                int span = values[valueIndex].ColumnSpan;
+                                if (dataSpanFilled + span <= maxColumnsPerRow)
+                                {
+                                    string cellText = values[valueIndex].Value;
+                                    double adjustmentFactor = 1 / maxColumnsPerRow + 1.0; // Dynamic factor based on maxColumnsPerRow
+                                    double availableWidth = columnWidth * span * adjustmentFactor; // Adjust available width dynamically
+
+                                    // Measure the text width using FormattedText
+                                    FormattedText formattedText = new FormattedText(
+                                        cellText,
+                                        System.Globalization.CultureInfo.CurrentCulture,
+                                        FlowDirection.LeftToRight,
+                                        new Typeface(flowDocument.FontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
+                                        fontSize,
+                                        Brushes.Black,
+                                        1.0
+                                    );
+
+                                    // If the text width exceeds the available width, trim and append "..." to prevent line breaks
+                                    // This ensures data cells fit within their columns, enhancing readability and layout consistency
+                                    if (formattedText.WidthIncludingTrailingWhitespace > availableWidth)
+                                    {
+                                        const string ellipsis = "...";
+                                        // Measure the width of the ellipsis to ensure it fits
+                                        FormattedText ellipsisText = new FormattedText(
+                                            ellipsis,
+                                            System.Globalization.CultureInfo.CurrentCulture,
+                                            FlowDirection.LeftToRight,
+                                            new Typeface(flowDocument.FontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
+                                            fontSize,
+                                            Brushes.Black,
+                                            1.0
+                                        );
+                                        double ellipsisWidth = ellipsisText.WidthIncludingTrailingWhitespace;
+                                        double targetWidth = availableWidth - ellipsisWidth;
+
+                                        // Iteratively trim the text until it fits within the target width
+                                        string trimmedText = cellText;
+                                        while (trimmedText.Length > 0)
+                                        {
+                                            formattedText = new FormattedText(
+                                                trimmedText + ellipsis,
+                                                System.Globalization.CultureInfo.CurrentCulture,
+                                                FlowDirection.LeftToRight,
+                                                new Typeface(flowDocument.FontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
+                                                fontSize,
+                                                Brushes.Black,
+                                                1.0
+                                            );
+                                            if (formattedText.WidthIncludingTrailingWhitespace <= availableWidth)
+                                            {
+                                                break;
+                                            }
+                                            trimmedText = trimmedText.Substring(0, trimmedText.Length - 1);
+                                        }
+                                        cellText = trimmedText + ellipsis;
+                                    }
+
+                                    var cell = new TableCell(new Paragraph(new Run(cellText)))
                                     {
                                         TextAlignment = values[valueIndex].Alignment,
-                                        ColumnSpan = values[valueIndex].ColumnSpan // Apply ColumnSpan from tuple
+                                        ColumnSpan = span
                                     };
                                     dataRow.Cells.Add(cell);
+                                    dataSpanFilled += span;
+                                    valueIndex++;
                                 }
-                                for (int i = columnsInThisRow; i < adjustedVirtualColumnCount; i++)
+                                else
                                 {
-                                    dataRow.Cells.Add(new TableCell(new Paragraph(new Run(""))));
+                                    break; // Move to the next row
                                 }
-                                itemGroup.Rows.Add(dataRow);
                             }
 
-                            if (repeatHeadersPerItem)
+                            // Fill remaining columns with empty cells up to maxColumnsPerRow
+                            for (int i = dataSpanFilled; i < maxColumnsPerRow; i++)
                             {
-                                itemGroup.Rows.Add(new TableRow { Cells = { new TableCell(new Paragraph(new Run("\n"))) } });
+                                dataRow.Cells.Add(new TableCell(new Paragraph(new Run(""))));
                             }
+                            itemGroup.Rows.Add(dataRow);
+                            currentColumnIndex = valueIndex; // Update the column index for the next row
+                        }
+
+                        if (repeatHeadersPerItem)
+                        {
+                            itemGroup.Rows.Add(new TableRow { Cells = { new TableCell(new Paragraph(new Run("\n"))) } });
                         }
                     }
 
                     // Add this page's table to the section, and the section to the document
                     pageSection.Blocks.Add(table);
-                    flowDoc.Blocks.Add(pageSection);
+                    flowDocument.Blocks.Add(pageSection);
                 }
 
                 // Check if summary text is provided and add it to the document
@@ -304,7 +419,7 @@ namespace ProjectCryptoGains.Common.Utils
                     TableRowGroup summaryGroup = new TableRowGroup();
                     summaryTable.RowGroups.Add(summaryGroup);
 
-                    // Add columns to match earlier tables
+                    // Add columns to match earlier tables, using totalColumns since summary doesn't repeat per item
                     for (int i = 0; i < totalColumns; i++)
                     {
                         summaryTable.Columns.Add(new TableColumn { Width = new GridLength(columnWeight, GridUnitType.Star) }); // Use consistent column weight
@@ -322,27 +437,26 @@ namespace ProjectCryptoGains.Common.Utils
                     };
                     summaryRow.Cells.Add(summaryCell);
                     summaryGroup.Rows.Add(summaryRow);
-                    flowDoc.Blocks.Add(summaryTable);
+                    flowDocument.Blocks.Add(summaryTable);
                 }
 
                 // Create a custom paginator to add page numbers
-                IDocumentPaginatorSource idpSource = flowDoc;
+                IDocumentPaginatorSource idpSource = flowDocument;
                 DocumentPaginator paginator = idpSource.DocumentPaginator;
                 int totalPages = GetTotalPageCount(paginator); // Calculate the total number of pages
-                if (totalPages == 0) totalPages = 1; // Set to 1 as a fallback if no pages are detected
-                CustomPaginator customPaginator = new CustomPaginator(paginator, footerHeight, fontSize, pageWidth, flowDoc.FontFamily, totalPages);
+                CustomPaginator customPaginator = new CustomPaginator(paginator, footerHeight, fontSize, pageWidth, flowDocument.FontFamily, totalPages);
 
                 // Attempt to print the document, handling any exceptions
                 try
                 {
-                    flowDoc.Name = "FlowDoc";
-                    // Tell the printer to use our CustomPaginator, which adds "Page X of Y" to each page.
-                    // This pulls pages one by one through our overridden GetPage, so we get trades with
-                    // numbers on every printed page (like "Page 1 of 12" for our 12 pages).
+                    flowDocument.Name = "FlowDoc";
+                    // Tell the printer to use our CustomPaginator, which adds "Page X of Y" to each page
+                    // This pulls pages one by one through our overridden GetPage, so we get content with numbers on every printed page (e.g., "Page 1 of 12" for a 12-page document)
                     printDlg.PrintDocument(customPaginator, title);
                 }
                 catch (Exception ex)
                 {
+                    // Handle printing exceptions by showing an error message
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         MessageBoxResult result = CustomMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -351,19 +465,18 @@ namespace ProjectCryptoGains.Common.Utils
             });
         }
 
-        // Forces WPF to count pages by asking for each one (GetPage) until it either knows the total
-        // (IsPageCountValid turns true) or we count them ourselves. Stops at 1000 max, but for our
-        // 12 pages, it’ll stop at 12 when it runs out (error). Works because GetPage waits to cut each
-        // page right, waking up the paginator as we go.
+        // Determines the total page count by iterating through pages with GetPage when IsPageCountValid is false
+        // Relies on WPF's validation (IsPageCountValid) or manual counting up to a 1000-page limit to prevent infinite loops
+        // Uses GetPage to compute the count as needed
         private static int GetTotalPageCount(DocumentPaginator paginator)
         {
-            int count = 0;
-            while (!paginator.IsPageCountValid && count < 1000) // Continue counting pages up to a maximum of 1000 to prevent infinite loops
+            int pageCount = 0;
+            while (!paginator.IsPageCountValid && pageCount < 1000) // Continue counting pages up to a maximum of 1000 to prevent infinite loops
             {
                 try
                 {
-                    paginator.GetPage(count);
-                    count++;
+                    paginator.GetPage(pageCount);
+                    pageCount++;
                 }
                 catch (ArgumentOutOfRangeException)
                 {
@@ -371,15 +484,15 @@ namespace ProjectCryptoGains.Common.Utils
                 }
             }
             // Returns the page count based on reliability:
-            // - If paginator.IsPageCountValid is true, use paginator.PageCount (the official count).
-            // - If false, and count > 0 (we manually found pages), use that count.
-            // - Otherwise, default to 1 as a fallback to ensure at least one page.
-            return paginator.IsPageCountValid ? paginator.PageCount : count > 0 ? count : 1;
+            // - If paginator.IsPageCountValid is true, use paginator.PageCount (the official count)
+            // - If false, and pageCount > 0 (we manually found pages), use that count
+            // - Otherwise, default to 1 as a fallback to ensure at least one page
+            return paginator.IsPageCountValid ? paginator.PageCount : pageCount > 0 ? pageCount : 1;
         }
 
-        // CustomPaginator adds page numbers (like "Page X of Y") to each page for printing.
-        // We override GetPage because the default only gives plain trades pages—no numbers.
-        // PrintDialog uses this to pull numbered pages, so our 12-page doc prints with "Page 1 of 12" etc.
+        // CustomPaginator adds page numbers (e.g., "Page X of Y") to each page for printing
+        // We override GetPage because the default paginator does not include page numbers
+        // PrintDialog uses this to render numbered pages (e.g., "Page 1 of 12" for a 12-page document)
         private class CustomPaginator : DocumentPaginator
         {
             private readonly DocumentPaginator _inner;
@@ -417,7 +530,7 @@ namespace ProjectCryptoGains.Common.Utils
                     // Draw a transparent background to match the page size (sets the drawing area)
                     dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, _pageWidth, originalPage.Size.Height));
 
-                    // Add the original page content (e.g., trades table) to our new canvas
+                    // Add the original page content (e.g., table data) to our new canvas
                     visual.Children.Add(originalPage.Visual);
 
                     // Create the page number text (e.g., "Page 1 of 5") with specified font settings

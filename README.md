@@ -102,4 +102,4 @@ This project includes or depends on the following third-party components:
 - **ControlzEx**:
   - [MIT License](licenses/LICENSE-CONTROLZEX-MIT.txt)
 
-If you distribute this project with Firebird Embedded, please ensure compliance with the IDPL [licenses/LICENSE-FIREBIRD-IDPL.txt](licenses/LICENSE-FIREBIRD-IDPL.txt) and IPL [licenses/LICENSE-FIREBIRD-IPL.txt](licenses/LICENSE-FIREBIRD-IPL.txt) terms.
+If you distribute this project with Firebird Embedded, please ensure compliance with the [IDPL](licenses/LICENSE-FIREBIRD-IDPL.txt) and [IPL](licenses/LICENSE-FIREBIRD-IPL.txt) terms.

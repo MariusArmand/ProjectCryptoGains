@@ -98,7 +98,6 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    // code to handle the exception
                     MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                     // Exit function early
@@ -683,9 +682,11 @@ namespace ProjectCryptoGains
                     (item.Gain.HasValue ? $"{item.Gain,2:F2}" : "N/A", TextAlignment.Left, 1)
                 },
                 printDlg: printDlg,
+                titlePage: true,
                 title: "Project Crypto Gains - Gains",
+                subtitle: $"From\t{fromDate}\nTo\t{toDate}",
                 footerHeight: 20,
-                maxColumnsPerRow: 6,
+                maxColumnsPerRow: 7,
                 repeatHeadersPerItem: true,
                 itemsPerPage: 15
             );
@@ -738,9 +739,8 @@ namespace ProjectCryptoGains
                 title: "Project Crypto Gains - Gains Summary",
                 subtitle: $"From\t{fromDate}\nTo\t{toDate}",
                 summaryText: "Total gains " + totalGains,
-                maxColumnsPerRow: 2,
-                repeatHeadersPerItem: true,
-                virtualColumnCount: 7
+                maxColumnsPerRow: 7,
+                repeatHeadersPerItem: true
             );
         }
     }

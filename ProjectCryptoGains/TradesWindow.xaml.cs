@@ -394,9 +394,11 @@ namespace ProjectCryptoGains
                     ($"{item.Costs_proceeds,2:F2}", TextAlignment.Left, 1)
                 },
                 printDlg: printDlg,
+                titlePage: true,
                 title: "Project Crypto Gains - Trades",
+                subtitle: $"From\t{fromDate}\nTo\t{toDate}",
                 footerHeight: 20,
-                maxColumnsPerRow: 6,
+                maxColumnsPerRow: 7,
                 repeatHeadersPerItem: true,
                 itemsPerPage: 15
             );

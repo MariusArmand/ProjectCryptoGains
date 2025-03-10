@@ -548,10 +548,12 @@ namespace ProjectCryptoGains
                     ($"{item.Amount_fiat,2:F2}", TextAlignment.Left, 1)
                 },
                 printDlg: printDlg,
+                titlePage: true,
                 title: "Project Crypto Gains - Rewards",
+                subtitle: $"From\t{fromDate}\nTo\t{toDate}",
                 maxColumnsPerRow: 7,
                 repeatHeadersPerItem: true,
-                itemsPerPage: 21
+                itemsPerPage: 22
             );
         }
 
@@ -603,9 +605,8 @@ namespace ProjectCryptoGains
                 title: "Project Crypto Gains - Rewards Summary",
                 subtitle: $"From\t{fromDate}\nTo\t{toDate}",
                 summaryText: "Total rewards converted " + totalAmountFiat,
-                maxColumnsPerRow: 3,
-                repeatHeadersPerItem: true,
-                virtualColumnCount: 8
+                maxColumnsPerRow: 8,
+                repeatHeadersPerItem: true
             );
         }
     }

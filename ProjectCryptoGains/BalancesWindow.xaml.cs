@@ -476,9 +476,8 @@ namespace ProjectCryptoGains
                     ($"{item.Amount_fiat,2:F2}", TextAlignment.Right, 1)
                 },
                 printDlg: printDlg,
-                maxColumnsPerRow: 3,
-                repeatHeadersPerItem: false,
-                virtualColumnCount: 6
+                maxColumnsPerRow: 6,
+                repeatHeadersPerItem: false
             );
         }
 

@@ -78,12 +78,10 @@ namespace ProjectCryptoGains
             {
                 try
                 {
-                    // code that may throw an exception
                     connection.Open();
                 }
                 catch (Exception ex)
                 {
-                    // code to handle the exception
                     MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                     // Exit function early
@@ -147,7 +145,6 @@ namespace ProjectCryptoGains
         {
             if (!IsValidDateFormat(txtFromDate.Text, "yyyy-MM-dd"))
             {
-                // code to handle the exception
                 MessageBoxResult result = CustomMessageBox.Show("From date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
@@ -156,7 +153,6 @@ namespace ProjectCryptoGains
 
             if (!IsValidDateFormat(txtToDate.Text, "yyyy-MM-dd"))
             {
-                // code to handle the exception
                 MessageBoxResult result = CustomMessageBox.Show("To date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
@@ -338,9 +334,11 @@ namespace ProjectCryptoGains
                     (string.IsNullOrEmpty(item.Notes) ? "N/A" : item.Notes, TextAlignment.Left, 3)
                 },
                 printDlg: printDlg,
+                titlePage: true,
                 title: "Project Crypto Gains - Ledgers",
+                subtitle: $"From\t{fromDate}\nTo\t{toDate}",
                 footerHeight: 20,
-                maxColumnsPerRow: 6,
+                maxColumnsPerRow: 7,
                 repeatHeadersPerItem: true,
                 itemsPerPage: 15
             );

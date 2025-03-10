@@ -143,7 +143,6 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    // code to handle the exception
                     lastError = "File could not be opened." + Environment.NewLine + ex.Message;
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
