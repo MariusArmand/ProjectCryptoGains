@@ -58,14 +58,14 @@ namespace ProjectCryptoGains
 
         private void RefreshFromSource_Click(object sender, RoutedEventArgs e)
         {
-            ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Refreshing from source");
+            ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Refreshing from source");
             BindGrid();
-            ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Refresh done");
+            ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Refresh done");
         }
 
         private async void Save_Click(object sender, RoutedEventArgs e)
         {
-            ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Saving assets");
+            ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Saving assets");
 
             int errors = 0;
             string? lastInfo = null;
@@ -74,7 +74,7 @@ namespace ProjectCryptoGains
             if (AssetCodesKrakenData == null || AssetCodesKrakenData.Count == 0)
             {
                 lastInfo = "No data to save.";
-                ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] {lastInfo}");
+                ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastInfo}");
                 MessageBoxResult result = CustomMessageBox.Show(lastInfo, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Exit function early
@@ -100,7 +100,7 @@ namespace ProjectCryptoGains
                 if (errors > 0)
                 {
                     lastError = "CODE and ASSET cannot be empty.";
-                    ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] {lastError}");
+                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else
@@ -140,7 +140,7 @@ namespace ProjectCryptoGains
                     if (lastError != null)
                     {
                         MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] {lastError}");
+                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
                     }
                 }
 
@@ -155,23 +155,23 @@ namespace ProjectCryptoGains
                     {
                         lastError = "Malconfigured asset(s) detected.";
                         MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] {lastError}");
+                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
 
                         // Log each malconfigured asset
                         foreach (string code in malconfiguredAssets)
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Malconfigured asset for code: {code}");
+                            ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Malconfigured asset for code: {code}");
                         }
                     }
                 }
 
                 if (lastError == null)
                 {
-                    ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Saving successful");
+                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Saving successful");
                 }
                 else
                 {
-                    ConsoleLog(_mainWindow.txtLog, $"[Kraken AssetCatalogData] Saving unsuccessful");
+                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Saving unsuccessful");
                 }
             }
             finally

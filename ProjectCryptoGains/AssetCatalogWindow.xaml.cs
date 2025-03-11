@@ -51,7 +51,7 @@ namespace ProjectCryptoGains
 
         private async void Save_Click(object sender, RoutedEventArgs e)
         {
-            ConsoleLog(_mainWindow.txtLog, $"[AssetCatalogData] Saving assets");
+            ConsoleLog(_mainWindow.txtLog, $"[Asset Catalog] Saving assets");
 
             int errors = 0;
             string? lastInfo = null;
@@ -60,7 +60,7 @@ namespace ProjectCryptoGains
             if (AssetCatalogData == null || AssetCatalogData.Count == 0)
             {
                 lastInfo = "No data to save.";
-                ConsoleLog(_mainWindow.txtLog, $"[AssetCatalogData] {lastInfo}");
+                ConsoleLog(_mainWindow.txtLog, $"[Asset Catalog] {lastInfo}");
                 MessageBoxResult result = CustomMessageBox.Show(lastInfo, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Exit function early
@@ -85,7 +85,7 @@ namespace ProjectCryptoGains
                 if (errors > 0)
                 {
                     lastError = "Code and Asset cannot be empty.";
-                    ConsoleLog(_mainWindow.txtLog, $"[AssetCatalogData] {lastError}");
+                    ConsoleLog(_mainWindow.txtLog, $"[Asset Catalog] {lastError}");
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else
@@ -131,17 +131,17 @@ namespace ProjectCryptoGains
                     if (lastError != null)
                     {
                         MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        ConsoleLog(_mainWindow.txtLog, $"[AssetCatalogData] {lastError}");
+                        ConsoleLog(_mainWindow.txtLog, $"[Asset Catalog] {lastError}");
                     }
                 }
 
                 if (lastError == null)
                 {
-                    ConsoleLog(_mainWindow.txtLog, $"[AssetCatalogData] Saving successful");
+                    ConsoleLog(_mainWindow.txtLog, $"[Asset Catalog] Saving successful");
                 }
                 else
                 {
-                    ConsoleLog(_mainWindow.txtLog, $"[AssetCatalogData] Saving unsuccessful");
+                    ConsoleLog(_mainWindow.txtLog, $"[Asset Catalog] Saving unsuccessful");
                 }
             }
             finally

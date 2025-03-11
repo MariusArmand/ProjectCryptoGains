@@ -300,7 +300,7 @@ namespace ProjectCryptoGains
 
                     if (missingAssets.Count > 0)
                     {
-                        lastWarning = "There are new Kraken assets to be refreshed." + Environment.NewLine + "[Configure => Kraken AssetCatalogData]";
+                        lastWarning = "There are new Kraken assets to be refreshed." + Environment.NewLine + "[Configure => Kraken Assets]";
                         MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                         ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastWarning}");
 

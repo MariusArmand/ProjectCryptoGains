@@ -67,7 +67,7 @@ namespace ProjectCryptoGains.Common.Utils
                     List<string> malconfiguredAssets = MalconfiguredAssets(connection);
                     if (missingAssets.Count > 0 || malconfiguredAssets.Count > 0)
                     {
-                        throw new ValidationException("Kraken asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Kraken AssetCatalogData]");
+                        throw new ValidationException("Kraken asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Kraken Assets]");
                     }
 
                     // Check for unsupported ledger types
