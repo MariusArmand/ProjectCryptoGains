@@ -467,7 +467,7 @@ namespace ProjectCryptoGains
             await PrintUtils.PrintFlowDocumentAsync(
                 title: "Project Crypto Gains - Balances",
                 subtitle: "Until\t" + untilDate,
-                columnHeaders: new[] { "CURRENCY", "AMOUNT", $"AMOUNT {fiatCurrency}" },
+                columnHeaders: new[] { "CURRENCY", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
                 dataItems: balances,
                 dataExtractor: item => new[]
                 {

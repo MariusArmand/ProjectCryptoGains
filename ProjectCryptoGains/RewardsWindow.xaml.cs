@@ -535,14 +535,14 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
-                columnHeaders: new[] { "DATE", "REFID", "TYPE", "EXCHANGE", "CURRENCY", "AMOUNT", $"AMOUNT {fiatCurrency}" },
+                columnHeaders: new[] { "DATE", "REFID", "TYPE", "EXCHANGE", "CURRENCY", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
                 dataItems: rewards,
                 dataExtractor: item => new[]
                 {
                     (ConvertDateTimeToString(item.Date) ?? "", TextAlignment.Left, 1),
                     (item.Refid ?? "", TextAlignment.Left, 1),
                     (item.Type ?? "", TextAlignment.Left, 1),
-                    (item.Exchange ?? "", TextAlignment.Left, 1),
+                    (string.IsNullOrEmpty(item.Exchange) ? "N/A" : item.Exchange, TextAlignment.Left, 1),
                     (item.Currency ?? "", TextAlignment.Left, 1),
                     ($"{item.Amount,10:F10}", TextAlignment.Left, 1),
                     ($"{item.Amount_fiat,2:F2}", TextAlignment.Left, 1)
@@ -593,7 +593,7 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
-                columnHeaders: new[] { "CURRENCY", "AMOUNT", $"AMOUNT {fiatCurrency}" },
+                columnHeaders: new[] { "CURRENCY", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
                 dataItems: rewardsSummary,
                 dataExtractor: item => new[]
                 {

@@ -663,7 +663,7 @@ namespace ProjectCryptoGains
                 columnHeaders: new[]
                 {
                     "DATE", "REFID", "TYPE", "BASE_CURRENCY", "BASE_AMOUNT", "QUOTE_CURRENCY",
-                    "QUOTE_AMOUNT", $"BASE_UNIT_PRICE_ {fiatCurrency}", "COSTS_PROCEEDS",
+                    "QUOTE_AMOUNT", $"BASE_UNIT_PRICE_{fiatCurrency}", "COSTS_PROCEEDS",
                     "TX_BALANCE_REMAINING", "GAIN"
                 },
                 dataItems: gains,

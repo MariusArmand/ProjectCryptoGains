@@ -183,18 +183,15 @@ namespace ProjectCryptoGains.Common.Utils
                 double columnWeight = 1.0 / effectiveColumnCount; // Proportional width of each column, dividing adjusted width by effectiveColumnCount
                 double columnWidth = adjustedUsableWidth * columnWeight; // Width of a single column in the table
 
-                // Split dataItems into chunks of itemsPerPage, adjusting for title on first page or separate title page
+                // Split dataItems into chunks of itemsPerPage
                 var dataList = dataItems.ToList();
                 int totalItems = dataList.Count;
-                int initialPageItemCount = titlePage ? 0 : Math.Max(1, itemsPerPage - 2); // No items on first page if titlePage is true, otherwise adjust for title/subtitle space
-                int remainingItems = totalItems - initialPageItemCount;
 
-                // Calculate how many additional pages are needed after the first page
-                // If there are remaining items (> 0), divide them by itemsPerPage and round up; otherwise, set to 0
-                int subsequentPages = remainingItems > 0 ? (int)Math.Ceiling((double)remainingItems / itemsPerPage) : 0;
+                // Calculate the number of content pages needed based on total items
+                int contentPageCount = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / itemsPerPage) : 0;
 
                 // Total pages includes a title page (if titlePage is true) plus content pages
-                int pageCount = (titlePage ? 1 : 0) + (initialPageItemCount > 0 || remainingItems > 0 ? 1 + subsequentPages : 0);
+                int pageCount = (titlePage ? 1 : 0) + contentPageCount;
 
                 for (int page = 0; page < pageCount; page++)
                 {
@@ -203,11 +200,11 @@ namespace ProjectCryptoGains.Common.Utils
 
                     // Adjust page index for content pages when titlePage is true
                     int adjustedPageIndex = titlePage ? page - 1 : page;
-                    // Decide how many items this page gets based on whether it’s the first content page
-                    int itemsPerPageThisPage = (adjustedPageIndex == 0 && !titlePage) ? initialPageItemCount : itemsPerPage;
 
-                    // Calculate how many items to skip based on the adjusted page number
-                    int skipCount = (adjustedPageIndex == 0 && !titlePage) ? 0 : initialPageItemCount + (adjustedPageIndex - 1) * itemsPerPage;
+                    // Calculate how many items to skip and take for this page
+                    int itemsPerPageThisPage = itemsPerPage; // Always use itemsPerPage for content pages
+                    int skipCount = adjustedPageIndex * itemsPerPage; // Multiply adjusted index by items per page
+
                     // Get the items for the current page by skipping and taking
                     var pageItems = dataList.Skip(skipCount)
                                             .Take(itemsPerPageThisPage);
