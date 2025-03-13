@@ -62,7 +62,7 @@ namespace ProjectCryptoGains.Common.Utils
             txtLog.ScrollToEnd();
         }
 
-        public static (decimal fiatAmount, string source) ConvertXToFiat(string xCurrency, decimal xAmount, DateTime date, FbConnection connection)
+        public static (decimal fiatAmount, string source) ConvertXToFiat(string xCurrency, DateTime date, FbConnection connection)
         {
             try
             {
@@ -75,13 +75,11 @@ namespace ProjectCryptoGains.Common.Utils
                 selectCommand.CommandText = $@"SELECT EXCHANGE_RATE
                                                FROM TB_CONVERT_X_TO_FIAT_A
                                                WHERE CURRENCY = @CURRENCY
-                                                  AND AMOUNT = @AMOUNT
                                                   AND ""DATE"" = @DATE
                                                   AND FIAT_CURRENCY = @FIAT_CURRENCY";
 
                 // Add parameters
                 AddParameterWithValue(selectCommand, "@CURRENCY", xCurrency);
-                AddParameterWithValue(selectCommand, "@AMOUNT", xAmount);
                 AddParameterWithValue(selectCommand, "@DATE", date);
                 AddParameterWithValue(selectCommand, "@FIAT_CURRENCY", fiatCurrency);
 
@@ -136,22 +134,19 @@ namespace ProjectCryptoGains.Common.Utils
                 {
                     using DbCommand insertCommand = connection.CreateCommand();
                     insertCommand.CommandText = @"INSERT INTO TB_CONVERT_X_TO_FIAT_A (
-                                                      CURRENCY, 
-                                                      AMOUNT, 
-                                                      ""DATE"", 
-                                                      FIAT_CURRENCY, 
+                                                      CURRENCY,
+                                                      ""DATE"",
+                                                      FIAT_CURRENCY,
                                                       EXCHANGE_RATE
                                                   )
                                                   VALUES (
-                                                      @CURRENCY, 
-                                                      @AMOUNT, 
-                                                      @DATE, 
-                                                      @FIAT_CURRENCY, 
+                                                      @CURRENCY,
+                                                      @DATE,
+                                                      @FIAT_CURRENCY,
                                                       ROUND(@EXCHANGE_RATE, 10)
                                                   )";
 
                     AddParameterWithValue(insertCommand, "@CURRENCY", xCurrency);
-                    AddParameterWithValue(insertCommand, "@AMOUNT", xAmount);
                     AddParameterWithValue(insertCommand, "@DATE", date);
                     AddParameterWithValue(insertCommand, "@FIAT_CURRENCY", fiatCurrency);
                     AddParameterWithValue(insertCommand, "@EXCHANGE_RATE", exchangeRateApi);
@@ -164,12 +159,12 @@ namespace ProjectCryptoGains.Common.Utils
 
                 if (exchangeRateDb.HasValue)
                 {
-                    fiatAmount = (decimal)(xAmount * exchangeRateDb);
+                    fiatAmount = (decimal)(exchangeRateDb);
                     source = "DB";
                 }
                 else if (exchangeRateApi.HasValue)
                 {
-                    fiatAmount = (decimal)(xAmount * exchangeRateApi);
+                    fiatAmount = (decimal)(exchangeRateApi);
                     source = "API";
                 }
 

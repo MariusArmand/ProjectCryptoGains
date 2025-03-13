@@ -249,7 +249,7 @@ namespace ProjectCryptoGains.Common.Utils
                                 decimal quote_fee = reader.GetDecimalOrDefault(6);
 
                                 // Calculate base fiat
-                                var (base_unit_price_fiat, baseConversionSource) = ConvertXToFiat(base_code, 1m, date.Date, connection);
+                                var (base_unit_price_fiat, baseConversionSource) = ConvertXToFiat(base_code, date.Date, connection);
 
                                 string lastWarningPrefix = $"[{caller}]";
                                 if (caller != Caller.Trades)
@@ -282,7 +282,7 @@ namespace ProjectCryptoGains.Common.Utils
                                 /////////////////////////////
 
                                 // Calculate quote fiat
-                                var (quote_unit_price_fiat, quoteConversionSource) = ConvertXToFiat(quote_code, 1m, date.Date, connection);
+                                var (quote_unit_price_fiat, quoteConversionSource) = ConvertXToFiat(quote_code, date.Date, connection);
 
                                 if (quote_unit_price_fiat == 0m)
                                 {

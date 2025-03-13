@@ -683,7 +683,7 @@ namespace ProjectCryptoGains
                 },
                 printDlg: printDlg,
                 titlePage: true,
-                title: "Project Crypto Gains - Gains",
+                title: "Gains",
                 subtitle: $"From\t{fromDate}\nTo\t{toDate}",
                 footerHeight: 20,
                 maxColumnsPerRow: 7,
@@ -736,7 +736,7 @@ namespace ProjectCryptoGains
                     ($"{item.Gain,2:F2}", TextAlignment.Left, 1)
                 },
                 printDlg: printDlg,
-                title: "Project Crypto Gains - Gains Summary",
+                title: "Gains Summary",
                 subtitle: $"From\t{fromDate}\nTo\t{toDate}",
                 summaryText: "Total gains " + totalGains,
                 maxColumnsPerRow: 7,

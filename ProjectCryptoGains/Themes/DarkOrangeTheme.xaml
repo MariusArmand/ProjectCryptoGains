@@ -468,6 +468,11 @@
         </Setter>
     </Style>
     
+    <!-- Separator Style -->
+    <Style TargetType="{x:Type Separator}">
+        <Setter Property="Background" Value="#444444"/>
+    </Style>
+
     <!-- Menu Styles -->
     <!-- Custom style for the entire Menu control -->
     <Style x:Key="CustomMenuStyle" TargetType="{x:Type Menu}">

@@ -335,7 +335,7 @@ namespace ProjectCryptoGains
                 },
                 printDlg: printDlg,
                 titlePage: true,
-                title: "Project Crypto Gains - Ledgers",
+                title: "Ledgers",
                 subtitle: $"From\t{fromDate}\nTo\t{toDate}",
                 footerHeight: 20,
                 maxColumnsPerRow: 7,

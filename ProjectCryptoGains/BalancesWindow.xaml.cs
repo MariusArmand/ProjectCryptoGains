@@ -465,7 +465,7 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
-                title: "Project Crypto Gains - Balances",
+                title: "Balances",
                 subtitle: "Until\t" + untilDate,
                 columnHeaders: new[] { "CURRENCY", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
                 dataItems: balances,
@@ -490,7 +490,7 @@ namespace ProjectCryptoGains
 
                 if (convertToFiat == true)
                 {
-                    var (fiatAmount, source) = ConvertXToFiat(currency_code, 1m, ConvertStringToIsoDate(untilDate), connection);
+                    var (fiatAmount, source) = ConvertXToFiat(currency_code, ConvertStringToIsoDate(untilDate), connection);
                     xInFiat = fiatAmount;
                     conversionSource = source;
                 }

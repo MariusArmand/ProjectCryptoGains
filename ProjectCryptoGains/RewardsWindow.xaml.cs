@@ -342,7 +342,7 @@ namespace ProjectCryptoGains
                             string currency = reader.GetStringOrEmpty(4);
                             decimal amount = reader.GetDecimalOrDefault(5);
 
-                            var (fiatAmount, source) = ConvertXToFiat(currency, 1m, date.Date, connection);
+                            var (fiatAmount, source) = ConvertXToFiat(currency, date.Date, connection);
                             decimal exchangeRate = fiatAmount;
 
                             // Rate limiting mechanism //
@@ -549,7 +549,7 @@ namespace ProjectCryptoGains
                 },
                 printDlg: printDlg,
                 titlePage: true,
-                title: "Project Crypto Gains - Rewards",
+                title: "Rewards",
                 subtitle: $"From\t{fromDate}\nTo\t{toDate}",
                 maxColumnsPerRow: 7,
                 repeatHeadersPerItem: true,
@@ -602,7 +602,7 @@ namespace ProjectCryptoGains
                     ($"{item.Amount_fiat,2:F2}", TextAlignment.Left, 1)
                 },
                 printDlg: printDlg,
-                title: "Project Crypto Gains - Rewards Summary",
+                title: "Rewards Summary",
                 subtitle: $"From\t{fromDate}\nTo\t{toDate}",
                 summaryText: "Total rewards converted " + totalAmountFiat,
                 maxColumnsPerRow: 8,

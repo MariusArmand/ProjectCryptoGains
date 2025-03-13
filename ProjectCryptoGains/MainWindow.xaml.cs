@@ -76,6 +76,7 @@ namespace ProjectCryptoGains
             ////////////////////
             string? lastError = null;
 
+            // Fiat currency
             try
             {
                 LoadSettingFiatCurrencyFromDB();
@@ -96,6 +97,7 @@ namespace ProjectCryptoGains
                 MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
+            // Rewards tax percentage
             try
             {
                 LoadSettingRewardsTaxPercentageFromDB();
@@ -112,6 +114,7 @@ namespace ProjectCryptoGains
                 MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
+            // CoinDesk Data API key
             try
             {
                 LoadSettingCoinDeskDataApiKeyFromDB();
@@ -127,7 +130,25 @@ namespace ProjectCryptoGains
                 ConsoleLog(txtLog, $"[Settings] {lastError}");
                 MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+
+            // Printout title prefix
+            try
+            {
+                LoadSettingPrintoutTitlePrefixFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Settings] {lastError}");
+                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
+        ////////////////////
 
         private void Minimize_Click(object sender, RoutedEventArgs e)
         {

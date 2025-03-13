@@ -556,7 +556,7 @@ namespace ProjectCryptoGains
         {
             try
             {
-                var (fiatAmount, source) = ConvertXToFiat(currency_code, 1m, date.Date, connection);
+                var (fiatAmount, source) = ConvertXToFiat(currency_code, date.Date, connection);
                 decimal xInFiat = fiatAmount;
                 string conversionSource = source;
 

@@ -47,6 +47,8 @@ namespace ProjectCryptoGains
             txtRewardsTaxPercentage.Text = SettingRewardsTaxPercentage.ToString();
 
             txtCoinDeskDataApiKey.Text = SettingCoinDeskDataApiKey;
+
+            txtPrintoutTitlePrefix.Text = SettingPrintoutTitlePrefix;
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -57,13 +59,14 @@ namespace ProjectCryptoGains
 
             try
             {
-
                 string? lastError = null;
 
                 try
                 {
+                    // Save fiat currency setting
                     SettingFiatCurrency = cmbFiatCurrency.SelectedItem as string ?? "NONE";
 
+                    // Save rewards tax percentage setting
                     if (decimal.TryParse(txtRewardsTaxPercentage.Text, out decimal tryParsedAmount))
                     {
                         SettingRewardsTaxPercentage = tryParsedAmount;
@@ -74,7 +77,11 @@ namespace ProjectCryptoGains
                         SettingRewardsTaxPercentage = 0m;
                     }
 
+                    // Save CoinDesk Data API key setting
                     SettingCoinDeskDataApiKey = txtCoinDeskDataApiKey.Text;
+
+                    // Save printout title prefix setting
+                    SettingPrintoutTitlePrefix = txtPrintoutTitlePrefix.Text;
 
                     string message = "Settings have been saved.";
                     ConsoleLog(_mainWindow.txtLog, $"[Settings] {message}");
