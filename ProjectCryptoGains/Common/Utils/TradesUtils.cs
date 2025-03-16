@@ -60,12 +60,12 @@ namespace ProjectCryptoGains.Common.Utils
                     using DbCommand deleteCommand = connection.CreateCommand();
 
                     // Truncate db table
-                    deleteCommand.CommandText = "DELETE FROM TB_TRADES_S";
+                    deleteCommand.CommandText = "DELETE FROM TB_TRADES";
                     deleteCommand.ExecuteNonQuery();
 
                     // Insert into db table
                     using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText = $@"INSERT INTO TB_TRADES_S (REFID, ""DATE"", TYPE, EXCHANGE, BASE_CURRENCY, BASE_AMOUNT, BASE_FEE, BASE_FEE_FIAT, QUOTE_CURRENCY, QUOTE_AMOUNT, QUOTE_AMOUNT_FIAT, QUOTE_FEE, QUOTE_FEE_FIAT, BASE_UNIT_PRICE, BASE_UNIT_PRICE_FIAT, QUOTE_UNIT_PRICE, QUOTE_UNIT_PRICE_FIAT, TOTAL_FEE_FIAT, COSTS_PROCEEDS)
+                    insertCommand.CommandText = $@"INSERT INTO TB_TRADES (REFID, ""DATE"", TYPE, EXCHANGE, BASE_CURRENCY, BASE_AMOUNT, BASE_FEE, BASE_FEE_FIAT, QUOTE_CURRENCY, QUOTE_AMOUNT, QUOTE_AMOUNT_FIAT, QUOTE_FEE, QUOTE_FEE_FIAT, BASE_UNIT_PRICE, BASE_UNIT_PRICE_FIAT, QUOTE_UNIT_PRICE, QUOTE_UNIT_PRICE_FIAT, TOTAL_FEE_FIAT, COSTS_PROCEEDS)
                                                    SELECT 
                                                         REFID,
                                                         ""DATE"",
@@ -161,9 +161,9 @@ namespace ProjectCryptoGains.Common.Utils
                                                                     q.AMOUNT AS QUOTE_AMOUNT,
                                                                     q.FEE AS QUOTE_FEE
                                                                 FROM 
-                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT > 0) b
+                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT > 0) b
                                                                     INNER JOIN 
-                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND CURRENCY = '{fiatCurrency}') q
+                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND CURRENCY = '{fiatCurrency}') q
                                                                     ON b.REFID = q.REFID
 
                                                                 UNION ALL
@@ -181,9 +181,9 @@ namespace ProjectCryptoGains.Common.Utils
                                                                     q.AMOUNT AS QUOTE_AMOUNT,
                                                                     q.FEE AS QUOTE_FEE
                                                                 FROM 
-                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT < 0) b
+                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT < 0) b
                                                                     INNER JOIN 
-                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND CURRENCY = '{fiatCurrency}') q
+                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND CURRENCY = '{fiatCurrency}') q
                                                                     ON b.REFID = q.REFID
 
                                                                 UNION ALL
@@ -201,9 +201,9 @@ namespace ProjectCryptoGains.Common.Utils
                                                                     q.AMOUNT AS QUOTE_AMOUNT,
                                                                     q.FEE AS QUOTE_FEE
                                                                 FROM 
-                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND CURRENCY != '{fiatCurrency}') b
+                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND CURRENCY != '{fiatCurrency}') b
                                                                     INNER JOIN 
-                                                                    (SELECT * FROM TB_LEDGERS_S WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND CURRENCY != '{fiatCurrency}') q
+                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND CURRENCY != '{fiatCurrency}') q
                                                                     ON b.REFID = q.REFID
                                                             )
                                                         )
@@ -223,10 +223,10 @@ namespace ProjectCryptoGains.Common.Utils
                                                            catalog_quote.CODE AS QUOTE_CODE,
                                                            trades.QUOTE_AMOUNT,
                                                            trades.QUOTE_FEE
-                                                       FROM TB_TRADES_S trades
-                                                           LEFT JOIN TB_ASSET_CATALOG_S catalog_base
+                                                       FROM TB_TRADES trades
+                                                           LEFT JOIN TB_ASSET_CATALOG catalog_base
                                                                ON trades.BASE_CURRENCY = catalog_base.ASSET
-                                                           LEFT JOIN TB_ASSET_CATALOG_S catalog_quote
+                                                           LEFT JOIN TB_ASSET_CATALOG catalog_quote
                                                                ON trades.QUOTE_CURRENCY = catalog_quote.ASSET
                                                        WHERE trades.BASE_CURRENCY != '{fiatCurrency}'
                                                            AND trades.QUOTE_CURRENCY != '{fiatCurrency}'";
@@ -342,7 +342,7 @@ namespace ProjectCryptoGains.Common.Utils
                             // Create a single command object for updating records, reused across all iterations
                             using DbCommand updateCommand = connection.CreateCommand();
                             updateCommand.Transaction = transaction; // Assign the transaction to the command
-                            updateCommand.CommandText = @"UPDATE TB_TRADES_S 
+                            updateCommand.CommandText = @"UPDATE TB_TRADES 
                                                           SET 
                                                               BASE_FEE_FIAT = @BASE_FEE_FIAT,
                                                               QUOTE_AMOUNT_FIAT = @QUOTE_AMOUNT_FIAT,

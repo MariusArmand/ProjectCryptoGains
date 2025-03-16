@@ -53,6 +53,8 @@
                 <MenuItem Header="Sources">
                     <MenuItem Style="{StaticResource CustomMenuItemStyle}" Click="MenuManualLedgers_Click" Header="Manual Ledgers" />
                     <MenuItem Style="{StaticResource CustomMenuItemStyle}" Click="MenuKrakenLedgers_Click" Header="Kraken Ledgers" />
+                    <Separator />
+                    <MenuItem Style="{StaticResource CustomMenuItemStyle}" Click="MenuExchangeRates_Click" Header="Exchange Rates" />
                 </MenuItem>
                 <MenuItem Header="Configure">
                     <MenuItem Style="{StaticResource CustomMenuItemStyle}" Click="MenuSettings_Click" Header="Settings" />
@@ -78,7 +80,7 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnHelp" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Grid.ColumnSpan="2" Click="ButtonHelp_Click">
+                <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnHelp" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Grid.ColumnSpan="2" Click="BtnHelp_Click">
                     <Image x:Name="imgBtnHelp" Width="32" Height="32" Source="Resources/help.png" Stretch="Uniform"/>
                 </Button>
 

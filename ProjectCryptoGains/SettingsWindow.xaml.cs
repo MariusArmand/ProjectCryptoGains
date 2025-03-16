@@ -51,7 +51,7 @@ namespace ProjectCryptoGains
             txtPrintoutTitlePrefix.Text = SettingPrintoutTitlePrefix;
         }
 
-        private void Save_Click(object sender, RoutedEventArgs e)
+        private void BtnSave_Click(object sender, RoutedEventArgs e)
         {
             ConsoleLog(_mainWindow.txtLog, $"[Settings] Saving settings");
 

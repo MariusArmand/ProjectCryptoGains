@@ -32,11 +32,6 @@ namespace ProjectCryptoGains
             BindGrid();
         }
 
-        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
-        {
-            OpenHelp("asset_catalog_help.html");
-        }
-
         private void BlockUI()
         {
             btnSave.IsEnabled = false;
@@ -49,7 +44,55 @@ namespace ProjectCryptoGains
             Cursor = Cursors.Arrow;
         }
 
-        private async void Save_Click(object sender, RoutedEventArgs e)
+        public void BindGrid()
+        {
+            // Clear existing data
+            AssetCatalogData?.Clear();
+
+            if (AssetCatalogData == null) return;
+
+            using (FbConnection connection = new(connectionString))
+            {
+                try
+                {
+                    connection.Open();
+                }
+                catch (Exception ex)
+                {
+                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                    // Exit function early
+                    return;
+                }
+
+                using DbCommand selectCommand = connection.CreateCommand();
+                selectCommand.CommandText = "SELECT * FROM TB_ASSET_CATALOG";
+
+                using (DbDataReader reader = selectCommand.ExecuteReader())
+                {
+                    int dbLineNumber = 0;
+                    while (reader.Read())
+                    {
+                        dbLineNumber++;
+
+                        AssetCatalogData.Add(new AssetCatalogModel
+                        {
+                            Code = reader.GetStringOrEmpty(0),
+                            Asset = reader.GetStringOrEmpty(1)
+                        });
+                    }
+                }
+            }
+
+            dgAssets.ItemsSource = AssetCatalogData;
+        }
+
+        private void BtnHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("asset_catalog_help.html");
+        }
+
+        private async void BtnSave_Click(object sender, RoutedEventArgs e)
         {
             ConsoleLog(_mainWindow.txtLog, $"[Asset Catalog] Saving assets");
 
@@ -97,13 +140,13 @@ namespace ProjectCryptoGains
                         {
                             connection.Open();
                             using DbCommand deleteCommand = connection.CreateCommand();
-                            deleteCommand.CommandText = "DELETE FROM TB_ASSET_CATALOG_S";
+                            deleteCommand.CommandText = "DELETE FROM TB_ASSET_CATALOG";
                             deleteCommand.ExecuteNonQuery();
 
                             using DbCommand insertCommand = connection.CreateCommand();
                             foreach (var asset in AssetCatalogData)
                             {
-                                insertCommand.CommandText = "INSERT INTO TB_ASSET_CATALOG_S (CODE, ASSET) VALUES (@CODE, @ASSET)";
+                                insertCommand.CommandText = "INSERT INTO TB_ASSET_CATALOG (CODE, ASSET) VALUES (@CODE, @ASSET)";
                                 insertCommand.Parameters.Clear();
 
                                 AddParameterWithValue(insertCommand, "@CODE", (object?)asset.Code ?? DBNull.Value);
@@ -117,11 +160,11 @@ namespace ProjectCryptoGains
                                 {
                                     if (ex.Message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        lastError = "Failed to insert data." + Environment.NewLine + "ASSET and CODE must be unique.";
+                                        lastError = "Failed to insert data" + Environment.NewLine + "ASSET and CODE must be unique";
                                     }
                                     else
                                     {
-                                        lastError = "Failed to insert data." + Environment.NewLine + ex.Message;
+                                        lastError = "Failed to insert data" + Environment.NewLine + ex.Message;
                                     }
                                 }
                             }
@@ -148,49 +191,6 @@ namespace ProjectCryptoGains
             {
                 UnblockUI();
             }
-        }
-
-        public void BindGrid()
-        {
-            // Clear existing data
-            AssetCatalogData?.Clear();
-
-            if (AssetCatalogData == null) return;
-
-            using (FbConnection connection = new(connectionString))
-            {
-                try
-                {
-                    connection.Open();
-                }
-                catch (Exception ex)
-                {
-                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
-                    // Exit function early
-                    return;
-                }
-
-                using DbCommand selectCommand = connection.CreateCommand();
-                selectCommand.CommandText = "SELECT * FROM TB_ASSET_CATALOG_S";
-
-                using (DbDataReader reader = selectCommand.ExecuteReader())
-                {
-                    int dbLineNumber = 0;
-                    while (reader.Read())
-                    {
-                        dbLineNumber++;
-
-                        AssetCatalogData.Add(new AssetCatalogModel
-                        {
-                            Code = reader.GetStringOrEmpty(0),
-                            Asset = reader.GetStringOrEmpty(1)
-                        });
-                    }
-                }
-            }
-
-            dgAssets.ItemsSource = AssetCatalogData;
         }
     }
 }

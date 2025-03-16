@@ -54,11 +54,6 @@ namespace ProjectCryptoGains
 
         public SeriesCollection? SeriesCollection { get; set; }
 
-        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
-        {
-            OpenHelp("balances_help.html");
-        }
-
         private void BlockUI()
         {
             btnRefresh.IsEnabled = false;
@@ -77,24 +72,6 @@ namespace ProjectCryptoGains
             imgBtnPrint.Source = new BitmapImage(new Uri(@"Resources/printer.png", UriKind.Relative));
 
             Cursor = Cursors.Arrow;
-        }
-
-        private void ToggleDataUIVisibility(Visibility visibility)
-        {
-            pcBalances.Visibility = visibility;
-            lblTotalAmountFiat.Visibility = visibility;
-            lblTotalAmountFiatData.Visibility = visibility;
-        }
-
-        private void ButtonRefresh_Click(object sender, RoutedEventArgs e)
-        {
-            lastWarning = null;
-            Refresh();
-        }
-
-        private void DatePickerDate_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            Refresh();
         }
 
         private void BindGrid()
@@ -120,7 +97,7 @@ namespace ProjectCryptoGains
                 }
 
                 using DbCommand selectCommand = connection.CreateCommand();
-                selectCommand.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_BALANCES_S";
+                selectCommand.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_BALANCES";
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
                 {
@@ -147,7 +124,7 @@ namespace ProjectCryptoGains
 
                             BalancesData.Add(new BalancesModel
                             {
-                                RowNumber = dbLineNumber,
+                                Row_number = dbLineNumber,
                                 Currency = curr,
                                 Amount = amnt,
                                 Amount_fiat = amnt_fiat
@@ -220,6 +197,47 @@ namespace ProjectCryptoGains
             pcBalances.DataTooltip = null;
         }
 
+        private void ToggleDataUIVisibility(Visibility visibility)
+        {
+            pcBalances.Visibility = visibility;
+            lblTotalAmountFiat.Visibility = visibility;
+            lblTotalAmountFiatData.Visibility = visibility;
+        }
+
+        private void TxtUntilDate_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (txtUntilDate.Text == "YYYY-MM-DD")
+            {
+                txtUntilDate.Text = string.Empty;
+            }
+        }
+
+        private void TxtUntilDate_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtUntilDate.Text))
+            {
+                txtUntilDate.Text = "YYYY-MM-DD";
+                txtUntilDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
+            }
+        }
+
+        private void TextBoxUntilDate_KeyUp(object sender, KeyboardEventArgs e)
+        {
+            SetUntilDate();
+            txtUntilDate.Foreground = Brushes.White;
+        }
+
+        private void SetUntilDate()
+        {
+            untilDate = txtUntilDate.Text;
+        }
+
+        private void BtnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            lastWarning = null;
+            Refresh();
+        }
+
         private async void Refresh()
         {
             string fiatCurrency = SettingFiatCurrency;
@@ -284,7 +302,7 @@ namespace ProjectCryptoGains
                                 using DbCommand deleteCommand = connection.CreateCommand();
 
                                 // Truncate db table
-                                deleteCommand.CommandText = "DELETE FROM TB_BALANCES_S";
+                                deleteCommand.CommandText = "DELETE FROM TB_BALANCES";
                                 deleteCommand.ExecuteNonQuery();
 
                                 // Insert into db table
@@ -294,10 +312,10 @@ namespace ProjectCryptoGains
                                                                   catalog.ASSET
                                                               FROM
                                                                   (SELECT CODE, ASSET 
-                                                                   FROM TB_ASSET_CATALOG_S) catalog
+                                                                   FROM TB_ASSET_CATALOG) catalog
                                                                   INNER JOIN
                                                                   (SELECT DISTINCT CURRENCY 
-                                                                   FROM TB_LEDGERS_S) ledgers
+                                                                   FROM TB_LEDGERS) ledgers
                                                                   ON catalog.ASSET = ledgers.CURRENCY
                                                               ORDER BY 
                                                                   CODE, 
@@ -401,35 +419,80 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void TxtUntilDate_GotFocus(object sender, RoutedEventArgs e)
+        private static (decimal xInFiat, string sqlCommand, string conversionSource) CreateCryptoBalancesInsert(string currency, string currency_code, string untilDate, bool? convertToFiat, FbConnection connection)
         {
-            if (txtUntilDate.Text == "YYYY-MM-DD")
+            try
             {
-                txtUntilDate.Text = string.Empty;
+                decimal xInFiat = 0.00m;
+                string conversionSource = "";
+
+                if (convertToFiat == true)
+                {
+                    var (fiatAmount, source) = ConvertXToFiat(currency_code, ConvertStringToIsoDate(untilDate), connection);
+                    xInFiat = fiatAmount;
+                    conversionSource = source;
+                }
+
+                string sqlCommand = $@"INSERT INTO TB_BALANCES (CURRENCY, AMOUNT, AMOUNT_FIAT)
+                                           SELECT 
+                                               CURRENCY, 
+                                               AMOUNT, 
+                                               AMOUNT_FIAT 
+                                           FROM
+                                               (
+                                                   SELECT 
+                                                       '{currency}' AS CURRENCY,
+                                                       ROUND(SUM(AMNT), 10) AS AMOUNT,
+                                                       ROUND({xInFiat} * SUM(AMNT), 2) AS AMOUNT_FIAT
+                                                   FROM (
+                                                       SELECT 
+                                                           SUM(AMOUNT) AS AMNT
+                                                       FROM TB_LEDGERS
+                                                       WHERE CURRENCY = '{currency}'
+                                                           AND TYPE NOT IN ('WITHDRAWAL', 'DEPOSIT')
+                                                           AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
+                                                       UNION ALL
+                                                       SELECT 
+                                                           -SUM(FEE) AS AMNT
+                                                       FROM TB_LEDGERS
+                                                       WHERE CURRENCY = '{currency}'
+                                                           AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
+                                                   )
+                                               )
+                                           WHERE CAST(AMOUNT AS REAL) > 0";
+
+                return (xInFiat, sqlCommand, conversionSource);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("CreateCryptoBalancesInsert failed", ex);
             }
         }
 
-        private void TxtUntilDate_LostFocus(object sender, RoutedEventArgs e)
+        private static string CreateFiatBalancesInsert(string fiat_code, string untilDate)
         {
-            if (string.IsNullOrWhiteSpace(txtUntilDate.Text))
-            {
-                txtUntilDate.Text = "YYYY-MM-DD";
-                txtUntilDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
-            }
+            string query = $@"INSERT INTO TB_BALANCES (CURRENCY, AMOUNT, AMOUNT_FIAT)
+                                  SELECT 
+                                      '{fiat_code}' AS CURRENCY,
+                                      ROUND(SUM(AMNT), 10) AS AMOUNT,
+                                      ROUND(SUM(AMNT), 2) AS AMOUNT_FIAT
+                                  FROM (
+                                      SELECT 
+                                          SUM(AMOUNT) AS AMNT
+                                      FROM TB_LEDGERS
+                                      WHERE CURRENCY = '{fiat_code}'
+                                          AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
+                                      UNION ALL
+                                      SELECT 
+                                          -SUM(FEE) AS AMNT
+                                      FROM TB_LEDGERS
+                                      WHERE CURRENCY = '{fiat_code}'
+                                          AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
+                                  )";
+            return query;
         }
 
-        private void TextBoxUntilDate_KeyUp(object sender, KeyboardEventArgs e)
-        {
-            SetUntilDate();
-            txtUntilDate.Foreground = Brushes.White;
-        }
-
-        private void SetUntilDate()
-        {
-            untilDate = txtUntilDate.Text;
-        }
-
-        private async void ButtonPrint_Click(object sender, RoutedEventArgs e)
+        private async void BtnPrint_Click(object sender, RoutedEventArgs e)
         {
             if (!dgBalances.HasItems)
             {
@@ -481,77 +544,9 @@ namespace ProjectCryptoGains
             );
         }
 
-        private static (decimal xInFiat, string sqlCommand, string conversionSource) CreateCryptoBalancesInsert(string currency, string currency_code, string untilDate, bool? convertToFiat, FbConnection connection)
+        private void BtnHelp_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                decimal xInFiat = 0.00m;
-                string conversionSource = "";
-
-                if (convertToFiat == true)
-                {
-                    var (fiatAmount, source) = ConvertXToFiat(currency_code, ConvertStringToIsoDate(untilDate), connection);
-                    xInFiat = fiatAmount;
-                    conversionSource = source;
-                }
-
-                string sqlCommand = $@"INSERT INTO TB_BALANCES_S (CURRENCY, AMOUNT, AMOUNT_FIAT)
-                                           SELECT 
-                                               CURRENCY, 
-                                               AMOUNT, 
-                                               AMOUNT_FIAT 
-                                           FROM
-                                               (
-                                                   SELECT 
-                                                       '{currency}' AS CURRENCY,
-                                                       ROUND(SUM(AMNT), 10) AS AMOUNT,
-                                                       ROUND({xInFiat} * SUM(AMNT), 2) AS AMOUNT_FIAT
-                                                   FROM (
-                                                       SELECT 
-                                                           SUM(AMOUNT) AS AMNT
-                                                       FROM TB_LEDGERS_S
-                                                       WHERE CURRENCY = '{currency}'
-                                                           AND TYPE NOT IN ('WITHDRAWAL', 'DEPOSIT')
-                                                           AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
-                                                       UNION ALL
-                                                       SELECT 
-                                                           -SUM(FEE) AS AMNT
-                                                       FROM TB_LEDGERS_S
-                                                       WHERE CURRENCY = '{currency}'
-                                                           AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
-                                                   )
-                                               )
-                                           WHERE CAST(AMOUNT AS REAL) > 0";
-
-                return (xInFiat, sqlCommand, conversionSource);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("CreateCryptoBalancesInsert failed", ex);
-            }
-        }
-
-        private static string CreateFiatBalancesInsert(string fiat_code, string untilDate)
-        {
-            string query = $@"INSERT INTO TB_BALANCES_S (CURRENCY, AMOUNT, AMOUNT_FIAT)
-                                  SELECT 
-                                      '{fiat_code}' AS CURRENCY,
-                                      ROUND(SUM(AMNT), 10) AS AMOUNT,
-                                      ROUND(SUM(AMNT), 2) AS AMOUNT_FIAT
-                                  FROM (
-                                      SELECT 
-                                          SUM(AMOUNT) AS AMNT
-                                      FROM TB_LEDGERS_S
-                                      WHERE CURRENCY = '{fiat_code}'
-                                          AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
-                                      UNION ALL
-                                      SELECT 
-                                          -SUM(FEE) AS AMNT
-                                      FROM TB_LEDGERS_S
-                                      WHERE CURRENCY = '{fiat_code}'
-                                          AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
-                                  )";
-            return query;
+            OpenHelp("balances_help.html");
         }
     }
 }

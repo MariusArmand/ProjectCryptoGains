@@ -16,16 +16,25 @@ namespace ProjectCryptoGains
             public required string Asset { get; set; }
         }
 
+        public class ExchangeRatesModel
+        {
+            public required int Row_number { get; set; }
+            public required DateTime Date { get; set; }
+            public required string Currency { get; set; }
+            public required string Fiat_currency { get; set; }
+            public required decimal Exchange_rate { get; set; }
+        }
+
         public class AvgBuyPriceModel
         {
-            public required int RowNumber { get; set; }
+            public required int Row_number { get; set; }
             public required string Currency { get; set; }
             public required decimal Amount_fiat { get; set; }
         }
 
         public class BalancesModel
         {
-            public required int RowNumber { get; set; }
+            public required int Row_number { get; set; }
             public required string Currency { get; set; }
             public required decimal Amount { get; set; }
             public required decimal Amount_fiat { get; set; }
@@ -33,7 +42,7 @@ namespace ProjectCryptoGains
 
         public class GainsModel
         {
-            public required int RowNumber { get; set; }
+            public required int Row_number { get; set; }
             public required string Refid { get; set; }
             public required DateTime Date { get; set; }
             public required string Type { get; set; }
@@ -60,14 +69,14 @@ namespace ProjectCryptoGains
 
         public class GainsSummaryModel
         {
-            public required int RowNumber { get; set; }
+            public required int Row_number { get; set; }
             public required string Currency { get; set; }
             public required decimal Gain { get; set; }
         }
 
         public class LedgersKrakenModel
         {
-            public required int RowNumber { get; set; }
+            public required int Row_number { get; set; }
             public required string Txid { get; set; }
             public required string Refid { get; set; }
             public required DateTime Time { get; set; }
@@ -83,7 +92,7 @@ namespace ProjectCryptoGains
 
         public class LedgersManualModel
         {
-            public required int RowNumber { get; set; }
+            public required int Row_number { get; set; }
             public required string Refid { get; set; }
             public required DateTime Date { get; set; }
             public required string Type { get; set; }
@@ -98,7 +107,7 @@ namespace ProjectCryptoGains
 
         public class LedgersModel
         {
-            public required int RowNumber { get; set; }
+            public required int Row_number { get; set; }
             public required string Refid { get; set; }
             public required DateTime Date { get; set; }
             public required string Type { get; set; }
@@ -113,7 +122,7 @@ namespace ProjectCryptoGains
 
         public class RewardsModel
         {
-            public required int RowNumber { get; set; }
+            public required int Row_number { get; set; }
             public required string Refid { get; set; }
             public required DateTime Date { get; set; }
             public required string Type { get; set; }
@@ -129,7 +138,7 @@ namespace ProjectCryptoGains
 
         public class RewardsSummaryModel
         {
-            public required int RowNumber { get; set; }
+            public required int Row_number { get; set; }
             public required string Currency { get; set; }
             public required decimal Amount { get; set; }
             public required decimal Amount_fiat { get; set; }
@@ -141,7 +150,7 @@ namespace ProjectCryptoGains
 
         public class MetricsRewardsSummaryModel
         {
-            public required int RowNumber { get; set; }
+            public required int Row_number { get; set; }
             public required string Currency { get; set; }
             public required decimal Amount { get; set; }
             public required decimal Amount_fiat { get; set; }
@@ -149,7 +158,7 @@ namespace ProjectCryptoGains
 
         public class TradesModel
         {
-            public required int RowNumber { get; set; }
+            public required int Row_number { get; set; }
             public required string Refid { get; set; }
             public required DateTime Date { get; set; }
             public required string Type { get; set; }

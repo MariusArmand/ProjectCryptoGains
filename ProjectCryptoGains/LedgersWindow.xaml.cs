@@ -44,11 +44,6 @@ namespace ProjectCryptoGains
             BindGrid();
         }
 
-        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
-        {
-            OpenHelp("ledgers_help.html");
-        }
-
         private void BlockUI()
         {
             btnRefresh.IsEnabled = false;
@@ -100,7 +95,7 @@ namespace ProjectCryptoGains
                                                    SOURCE,
                                                    TARGET,
                                                    NOTES
-                                               FROM TB_LEDGERS_S
+                                               FROM TB_LEDGERS
                                                WHERE ""DATE"" BETWEEN @FROM_DATE AND @TO_DATE
                                                ORDER BY ""DATE"", AMOUNT ASC";
 
@@ -117,7 +112,7 @@ namespace ProjectCryptoGains
 
                         LedgersData.Add(new LedgersModel
                         {
-                            RowNumber = dbLineNumber,
+                            Row_number = dbLineNumber,
                             Refid = reader.GetStringOrEmpty(0),
                             Date = reader.GetDateTime(1),
                             Type = reader.GetStringOrEmpty(2),
@@ -139,6 +134,67 @@ namespace ProjectCryptoGains
         private void UnbindGrid()
         {
             dgLedgers.ItemsSource = null;
+        }
+
+        private void TxtFromDate_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (txtFromDate.Text == "YYYY-MM-DD")
+            {
+                txtFromDate.Text = string.Empty;
+            }
+        }
+
+        private void TxtFromDate_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtFromDate.Text))
+            {
+                txtFromDate.Text = "YYYY-MM-DD";
+                txtFromDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
+            }
+        }
+
+        private void TxtFromDate_KeyUp(object sender, KeyboardEventArgs e)
+        {
+            SetFromDate();
+            txtFromDate.Foreground = Brushes.White;
+        }
+
+        private void SetFromDate()
+        {
+            fromDate = txtFromDate.Text;
+        }
+
+        private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (txtToDate.Text == "YYYY-MM-DD")
+            {
+                txtToDate.Text = string.Empty;
+            }
+        }
+
+        private void TxtToDate_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtToDate.Text))
+            {
+                txtToDate.Text = "YYYY-MM-DD";
+                txtToDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
+            }
+        }
+
+        private void TxtToDate_KeyUp(object sender, KeyboardEventArgs e)
+        {
+            SetToDate();
+            txtToDate.Foreground = Brushes.White;
+        }
+
+        private void SetToDate()
+        {
+            toDate = txtToDate.Text;
+        }
+
+        private void BtnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            Refresh();
         }
 
         private async void Refresh()
@@ -218,68 +274,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (txtToDate.Text == "YYYY-MM-DD")
-            {
-                txtToDate.Text = string.Empty;
-            }
-        }
-
-        private void TxtToDate_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(txtToDate.Text))
-            {
-                txtToDate.Text = "YYYY-MM-DD";
-                txtToDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
-            }
-        }
-
-        private void TxtToDate_KeyUp(object sender, KeyboardEventArgs e)
-        {
-            SetToDate();
-            txtToDate.Foreground = Brushes.White;
-        }
-
-        private void SetToDate()
-        {
-            toDate = txtToDate.Text;
-        }
-
-        private void TxtFromDate_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (txtFromDate.Text == "YYYY-MM-DD")
-            {
-                txtFromDate.Text = string.Empty;
-            }
-        }
-
-        private void TxtFromDate_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(txtFromDate.Text))
-            {
-                txtFromDate.Text = "YYYY-MM-DD";
-                txtFromDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
-            }
-        }
-
-        private void TxtFromDate_KeyUp(object sender, KeyboardEventArgs e)
-        {
-            SetFromDate();
-            txtFromDate.Foreground = Brushes.White;
-        }
-
-        private void SetFromDate()
-        {
-            fromDate = txtFromDate.Text;
-        }
-
-        private void ButtonRefresh_Click(object sender, RoutedEventArgs e)
-        {
-            Refresh();
-        }
-
-        private async void ButtonPrint_Click(object sender, RoutedEventArgs e)
+        private async void BtnPrint_Click(object sender, RoutedEventArgs e)
         {
             if (!dgLedgers.HasItems)
             {
@@ -342,6 +337,11 @@ namespace ProjectCryptoGains
                 repeatHeadersPerItem: true,
                 itemsPerPage: 15
             );
+        }
+
+        private void BtnHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("ledgers_help.html");
         }
     }
 }

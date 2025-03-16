@@ -40,11 +40,6 @@ namespace ProjectCryptoGains
             BindGrid();
         }
 
-        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
-        {
-            OpenHelp("metrics_help.html");
-        }
-
         private void BlockUI()
         {
             btnRefresh.IsEnabled = false;
@@ -81,7 +76,7 @@ namespace ProjectCryptoGains
 
                     // Total Invested
                     using DbCommand selectCommand = connection.CreateCommand();
-                    selectCommand.CommandText = @"SELECT ""VALUE"" FROM TB_METRICS_S
+                    selectCommand.CommandText = @"SELECT ""VALUE"" FROM TB_METRICS
 											      WHERE METRIC = 'TOTAL_INVESTED'";
 
                     using (DbDataReader reader = selectCommand.ExecuteReader())
@@ -95,7 +90,7 @@ namespace ProjectCryptoGains
                     }
 
                     // Last Invested
-                    selectCommand.CommandText = @"SELECT ""VALUE"" FROM TB_METRICS_S
+                    selectCommand.CommandText = @"SELECT ""VALUE"" FROM TB_METRICS
 											      WHERE METRIC = 'LAST_INVESTED'";
 
                     using (DbDataReader reader = selectCommand.ExecuteReader())
@@ -110,7 +105,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "There was a problem getting invest metrics." + Environment.NewLine + ex.Message;
+                    lastError = "There was a problem getting invest metrics" + Environment.NewLine + ex.Message;
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
 
@@ -159,7 +154,7 @@ namespace ProjectCryptoGains
                     ObservableCollection<AvgBuyPriceModel> AvgBuyPriceData = [];
 
                     using DbCommand selectCommand = connection.CreateCommand();
-                    selectCommand.CommandText = "SELECT CURRENCY, COALESCE(AMOUNT_FIAT, 0.00) FROM TB_AVG_BUY_PRICE_S";
+                    selectCommand.CommandText = "SELECT CURRENCY, COALESCE(AMOUNT_FIAT, 0.00) FROM TB_AVG_BUY_PRICE";
 
                     using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
@@ -171,7 +166,7 @@ namespace ProjectCryptoGains
                             amnt_fiat = reader.GetDecimalOrDefault(1);
                             AvgBuyPriceData.Add(new AvgBuyPriceModel
                             {
-                                RowNumber = dbLineNumber,
+                                Row_number = dbLineNumber,
                                 Currency = reader.GetStringOrEmpty(0),
                                 Amount_fiat = amnt_fiat
                             });
@@ -182,7 +177,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "There was a problem getting average buy prices." + Environment.NewLine + ex.Message;
+                    lastError = "There was a problem getting average buy prices" + Environment.NewLine + ex.Message;
 
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
@@ -198,7 +193,7 @@ namespace ProjectCryptoGains
                     ObservableCollection<MetricsRewardsSummaryModel> MetricsRewardsSummaryData = [];
 
                     using DbCommand selectCommand = connection.CreateCommand();
-                    selectCommand.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_REWARDS_SUMMARY_S where AMOUNT > 0";
+                    selectCommand.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_REWARDS_SUMMARY where AMOUNT > 0";
 
                     using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
@@ -211,7 +206,7 @@ namespace ProjectCryptoGains
                             amnt_fiat = reader.GetDecimalOrDefault(2);
                             MetricsRewardsSummaryData.Add(new MetricsRewardsSummaryModel
                             {
-                                RowNumber = dbLineNumber,
+                                Row_number = dbLineNumber,
                                 Currency = reader.GetStringOrEmpty(0),
                                 Amount = reader.GetDecimalOrDefault(1),
                                 Amount_fiat = amnt_fiat
@@ -225,7 +220,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "There was a problem getting rewards." + Environment.NewLine + ex.Message;
+                    lastError = "There was a problem getting rewards" + Environment.NewLine + ex.Message;
 
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
@@ -242,6 +237,12 @@ namespace ProjectCryptoGains
             lblTotalAmountFiatData.Content = "0.00 " + fiatCurrency;
             dgAvgBuyPrice.ItemsSource = null;
             dgRewardsSummary.ItemsSource = null;
+        }
+
+        private void BtnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            lastWarning = null;
+            Refresh();
         }
 
         private async void Refresh()
@@ -320,27 +321,27 @@ namespace ProjectCryptoGains
                         await Task.Run(() =>
                         {
                             // Truncate standard DB table
-                            deleteCommand.CommandText = "DELETE FROM TB_METRICS_S";
+                            deleteCommand.CommandText = "DELETE FROM TB_METRICS";
                             deleteCommand.ExecuteNonQuery();
 
                             using DbCommand insertCommand = connection.CreateCommand();
                             // Total Invested
-                            insertCommand.CommandText = $@"INSERT INTO TB_METRICS_S (METRIC, ""VALUE"")
+                            insertCommand.CommandText = $@"INSERT INTO TB_METRICS (METRIC, ""VALUE"")
                                                            SELECT 
                                                                'TOTAL_INVESTED' AS METRIC,
                                                                ROUND(SUM(AMOUNT), 2) AS ""VALUE""
-                                                           FROM TB_LEDGERS_S
+                                                           FROM TB_LEDGERS
                                                            WHERE CURRENCY = '{fiatCurrency}'
                                                                AND TYPE = 'DEPOSIT'";
 
                             insertCommand.ExecuteNonQuery();
 
                             // Last Invested
-                            insertCommand.CommandText = $@"INSERT INTO TB_METRICS_S (METRIC, ""VALUE"")
+                            insertCommand.CommandText = $@"INSERT INTO TB_METRICS (METRIC, ""VALUE"")
 													       SELECT 
                                                                'LAST_INVESTED' AS METRIC,
 													           SUBSTRING(CAST(MAX(""DATE"") AS VARCHAR(50)) FROM 1 FOR 19) AS ""VALUE""
-													       FROM TB_LEDGERS_S
+													       FROM TB_LEDGERS
                                                            WHERE CURRENCY = '{fiatCurrency}'
                                                                AND TYPE = 'DEPOSIT'";
 
@@ -361,12 +362,12 @@ namespace ProjectCryptoGains
                         await Task.Run(() =>
                         {
                             // Truncate standard DB table
-                            deleteCommand.CommandText = "DELETE FROM TB_AVG_BUY_PRICE_S";
+                            deleteCommand.CommandText = "DELETE FROM TB_AVG_BUY_PRICE";
                             deleteCommand.ExecuteNonQuery();
 
                             // Insert into standard DB table for each asset
                             using DbCommand selectCommand = connection.CreateCommand();
-                            selectCommand.CommandText = $"SELECT CODE, ASSET FROM TB_ASSET_CATALOG_S WHERE CODE != '{fiatCurrency}' ORDER BY CODE, ASSET";
+                            selectCommand.CommandText = $"SELECT CODE, ASSET FROM TB_ASSET_CATALOG WHERE CODE != '{fiatCurrency}' ORDER BY CODE, ASSET";
 
                             using (DbDataReader reader = selectCommand.ExecuteReader())
                             {
@@ -392,7 +393,7 @@ namespace ProjectCryptoGains
                             try
                             {
                                 // Truncate standard DB table
-                                deleteCommand.CommandText = "DELETE FROM TB_REWARDS_SUMMARY_S";
+                                deleteCommand.CommandText = "DELETE FROM TB_REWARDS_SUMMARY";
                                 deleteCommand.ExecuteNonQuery();
 
                                 // Insert into standard DB table
@@ -401,9 +402,9 @@ namespace ProjectCryptoGains
                                                                   catalog.CODE,
                                                                   catalog.ASSET
                                                               FROM
-                                                                  (SELECT CODE, ASSET FROM TB_ASSET_CATALOG_S) catalog
+                                                                  (SELECT CODE, ASSET FROM TB_ASSET_CATALOG) catalog
                                                                   INNER JOIN
-                                                                      (SELECT DISTINCT CURRENCY FROM TB_LEDGERS_S) ledgers
+                                                                      (SELECT DISTINCT CURRENCY FROM TB_LEDGERS) ledgers
                                                                       ON catalog.ASSET = ledgers.CURRENCY
                                                               ORDER BY CODE, ASSET";
 
@@ -525,7 +526,7 @@ namespace ProjectCryptoGains
 
         private static string CreateAvgBuyPriceInsert(string currency)
         {
-            return $@"INSERT INTO TB_AVG_BUY_PRICE_S (CURRENCY, AMOUNT_FIAT)
+            return $@"INSERT INTO TB_AVG_BUY_PRICE (CURRENCY, AMOUNT_FIAT)
                           SELECT 
                               CURRENCY,
                               ROUND(AMOUNT_FIAT, 2) AS AMOUNT_FIAT
@@ -537,14 +538,14 @@ namespace ProjectCryptoGains
                                   SELECT 
                                       BASE_AMOUNT AS AMOUNT,
                                       BASE_UNIT_PRICE_FIAT AS UNIT_PRICE_FIAT
-                                  FROM TB_TRADES_S
+                                  FROM TB_TRADES
                                   WHERE TYPE = 'BUY'
                                       AND BASE_CURRENCY = '{currency}'
                                   UNION ALL
                                   SELECT 
                                       QUOTE_AMOUNT AS AMOUNT,
                                       QUOTE_UNIT_PRICE_FIAT AS UNIT_PRICE_FIAT
-                                  FROM TB_TRADES_S
+                                  FROM TB_TRADES
                                   WHERE TYPE = 'SELL'
                                       AND QUOTE_CURRENCY = '{currency}'
                               )
@@ -560,11 +561,11 @@ namespace ProjectCryptoGains
                 decimal xInFiat = fiatAmount;
                 string conversionSource = source;
 
-                string sqlCommand = $@"INSERT INTO TB_REWARDS_SUMMARY_S (CURRENCY, AMOUNT, AMOUNT_FIAT)
+                string sqlCommand = $@"INSERT INTO TB_REWARDS_SUMMARY (CURRENCY, AMOUNT, AMOUNT_FIAT)
                                        WITH cas AS (
                                            SELECT 
                                                ROUND(SUM(AMOUNT) - SUM(FEE), 10) AS REWARD_SUM
-                                           FROM TB_LEDGERS_S
+                                           FROM TB_LEDGERS
                                            WHERE TYPE IN ('EARN', 'STAKING', 'AIRDROP')
                                                AND CURRENCY IN ('{currency}')
                                        )
@@ -582,10 +583,9 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void ButtonRefresh_Click(object sender, RoutedEventArgs e)
+        private void BtnHelp_Click(object sender, RoutedEventArgs e)
         {
-            lastWarning = null;
-            Refresh();
+            OpenHelp("metrics_help.html");
         }
     }
 }

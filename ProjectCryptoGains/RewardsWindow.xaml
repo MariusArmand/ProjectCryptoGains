@@ -59,11 +59,11 @@
                     <TextBox x:Name="txtFromDate" Width="125" Margin="75,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" GotFocus="TxtFromDate_GotFocus" KeyUp="TxtFromDate_KeyUp" LostFocus="TxtFromDate_LostFocus" Text="YYYY-MM-DD" />
                     <Label x:Name="lblToDate" Width="125" Margin="25,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="To" />
                     <TextBox x:Name="txtToDate" Width="125" Margin="75,60,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" GotFocus="TxtToDate_GotFocus" KeyUp="TxtToDate_KeyUp" LostFocus="TxtToDate_LostFocus" Text="YYYY-MM-DD" />
-                    <Button x:Name="btnRefresh" Width="125" Height="40" Margin="225,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonRefresh_Click" Content="Refresh" />
-                    <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnPrint" Width="40" Height="40" Margin="375,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonPrint_Click">
+                    <Button x:Name="btnRefresh" Width="125" Height="40" Margin="225,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="BtnRefresh_Click" Content="Refresh" />
+                    <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnPrint" Width="40" Height="40" Margin="375,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="BtnPrint_Click">
                         <Image x:Name="imgBtnPrint" Width="32" Height="32" Source="Resources/printer.png" />
                     </Button>
-                    <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnHelp" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Click="ButtonHelp_Click">
+                    <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnHelp" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Click="BtnHelp_Click">
                         <Image x:Name="imgBtnHelp" Width="32" Height="32" Source="Resources/help.png" />
                     </Button>
                     <CheckBox x:Name="chkRefreshLedgers" Width="150" Margin="30,100,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh ledgers" />
@@ -74,7 +74,7 @@
                             </Style>
                         </DataGrid.Resources>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding RowNumber}" Header="ROW__NR" />
+                            <DataGridTextColumn Binding="{Binding Row_number}" Header="ROW__NR" />
                             <DataGridTextColumn Binding="{Binding Refid}" Header="REFID" />
                             <DataGridTextColumn Binding="{Binding Date, StringFormat=yyyy-MM-dd HH:mm:ss}" Header="DATE" />
                             <DataGridTextColumn Binding="{Binding Type}" Header="TYPE" />
@@ -100,7 +100,7 @@
                             </Style>
                         </DataGrid.Resources>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding RowNumber}" Header="ROW__NR" />
+                            <DataGridTextColumn Binding="{Binding Row_number}" Header="ROW__NR" />
                             <DataGridTextColumn Binding="{Binding Currency}" Header="CURRENCY" />
                             <DataGridTextColumn Binding="{Binding Amount, StringFormat='0.0000000000'}" ElementStyle="{StaticResource CellRightAlign}" Header="AMOUNT" />
                             <DataGridTextColumn Binding="{Binding Amount_fiat, StringFormat='0.00'}" ElementStyle="{StaticResource CellRightAlign}" Header="AMOUNT__FIAT" />
@@ -110,7 +110,7 @@
                             <DataGridTextColumn Binding="{Binding Amount_sell_break_even, StringFormat='0.0000000000'}" ElementStyle="{StaticResource CellRightAlign}" Header="AMOUNT__SELL__BREAK__EVEN" />
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnPrintSummary" Width="40" Height="40" Margin="900,30,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonPrintSummary_Click">
+                    <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnPrintSummary" Width="40" Height="40" Margin="900,30,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="BtnPrintSummary_Click">
                         <Image x:Name="imgBtnPrintSummary" Width="32" Height="32" Source="Resources/printer.png" />
                     </Button>
                     <Label x:Name="lblTotalAmountFiat" Width="140" Margin="25,240,0,20" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total rewards converted" />

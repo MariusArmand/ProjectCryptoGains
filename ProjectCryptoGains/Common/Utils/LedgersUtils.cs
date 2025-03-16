@@ -123,12 +123,12 @@ namespace ProjectCryptoGains.Common.Utils
                     using DbCommand deleteCommand = connection.CreateCommand();
 
                     // Truncate db table
-                    deleteCommand.CommandText = "DELETE FROM TB_LEDGERS_S";
+                    deleteCommand.CommandText = "DELETE FROM TB_LEDGERS";
                     deleteCommand.ExecuteNonQuery();
 
                     // Insert into db table
                     using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText = $@"INSERT INTO TB_LEDGERS_S (REFID, ""DATE"", TYPE_SOURCE, TYPE, EXCHANGE, AMOUNT, CURRENCY, FEE, SOURCE, TARGET, NOTES)
+                    insertCommand.CommandText = $@"INSERT INTO TB_LEDGERS (REFID, ""DATE"", TYPE_SOURCE, TYPE, EXCHANGE, AMOUNT, CURRENCY, FEE, SOURCE, TARGET, NOTES)
                                                    SELECT 
                                                        REFID AS REFID,
                                                        ""TIME"" AS ""DATE"",
@@ -165,8 +165,8 @@ namespace ProjectCryptoGains.Common.Utils
                                                            WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'From Kraken to Bank'
                                                            ELSE TRIM('')
                                                        END AS NOTES
-                                                   FROM TB_LEDGERS_KRAKEN_S ledgers_kraken
-                                                   INNER JOIN TB_ASSET_CODES_KRAKEN_S assets_kraken
+                                                   FROM TB_LEDGERS_KRAKEN ledgers_kraken
+                                                   INNER JOIN TB_ASSET_CODES_KRAKEN assets_kraken
                                                        ON ledgers_kraken.ASSET = assets_kraken.CODE
                                                    WHERE REFID != ''
                                                        AND NOT (UPPER(TYPE) = 'TRANSFER' AND UPPER(SUBTYPE) IN ('STAKINGFROMSPOT', 'SPOTTOSTAKING', 'SPOTFROMSTAKING', 'STAKINGTOSPOT', 'SPOTFROMFUTURES'))
@@ -184,7 +184,7 @@ namespace ProjectCryptoGains.Common.Utils
                                                        SOURCE,
                                                        TARGET,
                                                        NOTES
-                                                   FROM TB_LEDGERS_MANUAL_S";
+                                                   FROM TB_LEDGERS_MANUAL";
 
                     insertCommand.ExecuteNonQuery();
                 }

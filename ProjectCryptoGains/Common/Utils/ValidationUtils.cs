@@ -14,8 +14,8 @@ namespace ProjectCryptoGains.Common.Utils
 
             using DbCommand selectCommand = connection.CreateCommand();
             selectCommand.CommandText = @"SELECT DISTINCT ledgers_kraken.ASSET
-                                          FROM TB_LEDGERS_KRAKEN_S ledgers_kraken
-                                              LEFT OUTER JOIN TB_ASSET_CODES_KRAKEN_S assets_kraken
+                                          FROM TB_LEDGERS_KRAKEN ledgers_kraken
+                                              LEFT OUTER JOIN TB_ASSET_CODES_KRAKEN assets_kraken
                                                   ON ledgers_kraken.ASSET = assets_kraken.CODE
                                           WHERE assets_kraken.ASSET IS NULL";
 
@@ -39,8 +39,8 @@ namespace ProjectCryptoGains.Common.Utils
 
             using DbCommand selectCommand = connection.CreateCommand();
             selectCommand.CommandText = @"SELECT assets_kraken.CODE 
-                                          FROM TB_ASSET_CODES_KRAKEN_S assets_kraken
-									          LEFT OUTER JOIN TB_ASSET_CATALOG_S catalog
+                                          FROM TB_ASSET_CODES_KRAKEN assets_kraken
+									          LEFT OUTER JOIN TB_ASSET_CATALOG catalog
 									              ON assets_kraken.ASSET = catalog.ASSET
 									      WHERE catalog.CODE IS NULL";
 
@@ -64,8 +64,8 @@ namespace ProjectCryptoGains.Common.Utils
 
             using DbCommand selectCommand = connection.CreateCommand();
             selectCommand.CommandText = @"SELECT DISTINCT ledgers_manual.ASSET 
-                                          FROM TB_LEDGERS_MANUAL_S ledgers_manual
-                                              LEFT OUTER JOIN TB_ASSET_CATALOG_S catalog
+                                          FROM TB_LEDGERS_MANUAL ledgers_manual
+                                              LEFT OUTER JOIN TB_ASSET_CATALOG catalog
                                                   ON ledgers_manual.ASSET = catalog.ASSET
                                           WHERE catalog.CODE IS NULL";
 
@@ -93,13 +93,13 @@ namespace ProjectCryptoGains.Common.Utils
             {
                 case LedgerSource.Kraken:
                     selectCommand.CommandText = @"SELECT REFID, TYPE
-                                                  FROM TB_LEDGERS_KRAKEN_S
+                                                  FROM TB_LEDGERS_KRAKEN
                                                   WHERE UPPER(TYPE) NOT IN ('DEPOSIT', 'WITHDRAWAL', 'TRADE', 'SPEND', 'RECEIVE', 'STAKING', 'EARN', 'TRANSFER')";
                     break;
 
                 case LedgerSource.Manual:
                     selectCommand.CommandText = @"SELECT REFID, TYPE
-                                                  FROM TB_LEDGERS_MANUAL_S
+                                                  FROM TB_LEDGERS_MANUAL
                                                   WHERE TYPE NOT IN ('DEPOSIT', 'WITHDRAWAL', 'TRADE', 'STAKING', 'AIRDROP')";
                     break;
 

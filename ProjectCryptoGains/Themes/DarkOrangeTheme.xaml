@@ -511,7 +511,8 @@
                                            PopupAnimation="None">
                                             <Border Background="{TemplateBinding Background}" 
                                                 BorderBrush="{TemplateBinding BorderBrush}" 
-                                                BorderThickness="{TemplateBinding BorderThickness}">
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                Padding="0,0,0,5">
                                                 <ScrollViewer Style="{DynamicResource {ComponentResourceKey ResourceId=MenuScrollViewer, TypeInTargetAssembly={x:Type FrameworkElement}}}">
                                                     <ItemsPresenter/>
                                                 </ScrollViewer>
@@ -551,7 +552,7 @@
                         Background="{TemplateBinding Background}" 
                         BorderBrush="{TemplateBinding BorderBrush}" 
                         BorderThickness="{TemplateBinding BorderThickness}" 
-                        Padding="30,5,20,0">
+                        Padding="30,3,20,3">
                         <!-- Adjusted padding for more space on sides -->
                         <Grid>
                             <ContentPresenter Margin="3,3,6,3" ContentSource="Header" RecognizesAccessKey="True"/>

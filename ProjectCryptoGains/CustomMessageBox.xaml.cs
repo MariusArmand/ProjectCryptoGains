@@ -10,7 +10,9 @@ namespace ProjectCryptoGains
         public string Message { get; set; }
         public string TitleBarCaption { get; set; }
         public ImageSource ImageSource { get; set; }
-        public Visibility CancelButtonVisibility { get; set; }
+        public string btnOkContent { get; set; }
+        public string btnCancelContent { get; set; }
+        public Visibility btnCancelVisibility { get; set; }
 
         public CustomMessageBox(string message, string caption, MessageBoxButton buttons, MessageBoxImage icon, TextAlignment textAlignment = TextAlignment.Center)
         {
@@ -32,14 +34,26 @@ namespace ProjectCryptoGains
 
             txtMessage.TextAlignment = textAlignment;
 
-            // Set visibility of Cancel button
-            if (buttons == MessageBoxButton.OKCancel)
+            // Handle buttons
+            switch (buttons)
             {
-                CancelButtonVisibility = Visibility.Visible;
-            }
-            else
-            {
-                CancelButtonVisibility = Visibility.Collapsed;
+                case MessageBoxButton.OKCancel:
+                    btnOkContent = "OK";
+                    btnCancelContent = "Cancel";
+                    btnCancelVisibility = Visibility.Visible;
+                    break;
+
+                case MessageBoxButton.YesNo:
+                    btnOkContent = "Yes";
+                    btnCancelContent = "No";
+                    btnCancelVisibility = Visibility.Visible;
+                    break;
+
+                default:
+                    btnOkContent = "OK";
+                    btnCancelContent = "Cancel";
+                    btnCancelVisibility = Visibility.Collapsed;
+                    break;
             }
         }
 
@@ -49,6 +63,7 @@ namespace ProjectCryptoGains
 
             switch (icon)
             {
+                case MessageBoxImage.Question:
                 case MessageBoxImage.Warning:
                     iconPath = "pack://application:,,,/ProjectCryptoGains;component/Resources/warning.png";
                     break;
@@ -82,13 +97,17 @@ namespace ProjectCryptoGains
                 customMessageBox.Owner.Activate();
             }
 
-            if (customMessageBox.DialogResult == true)
+            // Return appropriate MessageBoxResult based on button type
+            switch (buttons)
             {
-                return MessageBoxResult.OK;
-            }
-            else
-            {
-                return MessageBoxResult.Cancel;
+                case MessageBoxButton.OKCancel:
+                    return customMessageBox.DialogResult == true ? MessageBoxResult.OK : MessageBoxResult.Cancel;
+
+                case MessageBoxButton.YesNo:
+                    return customMessageBox.DialogResult == true ? MessageBoxResult.Yes : MessageBoxResult.No;
+
+                default:
+                    return customMessageBox.DialogResult == true ? MessageBoxResult.OK : MessageBoxResult.Cancel;
             }
         }
 
@@ -98,12 +117,12 @@ namespace ProjectCryptoGains
             Close();
         }
 
-        private void OnOKClick(object sender, RoutedEventArgs e)
+        private void BtnOk_Click(object sender, RoutedEventArgs e)
         {
             SetDialogResultAndClose(true);
         }
 
-        private void OnCancelClick(object sender, RoutedEventArgs e)
+        private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
             SetDialogResultAndClose(false);
         }

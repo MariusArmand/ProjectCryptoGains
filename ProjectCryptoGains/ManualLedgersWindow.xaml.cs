@@ -39,11 +39,6 @@ namespace ProjectCryptoGains
             BindGrid();
         }
 
-        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
-        {
-            OpenHelp("manual_ledgers_help.html");
-        }
-
         private void BlockUI()
         {
             btnBrowse.IsEnabled = false;
@@ -80,7 +75,7 @@ namespace ProjectCryptoGains
                 }
 
                 using DbCommand selectCommand = connection.CreateCommand();
-                selectCommand.CommandText = "SELECT * FROM TB_LEDGERS_MANUAL_S";
+                selectCommand.CommandText = "SELECT * FROM TB_LEDGERS_MANUAL";
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
                 {
@@ -91,7 +86,7 @@ namespace ProjectCryptoGains
 
                         LedgersManualData.Add(new LedgersManualModel
                         {
-                            RowNumber = dbLineNumber,
+                            Row_number = dbLineNumber,
                             Refid = reader.GetStringOrEmpty(0),
                             Date = reader.GetDateTime(1),
                             Type = reader.GetStringOrEmpty(2),
@@ -110,7 +105,18 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void ButtonUpload_Click(object sender, RoutedEventArgs e)
+        private void BtnBrowse_Click(object sender, RoutedEventArgs e)
+        {
+            FileDialog(txtFileName);
+            filePath = txtFileName.Text;
+        }
+
+        private void BtnHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("manual_ledgers_help.html");
+        }
+
+        private void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
             string? lastWarning = null;
             string? lastError = null;
@@ -130,6 +136,7 @@ namespace ProjectCryptoGains
                     lastError = "The file does not exist.";
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
+                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load unsuccessful");
 
                     // Exit function early
                     return;
@@ -143,7 +150,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "File could not be opened." + Environment.NewLine + ex.Message;
+                    lastError = "File could not be opened" + Environment.NewLine + ex.Message;
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load unsuccessful");
@@ -174,10 +181,9 @@ namespace ProjectCryptoGains
                                 lastError = "Unexpected inputfile header.";
                                 MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
-                                ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load unsuccessful");
 
-                                // Exit function early
-                                return;
+                                // Exit loop early
+                                break;
                             }
 
                             // Add the column names to the DataTable
@@ -197,36 +203,34 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "File could not be parsed." + Environment.NewLine + ex.Message;
+                    lastError = "File could not be parsed" + Environment.NewLine + ex.Message;
                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
-                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load unsuccessful");
-
-                    // Exit function early
-                    return;
                 }
 
-                // Load the db table with LedgersManualData from the csv
-                using (FbConnection connection = new(connectionString))
+                if (lastError == null)
                 {
-                    connection.Open();
+                    // Load the db table with LedgersManualData from the csv
+                    using (FbConnection connection = new(connectionString))
+                    {
+                        connection.Open();
 
-                    using DbCommand deleteCommand = connection.CreateCommand();
+                        using DbCommand deleteCommand = connection.CreateCommand();
 
-                    // Truncate DB table
-                    deleteCommand.CommandText = "DELETE FROM TB_LEDGERS_MANUAL_S";
-                    deleteCommand.ExecuteNonQuery();
+                        // Truncate DB table
+                        deleteCommand.CommandText = "DELETE FROM TB_LEDGERS_MANUAL";
+                        deleteCommand.ExecuteNonQuery();
 
-                    // Initialize the transaction
-                    DbTransaction transaction = connection.BeginTransaction();
+                        // Initialize the transaction
+                        DbTransaction transaction = connection.BeginTransaction();
 
-                    // Counter to keep track of the number of rows inserted
-                    int insertCounter = 0;
+                        // Counter to keep track of the number of rows inserted
+                        int insertCounter = 0;
 
-                    // Create and prepare the command
-                    using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.Transaction = transaction;
-                    insertCommand.CommandText = @"INSERT INTO TB_LEDGERS_MANUAL_S (
+                        // Create and prepare the command
+                        using DbCommand insertCommand = connection.CreateCommand();
+                        insertCommand.Transaction = transaction;
+                        insertCommand.CommandText = @"INSERT INTO TB_LEDGERS_MANUAL (
                                                       REFID,
                                                       ""DATE"",
                                                       TYPE,
@@ -250,111 +254,121 @@ namespace ProjectCryptoGains
                                                       @NOTES
                                                   )";
 
-                    insertCommand.Prepare();
+                        insertCommand.Prepare();
 
-                    // Per row in the DataTable insert a row in the DB table
-                    foreach (DataRow row in dataTable.Rows)
-                    {
-                        insertCommand.Parameters.Clear(); // Reset parameters for the next row
-
-                        string value = "";
-                        string columnName = "";
-                        for (int i = 0; i < dataTable.Columns.Count; i++)
+                        // Per row in the DataTable insert a row in the DB table
+                        foreach (DataRow row in dataTable.Rows)
                         {
-                            columnName = dataTable.Columns[i].ColumnName.Replace(' ', '_').ToUpper();
-                            value = (string)(row.ItemArray[i] ?? "");
-                            if (i != 3 && i != 7 && i != 8 && i != 9 && value == "")
+                            insertCommand.Parameters.Clear(); // Reset parameters for the next row
+
+                            string value = "";
+                            string columnName = "";
+
+                            for (int i = 0; i < dataTable.Columns.Count; i++)
                             {
-                                lastError = "Insert row " + insertCounter + " failed: " + columnName + " cannot be null.";
+                                columnName = dataTable.Columns[i].ColumnName.Replace(' ', '_').ToUpper();
+                                value = (string)(row.ItemArray[i] ?? "");
+
+                                if (i != 3 && i != 7 && i != 8 && i != 9 && value == "")
+                                {
+                                    lastError = "Insert row " + insertCounter + " failed: " + columnName + " cannot be null.";
+                                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
+
+                                    // Exit loop early
+                                    break;
+                                }
+
+                                if (columnName == "DATE" && !IsValidDateFormat(value, "yyyy-MM-dd HH:mm:ss"))
+                                {
+                                    lastError = "Insert row " + insertCounter + " failed: " + columnName + " should be in yyyy-MM-dd HH:mm:ss format.";
+                                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
+
+                                    // Exit loop early
+                                    break;
+                                }
+
+                                if (columnName == "DATE")
+                                {
+                                    AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToIsoDateTime(value));
+                                }
+                                else if (columnName == "AMOUNT" || columnName == "FEE")
+                                {
+                                    AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToDecimal(value));
+                                }
+                                else
+                                {
+                                    AddParameterWithValue(insertCommand, "@" + columnName, value);
+                                }
+                            }
+
+                            if (lastError != null)
+                            {
+                                transaction.Rollback();
+                                break; // Exit loop, but continue to the final logging
+                            }
+
+                            try
+                            {
+                                insertCommand.ExecuteNonQuery();
+                            }
+                            catch (Exception ex)
+                            {
+                                lastError = $"Insert row {insertCounter} failed: {ex.Message}";
                                 MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
                                 transaction.Rollback();
-
-                                // Exit function early
-                                return;
+                                break;
                             }
 
-                            if (columnName == "DATE" && !IsValidDateFormat(value, "yyyy-MM-dd HH:mm:ss"))
-                            {
-                                lastError = "Insert row " + insertCounter + " failed: " + columnName + " should be in yyyy-MM-dd HH:mm:ss format.";
-                                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                                ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
-                                transaction.Rollback();
+                            insertCounter++;
 
-                                // Exit function early
-                                return;
-                            }
-
-                            if (columnName == "DATE")
+                            // If the insertCounter is divisible by 10k, commit the transaction and start a new one
+                            if (insertCounter % 10000 == 0)
                             {
-                                AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToIsoDateTime(value));
-                            }
-                            else if (columnName == "AMOUNT" || columnName == "FEE")
-                            {
-                                AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToDecimal(value));
-                            }
-                            else
-                            {
-                                AddParameterWithValue(insertCommand, "@" + columnName, value);
+                                transaction.Commit();
+                                transaction = connection.BeginTransaction();
+                                insertCommand.Transaction = transaction;
                             }
                         }
 
-                        try
-                        {
-                            insertCommand.ExecuteNonQuery();
-                        }
-                        catch (Exception ex)
-                        {
-                            lastError = $"Insert row {insertCounter} failed: {ex.Message}";
-                            MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                            ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
-                            transaction.Rollback();
-                            return;
-                        }
-
-                        insertCounter++;
-
-                        // If the insertCounter is divisible by 10k, commit the transaction and start a new one
-                        if (insertCounter % 10000 == 0)
+                        // Commit any remaining upserts if no errors occurred and perform checks
+                        if (lastError == null)
                         {
                             transaction.Commit();
-                            transaction = connection.BeginTransaction();
-                            insertCommand.Transaction = transaction;
-                        }
-                    }
 
-                    // Commit any remaining inserts in the final transaction
-                    transaction.Commit();
+                            // Check for missing assets
+                            List<string> missingAssets = MissingAssetsManual(connection);
 
-                    // Check for missing assets
-                    List<string> missingAssets = MissingAssetsManual(connection);
+                            if (missingAssets.Count > 0)
+                            {
+                                lastWarning = "Missing asset(s) detected." + Environment.NewLine + "[Configure => Asset Catalog]";
+                                MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastWarning}");
 
-                    if (missingAssets.Count > 0)
-                    {
-                        lastWarning = "Missing asset(s) detected." + Environment.NewLine + "[Configure => Asset Catalog]";
-                        MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastWarning}");
+                                // Log each missing asset
+                                foreach (string asset in missingAssets)
+                                {
+                                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Missing asset: {asset}");
+                                }
+                            }
 
-                        // Log each missing asset
-                        foreach (string asset in missingAssets)
-                        {
-                            ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Missing asset: {asset}");
-                        }
-                    }
+                            // Check for unsupported ledger types
+                            List<(string RefId, string Type)> unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Manual);
 
-                    // Check for unsupported ledger types
-                    List<(string RefId, string Type)> unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Manual);
+                            if (unsupportedTypes.Count > 0)
+                            {
+                                lastWarning = "Unsupported ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account.";
+                                MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
+                                ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastWarning}");
 
-                    if (unsupportedTypes.Count > 0)
-                    {
-                        lastWarning = "Unsupported ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account.";
-                        MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
-                        ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastWarning}");
-
-                        // Log each unsupported ledger type
-                        foreach ((string RefId, string Type) in unsupportedTypes)
-                        {
-                            ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Unsupported ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                                // Log each unsupported ledger type
+                                foreach ((string RefId, string Type) in unsupportedTypes)
+                                {
+                                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Unsupported ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                                }
+                            }
                         }
                     }
                 }
@@ -381,12 +395,6 @@ namespace ProjectCryptoGains
             {
                 UnblockUI();
             }
-        }
-
-        private void ButtonBrowse_Click(object sender, RoutedEventArgs e)
-        {
-            FileDialog(txtFileName);
-            filePath = txtFileName.Text;
         }
     }
 }

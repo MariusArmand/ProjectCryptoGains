@@ -73,14 +73,14 @@ namespace ProjectCryptoGains.Common.Utils
 
                 using DbCommand selectCommand = connection.CreateCommand();
                 selectCommand.CommandText = $@"SELECT EXCHANGE_RATE
-                                               FROM TB_CONVERT_X_TO_FIAT_A
-                                               WHERE CURRENCY = @CURRENCY
-                                                  AND ""DATE"" = @DATE
+                                               FROM TB_EXCHANGE_RATES
+                                               WHERE ""DATE"" = @DATE
+                                                  AND CURRENCY = @CURRENCY
                                                   AND FIAT_CURRENCY = @FIAT_CURRENCY";
 
                 // Add parameters
-                AddParameterWithValue(selectCommand, "@CURRENCY", xCurrency);
                 AddParameterWithValue(selectCommand, "@DATE", date);
+                AddParameterWithValue(selectCommand, "@CURRENCY", xCurrency);
                 AddParameterWithValue(selectCommand, "@FIAT_CURRENCY", fiatCurrency);
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
@@ -133,15 +133,15 @@ namespace ProjectCryptoGains.Common.Utils
                 if (exchangeRateApi > 0)
                 {
                     using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText = @"INSERT INTO TB_CONVERT_X_TO_FIAT_A (
-                                                      CURRENCY,
+                    insertCommand.CommandText = @"INSERT INTO TB_EXCHANGE_RATES (
                                                       ""DATE"",
+                                                      CURRENCY,                                                      
                                                       FIAT_CURRENCY,
                                                       EXCHANGE_RATE
                                                   )
                                                   VALUES (
-                                                      @CURRENCY,
                                                       @DATE,
+                                                      @CURRENCY,
                                                       @FIAT_CURRENCY,
                                                       ROUND(@EXCHANGE_RATE, 10)
                                                   )";

@@ -36,13 +36,13 @@ namespace ProjectCryptoGains.Common.Utils
 
                     // First, delete any existing setting with the same name
                     using DbCommand deleteCommand = connection.CreateCommand();
-                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @NAME";
+                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS WHERE Name = @NAME";
                     AddParameterWithValue(deleteCommand, "@NAME", "FIAT_CURRENCY");
                     deleteCommand.ExecuteNonQuery();
 
                     // Then, insert the new setting
                     using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, \"VALUE\") VALUES (@NAME, @VALUE)";
+                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS (NAME, \"VALUE\") VALUES (@NAME, @VALUE)";
                     AddParameterWithValue(insertCommand, "@NAME", "FIAT_CURRENCY");
                     AddParameterWithValue(insertCommand, "@VALUE", value);
                     insertCommand.ExecuteNonQuery();
@@ -64,8 +64,8 @@ namespace ProjectCryptoGains.Common.Utils
 
                     using DbCommand selectCommand = connection.CreateCommand();
                     selectCommand.CommandText = @"SELECT ""VALUE""
-                                              FROM TB_SETTINGS_S
-										      WHERE NAME = 'FIAT_CURRENCY'";
+                                                  FROM TB_SETTINGS
+										          WHERE NAME = 'FIAT_CURRENCY'";
 
                     using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
@@ -121,13 +121,13 @@ namespace ProjectCryptoGains.Common.Utils
 
                     // First, delete any existing setting with the same name
                     using DbCommand deleteCommand = connection.CreateCommand();
-                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @NAME";
+                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS WHERE Name = @NAME";
                     AddParameterWithValue(deleteCommand, "@NAME", "REWARDS_TAX_PERCENTAGE");
                     deleteCommand.ExecuteNonQuery();
 
                     // Then, insert the new setting
                     using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, \"VALUE\") VALUES (@NAME, @VALUE)";
+                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS (NAME, \"VALUE\") VALUES (@NAME, @VALUE)";
                     AddParameterWithValue(insertCommand, "@NAME", "REWARDS_TAX_PERCENTAGE");
                     AddParameterWithValue(insertCommand, "@VALUE", value);
                     insertCommand.ExecuteNonQuery();
@@ -149,7 +149,7 @@ namespace ProjectCryptoGains.Common.Utils
 
                     using DbCommand selectCommand = connection.CreateCommand();
                     selectCommand.CommandText = @"SELECT ""VALUE"" 
-                                                  FROM TB_SETTINGS_S
+                                                  FROM TB_SETTINGS
 										          WHERE NAME = 'REWARDS_TAX_PERCENTAGE'";
 
                     using (DbDataReader reader = selectCommand.ExecuteReader())
@@ -198,13 +198,13 @@ namespace ProjectCryptoGains.Common.Utils
 
                     // First, delete any existing setting with the same name
                     using DbCommand deleteCommand = connection.CreateCommand();
-                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @NAME";
+                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS WHERE Name = @NAME";
                     AddParameterWithValue(deleteCommand, "@NAME", "COINDESKDATA_API_KEY");
                     deleteCommand.ExecuteNonQuery();
 
                     // Then, insert the new setting
                     using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, \"VALUE\") VALUES (@NAME, @VALUE)";
+                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS (NAME, \"VALUE\") VALUES (@NAME, @VALUE)";
                     AddParameterWithValue(insertCommand, "@NAME", "COINDESKDATA_API_KEY");
                     AddParameterWithValue(insertCommand, "@VALUE", value);
                     insertCommand.ExecuteNonQuery();
@@ -225,8 +225,8 @@ namespace ProjectCryptoGains.Common.Utils
                     connection.Open();
                     using DbCommand selectCommand = connection.CreateCommand();
                     selectCommand.CommandText = @"SELECT ""VALUE"" 
-                                              FROM TB_SETTINGS_S
-								              WHERE NAME = 'COINDESKDATA_API_KEY'";
+                                                  FROM TB_SETTINGS
+								                  WHERE NAME = 'COINDESKDATA_API_KEY'";
 
                     using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
@@ -278,13 +278,13 @@ namespace ProjectCryptoGains.Common.Utils
 
                     // First, delete any existing setting with the same name
                     using DbCommand deleteCommand = connection.CreateCommand();
-                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS_S WHERE Name = @NAME";
+                    deleteCommand.CommandText = "DELETE FROM TB_SETTINGS WHERE Name = @NAME";
                     AddParameterWithValue(deleteCommand, "@NAME", "PRINTOUT_TITLE_PREFIX");
                     deleteCommand.ExecuteNonQuery();
 
                     // Then, insert the new setting
                     using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS_S (NAME, \"VALUE\") VALUES (@NAME, @VALUE)";
+                    insertCommand.CommandText = "INSERT INTO TB_SETTINGS (NAME, \"VALUE\") VALUES (@NAME, @VALUE)";
                     AddParameterWithValue(insertCommand, "@NAME", "PRINTOUT_TITLE_PREFIX");
                     AddParameterWithValue(insertCommand, "@VALUE", value);
                     insertCommand.ExecuteNonQuery();
@@ -306,7 +306,7 @@ namespace ProjectCryptoGains.Common.Utils
 
                     using DbCommand selectCommand = connection.CreateCommand();
                     selectCommand.CommandText = @"SELECT ""VALUE"" 
-                                                  FROM TB_SETTINGS_S
+                                                  FROM TB_SETTINGS
 										          WHERE NAME = 'PRINTOUT_TITLE_PREFIX'";
 
                     using (DbDataReader reader = selectCommand.ExecuteReader())

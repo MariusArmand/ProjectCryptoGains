@@ -14,17 +14,18 @@ namespace ProjectCryptoGains
     public partial class MainWindow : Window
     {
         // Temporary declare subwindows
+        private KrakenLedgersWindow? winKrakenLedgers;
+        private ManualLedgersWindow? winManualLedgers;
+        private ExchangeRatesWindow? winExchangeRates;
         private SettingsWindow? winSettings;
         private AssetCatalogWindow? winAssetCatalog;
         private KrakenAssetsWindow? winKrakenAssets;
-        private KrakenLedgersWindow? winKrakenLedgers;
-        private ManualLedgersWindow? winManualLedgers;
+        private LedgersWindow? winLedgers;
         private TradesWindow? winTrades;
         private GainsWindow? winGains;
-        private LedgersWindow? winLedgers;
         private RewardsWindow? winRewards;
-        private MetricsWindow? winMetrics;
         private BalancesWindow? winBalances;
+        private MetricsWindow? winMetrics;
 
         public MainWindow()
         {
@@ -51,9 +52,9 @@ namespace ProjectCryptoGains
             {
                 // Close the subwindows
                 foreach (var window in new Window?[] {
-                    winAssetCatalog, winKrakenAssets, winKrakenLedgers,
-                    winManualLedgers, winTrades, winGains, winLedgers,
-                    winRewards, winMetrics, winBalances
+                    winManualLedgers, winKrakenLedgers, winExchangeRates,
+                    winAssetCatalog, winKrakenAssets, winSettings,
+                    winLedgers, winTrades, winGains, winRewards, winBalances, winMetrics
                 })
                 {
                     if (window != null)
@@ -216,6 +217,13 @@ namespace ProjectCryptoGains
             ShowAndFocusSubWindow(winManualLedgers, this);
         }
 
+        private void MenuExchangeRates_Click(object sender, RoutedEventArgs e)
+        {
+            // Create window if it doesn't exist yet
+            winExchangeRates ??= new ExchangeRatesWindow(this);
+            ShowAndFocusSubWindow(winExchangeRates, this);
+        }
+
         private void MenuTrades_Click(object sender, RoutedEventArgs e)
         {
             // Create window if it doesn't exist yet
@@ -258,7 +266,7 @@ namespace ProjectCryptoGains
             ShowAndFocusSubWindow(winMetrics, this);
         }
 
-        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        private void BtnHelp_Click(object sender, RoutedEventArgs e)
         {
             OpenHelp("help.html");
         }

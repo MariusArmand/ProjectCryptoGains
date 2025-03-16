@@ -47,11 +47,6 @@ namespace ProjectCryptoGains
             BindGrid();
         }
 
-        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
-        {
-            OpenHelp("rewards_help.html");
-        }
-
         private void BlockUI()
         {
             btnRefresh.IsEnabled = false;
@@ -117,7 +112,7 @@ namespace ProjectCryptoGains
                                                    UNIT_PRICE,
                                                    UNIT_PRICE_BREAK_EVEN,
                                                    AMOUNT_SELL_BREAK_EVEN
-                                               FROM TB_REWARDS_S
+                                               FROM TB_REWARDS
                                                ORDER BY ""DATE"" ASC";
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
@@ -129,7 +124,7 @@ namespace ProjectCryptoGains
 
                         RewardsData.Add(new RewardsModel
                         {
-                            RowNumber = dbLineNumber,
+                            Row_number = dbLineNumber,
                             Refid = reader.GetStringOrEmpty(0),
                             Date = reader.GetDateTime(1),
                             Type = reader.GetStringOrEmpty(2),
@@ -157,7 +152,7 @@ namespace ProjectCryptoGains
                                                    ROUND(AVG(UNIT_PRICE), 2) AS UNIT_PRICE,
                                                    ROUND(AVG(UNIT_PRICE_BREAK_EVEN), 2) AS UNIT_PRICE_BREAK_EVEN,
                                                    ROUND(SUM(AMOUNT_SELL_BREAK_EVEN), 10) AS AMOUNT_SELL_BREAK_EVEN
-                                               FROM TB_REWARDS_S
+                                               FROM TB_REWARDS
                                                GROUP BY CURRENCY
                                                ORDER BY CURRENCY";
 
@@ -173,7 +168,7 @@ namespace ProjectCryptoGains
                         amnt_fiat = reader.GetDecimalOrDefault(2);
                         RewardsSummaryData.Add(new RewardsSummaryModel
                         {
-                            RowNumber = dbLineNumber,
+                            Row_number = dbLineNumber,
                             Currency = reader.GetStringOrEmpty(0),
                             Amount = reader.GetDecimalOrDefault(1),
                             Amount_fiat = amnt_fiat,
@@ -199,6 +194,68 @@ namespace ProjectCryptoGains
             lblTotalAmountFiatData.Content = "0.00 " + fiatCurrency;
         }
 
+        private void TxtFromDate_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (txtFromDate.Text == "YYYY-MM-DD")
+            {
+                txtFromDate.Text = string.Empty;
+            }
+        }
+
+        private void TxtFromDate_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtFromDate.Text))
+            {
+                txtFromDate.Text = "YYYY-MM-DD";
+                txtFromDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
+            }
+        }
+
+        private void TxtFromDate_KeyUp(object sender, KeyboardEventArgs e)
+        {
+            SetFromDate();
+            txtFromDate.Foreground = Brushes.White;
+        }
+
+        private void SetFromDate()
+        {
+            fromDate = txtFromDate.Text;
+        }
+
+        private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (txtToDate.Text == "YYYY-MM-DD")
+            {
+                txtToDate.Text = string.Empty;
+            }
+        }
+
+        private void TxtToDate_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtToDate.Text))
+            {
+                txtToDate.Text = "YYYY-MM-DD";
+                txtToDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
+            }
+        }
+
+        private void TxtToDate_KeyUp(object sender, KeyboardEventArgs e)
+        {
+            SetToDate();
+            txtToDate.Foreground = Brushes.White;
+        }
+
+        private void SetToDate()
+        {
+            toDate = txtToDate.Text;
+        }
+
+        private void BtnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            lastWarning = null;
+            Refresh();
+        }
+
         private async void Refresh()
         {
             if (!IsValidDateFormat(txtFromDate.Text, "yyyy-MM-dd"))
@@ -221,7 +278,6 @@ namespace ProjectCryptoGains
 
             try
             {
-
                 ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refreshing Rewards");
 
                 bool ledgersRefreshFailed = false;
@@ -304,7 +360,7 @@ namespace ProjectCryptoGains
                     using DbCommand deleteCommand = connection.CreateCommand();
 
                     // Truncate standard DB table
-                    deleteCommand.CommandText = "DELETE FROM TB_REWARDS_S";
+                    deleteCommand.CommandText = "DELETE FROM TB_REWARDS";
                     deleteCommand.ExecuteNonQuery();
 
                     // Read rewards from Kraken ledgers and manual ledgers
@@ -316,8 +372,8 @@ namespace ProjectCryptoGains
                                                        ledgers.EXCHANGE,
                                                        catalog.CODE AS CURRENCY,
                                                        ROUND(ledgers.AMOUNT - ledgers.FEE, 10) AS AMOUNT
-                                                   FROM TB_LEDGERS_S ledgers
-                                                       INNER JOIN TB_ASSET_CATALOG_S catalog 
+                                                   FROM TB_LEDGERS ledgers
+                                                       INNER JOIN TB_ASSET_CATALOG catalog 
                                                            ON ledgers.CURRENCY = catalog.ASSET
                                                    WHERE ledgers.TYPE IN ('EARN', 'STAKING', 'AIRDROP')
                                                        AND ledgers.""DATE"" BETWEEN @FROM_DATE AND @TO_DATE
@@ -379,7 +435,7 @@ namespace ProjectCryptoGains
                             }
 
                             using DbCommand insertCommand = connection.CreateCommand();
-                            insertCommand.CommandText = $@"INSERT INTO TB_REWARDS_S (
+                            insertCommand.CommandText = $@"INSERT INTO TB_REWARDS (
                                                                 REFID,
                                                                 ""DATE"",
                                                                 TYPE,
@@ -437,69 +493,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (txtToDate.Text == "YYYY-MM-DD")
-            {
-                txtToDate.Text = string.Empty;
-            }
-        }
-
-        private void TxtToDate_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(txtToDate.Text))
-            {
-                txtToDate.Text = "YYYY-MM-DD";
-                txtToDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
-            }
-        }
-
-        private void TxtToDate_KeyUp(object sender, KeyboardEventArgs e)
-        {
-            SetToDate();
-            txtToDate.Foreground = Brushes.White;
-        }
-
-        private void SetToDate()
-        {
-            toDate = txtToDate.Text;
-        }
-
-        private void TxtFromDate_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (txtFromDate.Text == "YYYY-MM-DD")
-            {
-                txtFromDate.Text = string.Empty;
-            }
-        }
-
-        private void TxtFromDate_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(txtFromDate.Text))
-            {
-                txtFromDate.Text = "YYYY-MM-DD";
-                txtFromDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
-            }
-        }
-
-        private void TxtFromDate_KeyUp(object sender, KeyboardEventArgs e)
-        {
-            SetFromDate();
-            txtFromDate.Foreground = Brushes.White;
-        }
-
-        private void SetFromDate()
-        {
-            fromDate = txtFromDate.Text;
-        }
-
-        private void ButtonRefresh_Click(object sender, RoutedEventArgs e)
-        {
-            lastWarning = null;
-            Refresh();
-        }
-
-        private async void ButtonPrint_Click(object sender, RoutedEventArgs e)
+        private async void BtnPrint_Click(object sender, RoutedEventArgs e)
         {
             if (!dgRewards.HasItems)
             {
@@ -557,7 +551,12 @@ namespace ProjectCryptoGains
             );
         }
 
-        private async void ButtonPrintSummary_Click(object sender, RoutedEventArgs e)
+        private void BtnHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("rewards_help.html");
+        }
+
+        private async void BtnPrintSummary_Click(object sender, RoutedEventArgs e)
         {
             if (!dgRewardsSummary.HasItems)
             {

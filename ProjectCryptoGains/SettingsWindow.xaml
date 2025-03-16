@@ -51,7 +51,7 @@
                     <Separator Margin="28,130,28,0" VerticalAlignment="Top"/>
                     <Label x:Name="lblPrintoutTitlePrefix" Width="140" Margin="25,145,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Printout title prefix" />
                     <TextBox x:Name="txtPrintoutTitlePrefix" Width="200" Margin="200,145,25,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                    <Button x:Name="btnSave" Width="125" Height="40" Margin="490,65,25,25" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="Save_Click" Content="Save" />
+                    <Button x:Name="btnSave" Width="125" Height="40" Margin="490,65,25,25" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="BtnSave_Click" Content="Save" />
                 </Grid>
             </Grid>
         </Grid>

@@ -51,11 +51,6 @@ namespace ProjectCryptoGains
             BindGrid();
         }
 
-        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
-        {
-            OpenHelp("gains_help.html");
-        }
-
         private void BlockUI()
         {
             btnRefresh.IsEnabled = false;
@@ -123,8 +118,8 @@ namespace ProjectCryptoGains
                                                        WHEN trades.TYPE = 'BUY' THEN NULL
                                                        ELSE gains.GAIN
                                                    END AS GAIN
-                                               FROM TB_GAINS_S gains
-                                                   INNER JOIN TB_TRADES_S trades
+                                               FROM TB_GAINS gains
+                                                   INNER JOIN TB_TRADES trades
                                                        ON gains.REFID = trades.REFID
                                                WHERE trades.BASE_CURRENCY LIKE '%{baseCurrency}%'
                                                ORDER BY ""DATE"" ASC";
@@ -138,7 +133,7 @@ namespace ProjectCryptoGains
 
                         GainsData.Add(new GainsModel
                         {
-                            RowNumber = dbLineNumber,
+                            Row_number = dbLineNumber,
                             Refid = reader.GetStringOrEmpty(0),
                             Date = reader.GetDateTime(1),
                             Type = reader.GetStringOrEmpty(2),
@@ -161,8 +156,8 @@ namespace ProjectCryptoGains
                 selectCommand.CommandText = $@"SELECT 
                                                    trades.BASE_CURRENCY AS CURRENCY,
                                                    ROUND(SUM(gains.GAIN), 10) AS GAIN
-                                               FROM TB_GAINS_S gains
-                                                   INNER JOIN TB_TRADES_S trades
+                                               FROM TB_GAINS gains
+                                                   INNER JOIN TB_TRADES trades
                                                        ON gains.REFID = trades.REFID
                                                WHERE gains.GAIN IS NOT NULL
                                                    AND trades.BASE_CURRENCY LIKE @BASE_CURRENCY
@@ -186,7 +181,7 @@ namespace ProjectCryptoGains
                         gain = reader.GetDecimalOrDefault(1);
                         GainsSummaryData.Add(new GainsSummaryModel
                         {
-                            RowNumber = dbLineNumber,
+                            Row_number = dbLineNumber,
                             Currency = reader.GetStringOrEmpty(0),
                             Gain = reader.GetDecimalOrDefault(1)
                         });
@@ -204,6 +199,77 @@ namespace ProjectCryptoGains
             lblTotalGainsData.Content = "0.00 " + fiatCurrency;
             dgGains.ItemsSource = null;
             dgGainsSummary.ItemsSource = null;
+        }
+
+        private void TxtFromDate_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (txtFromDate.Text == "YYYY-MM-DD")
+            {
+                txtFromDate.Text = string.Empty;
+            }
+        }
+
+        private void TxtFromDate_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtFromDate.Text))
+            {
+                txtFromDate.Text = "YYYY-MM-DD";
+                txtFromDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
+            }
+        }
+
+        private void TxtFromDate_KeyUp(object sender, KeyboardEventArgs e)
+        {
+            SetFromDate();
+            txtFromDate.Foreground = Brushes.White;
+        }
+
+        private void SetFromDate()
+        {
+            fromDate = txtFromDate.Text;
+        }
+
+        private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (txtToDate.Text == "YYYY-MM-DD")
+            {
+                txtToDate.Text = string.Empty;
+            }
+        }
+
+        private void TxtToDate_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtToDate.Text))
+            {
+                txtToDate.Text = "YYYY-MM-DD";
+                txtToDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
+            }
+        }
+
+        private void TxtToDate_KeyUp(object sender, KeyboardEventArgs e)
+        {
+            SetToDate();
+            txtToDate.Foreground = Brushes.White;
+        }
+
+        private void SetToDate()
+        {
+            toDate = txtToDate.Text;
+        }
+
+        private void TextBoxBaseCurrency_KeyUp(object sender, KeyboardEventArgs e)
+        {
+            SetBaseCurrency();
+        }
+
+        private void SetBaseCurrency()
+        {
+            baseCurrency = txtBaseCurrency.Text;
+        }
+
+        private void BtnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            Refresh();
         }
 
         private async void Refresh()
@@ -283,12 +349,12 @@ namespace ProjectCryptoGains
                                 connection.Open();
                                 // Clear the table before inserting new data
                                 using DbCommand deleteCommand = connection.CreateCommand();
-                                deleteCommand.CommandText = "DELETE FROM TB_GAINS_S";
+                                deleteCommand.CommandText = "DELETE FROM TB_GAINS";
                                 deleteCommand.ExecuteNonQuery();
 
                                 // Read the assets into a list
                                 using DbCommand selectCommand = connection.CreateCommand();
-                                selectCommand.CommandText = $@"SELECT ASSET FROM TB_ASSET_CATALOG_S WHERE ASSET like '%{baseCurrency}%'";
+                                selectCommand.CommandText = $@"SELECT ASSET FROM TB_ASSET_CATALOG WHERE ASSET like '%{baseCurrency}%'";
 
                                 List<string> assets = [];
 
@@ -391,7 +457,7 @@ namespace ProjectCryptoGains
                                                        BASE_UNIT_PRICE_FIAT AS UNIT_PRICE,
                                                        COSTS_PROCEEDS,
                                                        BASE_AMOUNT AS TX_BALANCE_REMAINING
-                                                   FROM TB_TRADES_S
+                                                   FROM TB_TRADES
                                                    WHERE BASE_CURRENCY = '{asset}'
                                                        AND TYPE = '{tx_type}'
                                                    ORDER BY ""DATE"" {orderBy}";
@@ -502,7 +568,7 @@ namespace ProjectCryptoGains
                     connection.Open();
 
                     using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText = @"INSERT INTO TB_GAINS_S (
+                    insertCommand.CommandText = @"INSERT INTO TB_GAINS (
                                                       REFID,
                                                       TX_BALANCE_REMAINING,
                                                       GAIN
@@ -553,78 +619,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (txtToDate.Text == "YYYY-MM-DD")
-            {
-                txtToDate.Text = string.Empty;
-            }
-        }
-
-        private void TxtToDate_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(txtToDate.Text))
-            {
-                txtToDate.Text = "YYYY-MM-DD";
-                txtToDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
-            }
-        }
-
-        private void TxtToDate_KeyUp(object sender, KeyboardEventArgs e)
-        {
-            SetToDate();
-            txtToDate.Foreground = Brushes.White;
-        }
-
-        private void SetToDate()
-        {
-            toDate = txtToDate.Text;
-        }
-
-        private void TxtFromDate_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (txtFromDate.Text == "YYYY-MM-DD")
-            {
-                txtFromDate.Text = string.Empty;
-            }
-        }
-
-        private void TxtFromDate_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(txtFromDate.Text))
-            {
-                txtFromDate.Text = "YYYY-MM-DD";
-                txtFromDate.Foreground = new SolidColorBrush(Color.FromRgb(102, 102, 102)); // Gray #666666
-            }
-        }
-
-        private void TxtFromDate_KeyUp(object sender, KeyboardEventArgs e)
-        {
-            SetFromDate();
-            txtFromDate.Foreground = Brushes.White;
-        }
-
-        private void SetFromDate()
-        {
-            fromDate = txtFromDate.Text;
-        }
-
-        private void TextBoxBaseCurrency_KeyUp(object sender, KeyboardEventArgs e)
-        {
-            SetBaseCurrency();
-        }
-
-        private void SetBaseCurrency()
-        {
-            baseCurrency = txtBaseCurrency.Text;
-        }
-
-        private void ButtonRefresh_Click(object sender, RoutedEventArgs e)
-        {
-            Refresh();
-        }
-
-        private async void ButtonPrint_Click(object sender, RoutedEventArgs e)
+        private async void BtnPrint_Click(object sender, RoutedEventArgs e)
         {
             if (!dgGains.HasItems)
             {
@@ -692,7 +687,12 @@ namespace ProjectCryptoGains
             );
         }
 
-        private async void ButtonPrintSummary_Click(object sender, RoutedEventArgs e)
+        private void BtnHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("gains_help.html");
+        }
+
+        private async void BtnPrintSummary_Click(object sender, RoutedEventArgs e)
         {
             if (!dgGainsSummary.HasItems)
             {

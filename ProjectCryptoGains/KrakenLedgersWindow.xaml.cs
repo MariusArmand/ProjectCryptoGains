@@ -39,11 +39,6 @@ namespace ProjectCryptoGains
             BindGrid();
         }
 
-        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
-        {
-            OpenHelp("kraken_ledgers_help.html");
-        }
-
         private void BlockUI()
         {
             btnBrowse.IsEnabled = false;
@@ -80,7 +75,7 @@ namespace ProjectCryptoGains
                 }
 
                 using DbCommand selectCommand = connection.CreateCommand();
-                selectCommand.CommandText = "SELECT * FROM TB_LEDGERS_KRAKEN_S";
+                selectCommand.CommandText = "SELECT * FROM TB_LEDGERS_KRAKEN";
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
                 {
@@ -91,7 +86,7 @@ namespace ProjectCryptoGains
 
                         ledgersKrakenData.Add(new LedgersKrakenModel
                         {
-                            RowNumber = dbLineNumber,
+                            Row_number = dbLineNumber,
                             Txid = reader.GetStringOrEmpty(0),
                             Refid = reader.GetStringOrEmpty(1),
                             Time = reader.GetDateTime(2),
@@ -106,12 +101,23 @@ namespace ProjectCryptoGains
                         });
                     }
                 }
-            }
 
-            dgLedgers.ItemsSource = ledgersKrakenData;
+                dgLedgers.ItemsSource = ledgersKrakenData;
+            }
         }
 
-        private void ButtonUpload_Click(object sender, RoutedEventArgs e)
+        private void BtnBrowse_Click(object sender, RoutedEventArgs e)
+        {
+            FileDialog(txtFileName);
+            filePath = txtFileName.Text;
+        }
+
+        private void BtnHelp_Click(object sender, RoutedEventArgs e)
+        {
+            OpenHelp("kraken_ledgers_help.html");
+        }
+
+        private void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
             string? lastWarning = null;
             string? lastError = null;
@@ -162,10 +168,9 @@ namespace ProjectCryptoGains
                                     lastError = "Unexpected inputfile header.";
                                     MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
-                                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Load unsuccessful");
 
-                                    // Exit function early
-                                    return;
+                                    // Exit loop early
+                                    break;
                                 }
 
                                 // Add the column names to the DataTable
@@ -185,37 +190,35 @@ namespace ProjectCryptoGains
                     }
                     catch (Exception ex)
                     {
-                        lastError = "File could not be parsed." + Environment.NewLine + ex.Message;
+                        lastError = "File could not be parsed" + Environment.NewLine + ex.Message;
                         MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
-                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Load unsuccessful");
-
-                        // Exit function early
-                        return;
                     }
                 }
 
-                // Load the db table with ledgersKrakenData from the csv
-                using (FbConnection connection = new(connectionString))
+                if (lastError == null)
                 {
-                    connection.Open();
+                    // Load the db table with ledgersKrakenData from the csv
+                    using (FbConnection connection = new(connectionString))
+                    {
+                        connection.Open();
 
-                    using DbCommand deleteCommand = connection.CreateCommand();
+                        using DbCommand deleteCommand = connection.CreateCommand();
 
-                    // Truncate DB table
-                    deleteCommand.CommandText = "DELETE FROM TB_LEDGERS_KRAKEN_S";
-                    deleteCommand.ExecuteNonQuery();
+                        // Truncate DB table
+                        deleteCommand.CommandText = "DELETE FROM TB_LEDGERS_KRAKEN";
+                        deleteCommand.ExecuteNonQuery();
 
-                    // Initialize the transaction
-                    DbTransaction transaction = connection.BeginTransaction();
+                        // Initialize the transaction
+                        DbTransaction transaction = connection.BeginTransaction();
 
-                    // Counter to keep track of the number of rows inserted
-                    int insertCounter = 0;
+                        // Counter to keep track of the number of rows inserted
+                        int insertCounter = 0;
 
-                    // Create and prepare the command
-                    using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.Transaction = transaction;
-                    insertCommand.CommandText = @"INSERT INTO TB_LEDGERS_KRAKEN_S (
+                        // Create and prepare the command
+                        using DbCommand insertCommand = connection.CreateCommand();
+                        insertCommand.Transaction = transaction;
+                        insertCommand.CommandText = @"INSERT INTO TB_LEDGERS_KRAKEN (
                                                       TXID,
                                                       REFID,
                                                       ""TIME"",
@@ -241,89 +244,101 @@ namespace ProjectCryptoGains
                                                       ROUND(@BALANCE, 10)
                                                   )";
 
-                    insertCommand.Prepare();
+                        insertCommand.Prepare();
 
-                    // Per row in the DataTable insert a row in the DB table
-                    foreach (DataRow row in dataTable.Rows)
-                    {
-                        insertCommand.Parameters.Clear(); // Reset parameters for the next row
-
-                        string value = "";
-                        string columnName = "";
-                        for (int i = 0; i < dataTable.Columns.Count; i++)
+                        // Per row in the DataTable insert a row in the DB table
+                        foreach (DataRow row in dataTable.Rows)
                         {
-                            columnName = dataTable.Columns[i].ColumnName.Replace(' ', '_').ToUpper();
-                            value = (string)(row.ItemArray[i] ?? "");
-                            if (columnName == "TIME")
+                            insertCommand.Parameters.Clear(); // Reset parameters for the next row
+
+                            string value = "";
+                            string columnName = "";
+
+                            for (int i = 0; i < dataTable.Columns.Count; i++)
                             {
-                                AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToIsoDateTime(value));
+                                columnName = dataTable.Columns[i].ColumnName.Replace(' ', '_').ToUpper();
+                                value = (string)(row.ItemArray[i] ?? "");
+
+                                if (columnName == "TIME")
+                                {
+                                    AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToIsoDateTime(value));
+                                }
+                                else if (columnName == "AMOUNT" || columnName == "FEE" || columnName == "BALANCE")
+                                {
+                                    AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToDecimal(value));
+                                }
+                                else
+                                {
+                                    AddParameterWithValue(insertCommand, "@" + columnName, value);
+                                }
                             }
-                            else if (columnName == "AMOUNT" || columnName == "FEE" || columnName == "BALANCE")
+
+                            if (lastError != null)
                             {
-                                AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToDecimal(value));
+                                transaction.Rollback();
+                                break; // Exit loop, but continue to the final logging
                             }
-                            else
+
+                            try
                             {
-                                AddParameterWithValue(insertCommand, "@" + columnName, value);
+                                insertCommand.ExecuteNonQuery();
+                            }
+                            catch (Exception ex)
+                            {
+                                lastError = $"Insert row {insertCounter} failed: {ex.Message}";
+                                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
+                                transaction.Rollback();
+                                break;
+                            }
+
+                            insertCounter++;
+
+                            // If the insertCounter is divisible by 10k, commit the transaction and start a new one
+                            if (insertCounter % 10000 == 0)
+                            {
+                                transaction.Commit();
+                                transaction = connection.BeginTransaction();
+                                insertCommand.Transaction = transaction;
                             }
                         }
 
-                        try
-                        {
-                            insertCommand.ExecuteNonQuery();
-                        }
-                        catch (Exception ex)
-                        {
-                            lastError = $"Insert row {insertCounter} failed: {ex.Message}";
-                            MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                            ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
-                            transaction.Rollback();
-                            return;
-                        }
-
-                        insertCounter++;
-
-                        // If the insertCounter is divisible by 10k, commit the transaction and start a new one
-                        if (insertCounter % 10000 == 0)
+                        // Commit any remaining inserts if no errors occurred and perform checks
+                        if (lastError == null)
                         {
                             transaction.Commit();
-                            transaction = connection.BeginTransaction();
-                            insertCommand.Transaction = transaction;
-                        }
-                    }
 
-                    // Commit any remaining inserts in the final transaction
-                    transaction.Commit();
+                            // Check for missing assets
+                            List<string> missingAssets = MissingAssets(connection);
 
-                    // Check for missing assets
-                    List<string> missingAssets = MissingAssets(connection);
+                            if (missingAssets.Count > 0)
+                            {
+                                lastWarning = "There are new Kraken assets to be refreshed." + Environment.NewLine + "[Configure => Kraken Assets]";
+                                MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastWarning}");
 
-                    if (missingAssets.Count > 0)
-                    {
-                        lastWarning = "There are new Kraken assets to be refreshed." + Environment.NewLine + "[Configure => Kraken Assets]";
-                        MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastWarning}");
+                                // Log each missing asset
+                                foreach (string code in missingAssets)
+                                {
+                                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Missing asset for code: {code}");
+                                }
+                            }
 
-                        // Log each missing asset
-                        foreach (string code in missingAssets)
-                        {
-                            ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Missing asset for code: {code}");
-                        }
-                    }
+                            // Check for unsupported ledger types
+                            List<(string RefId, string Type)> unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Kraken);
 
-                    // Check for unsupported ledger types
-                    List<(string RefId, string Type)> unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Kraken);
+                            if (unsupportedTypes.Count > 0)
+                            {
+                                lastWarning = "Unsupported ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account.";
+                                MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
+                                ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastWarning}");
 
-                    if (unsupportedTypes.Count > 0)
-                    {
-                        lastWarning = "Unsupported ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account.";
-                        MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
-                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastWarning}");
-
-                        // Log each unsupported ledger type
-                        foreach ((string RefId, string Type) in unsupportedTypes)
-                        {
-                            ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Unsupported ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                                // Log each unsupported ledger type
+                                foreach ((string RefId, string Type) in unsupportedTypes)
+                                {
+                                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Unsupported ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                                }
+                            }
                         }
                     }
                 }
@@ -350,12 +365,6 @@ namespace ProjectCryptoGains
             {
                 UnblockUI();
             }
-        }
-
-        private void ButtonBrowse_Click(object sender, RoutedEventArgs e)
-        {
-            FileDialog(txtFileName);
-            filePath = txtFileName.Text;
         }
     }
 }
