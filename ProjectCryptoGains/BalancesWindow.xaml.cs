@@ -90,7 +90,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                     // Exit function early
                     return;
@@ -150,7 +150,7 @@ namespace ProjectCryptoGains
                     }
                     catch (Exception ex)
                     {
-                        MessageBoxResult result = CustomMessageBox.Show("Exception whilst fetching BalancesData." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        CustomMessageBox.Show("Exception whilst fetching BalancesData." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                         // Exit function early
                         return;
@@ -244,7 +244,7 @@ namespace ProjectCryptoGains
 
             if (!IsValidDateFormat(txtUntilDate.Text, "yyyy-MM-dd"))
             {
-                MessageBoxResult result = CustomMessageBox.Show("Until date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show("Until date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 // Exit function early
                 return;
@@ -287,7 +287,7 @@ namespace ProjectCryptoGains
                         }
                         catch (Exception ex)
                         {
-                            MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                             // Exit function early
                             return;
@@ -371,7 +371,7 @@ namespace ProjectCryptoGains
                                     {
                                         Application.Current.Dispatcher.Invoke(() =>
                                         {
-                                            MessageBoxResult result = CustomMessageBox.Show("There were issues calculating some balances.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                            CustomMessageBox.Show("There were issues calculating some balances.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                                         });
                                     }
                                 }
@@ -496,7 +496,7 @@ namespace ProjectCryptoGains
         {
             if (!dgBalances.HasItems)
             {
-                MessageBoxResult result = CustomMessageBox.Show("Nothing to print.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show("Nothing to print.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -512,7 +512,7 @@ namespace ProjectCryptoGains
             catch (Exception ex)
             {
                 ConsoleLog(_mainWindow.txtLog, $"[Balances] Printing failed: {ex.Message}");
-                MessageBoxResult result = CustomMessageBox.Show($"Printing failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Printing failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {

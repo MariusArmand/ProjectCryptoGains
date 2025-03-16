@@ -1,4 +1,5 @@
 ﻿using FirebirdSql.Data.FirebirdClient;
+using Microsoft.Win32;
 using ProjectCryptoGains.Common;
 using System;
 using System.Collections.Generic;
@@ -27,8 +28,6 @@ namespace ProjectCryptoGains
     {
         private readonly MainWindow _mainWindow;
 
-        private string filePath = "";
-
         public ManualLedgersWindow(MainWindow mainWindow)
         {
             InitializeComponent();
@@ -41,16 +40,14 @@ namespace ProjectCryptoGains
 
         private void BlockUI()
         {
-            btnBrowse.IsEnabled = false;
-            btnUpload.IsEnabled = false;
+            btnImport.IsEnabled = false;
 
             Cursor = Cursors.Wait;
         }
 
         private void UnblockUI()
         {
-            btnBrowse.IsEnabled = true;
-            btnUpload.IsEnabled = true;
+            btnImport.IsEnabled = true;
 
             Cursor = Cursors.Arrow;
         }
@@ -68,7 +65,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                     // Exit function early
                     return;
@@ -105,23 +102,33 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void BtnBrowse_Click(object sender, RoutedEventArgs e)
-        {
-            FileDialog(txtFileName);
-            filePath = txtFileName.Text;
-        }
-
         private void BtnHelp_Click(object sender, RoutedEventArgs e)
         {
             OpenHelp("manual_ledgers_help.html");
         }
 
-        private void BtnUpload_Click(object sender, RoutedEventArgs e)
+        private void BtnImport_Click(object sender, RoutedEventArgs e)
         {
             string? lastWarning = null;
             string? lastError = null;
 
-            ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Attempting to load {filePath}");
+            ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Attempting to import manual ledgers");
+
+            // Open file dialog
+            OpenFileDialog openFileDlg = new OpenFileDialog
+            {
+                Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                Title = "Import Manual Ledgers"
+            };
+
+            bool? openFiledlgResult = openFileDlg.ShowDialog();
+            if (openFiledlgResult != true)
+            {
+                ConsoleLog(_mainWindow.txtLog, "[Manual Ledgers] Import cancelled");
+                return;
+            }
+
+            string filePath = openFileDlg.FileName;
 
             BlockUI();
 
@@ -134,9 +141,9 @@ namespace ProjectCryptoGains
                 if (!File.Exists(filePath))
                 {
                     lastError = "The file does not exist.";
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
-                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load unsuccessful");
+                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Import unsuccessful");
 
                     // Exit function early
                     return;
@@ -147,13 +154,14 @@ namespace ProjectCryptoGains
                 try
                 {
                     reader = new(filePath);
+                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Importing {filePath}");
                 }
                 catch (Exception ex)
                 {
                     lastError = "File could not be opened" + Environment.NewLine + ex.Message;
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
-                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load unsuccessful");
+                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Import unsuccessful");
 
                     // Exit function early
                     return;
@@ -179,7 +187,7 @@ namespace ProjectCryptoGains
                             if (!Enumerable.SequenceEqual(columnNames, columnNamesExpected))
                             {
                                 lastError = "Unexpected inputfile header.";
-                                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
 
                                 // Exit loop early
@@ -204,7 +212,7 @@ namespace ProjectCryptoGains
                 catch (Exception ex)
                 {
                     lastError = "File could not be parsed" + Environment.NewLine + ex.Message;
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
                 }
 
@@ -272,7 +280,7 @@ namespace ProjectCryptoGains
                                 if (i != 3 && i != 7 && i != 8 && i != 9 && value == "")
                                 {
                                     lastError = "Insert row " + insertCounter + " failed: " + columnName + " cannot be null.";
-                                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
 
                                     // Exit loop early
@@ -282,7 +290,7 @@ namespace ProjectCryptoGains
                                 if (columnName == "DATE" && !IsValidDateFormat(value, "yyyy-MM-dd HH:mm:ss"))
                                 {
                                     lastError = "Insert row " + insertCounter + " failed: " + columnName + " should be in yyyy-MM-dd HH:mm:ss format.";
-                                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
 
                                     // Exit loop early
@@ -316,7 +324,7 @@ namespace ProjectCryptoGains
                             catch (Exception ex)
                             {
                                 lastError = $"Insert row {insertCounter} failed: {ex.Message}";
-                                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
                                 transaction.Rollback();
                                 break;
@@ -344,7 +352,7 @@ namespace ProjectCryptoGains
                             if (missingAssets.Count > 0)
                             {
                                 lastWarning = "Missing asset(s) detected." + Environment.NewLine + "[Configure => Asset Catalog]";
-                                MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastWarning}");
 
                                 // Log each missing asset
@@ -360,7 +368,7 @@ namespace ProjectCryptoGains
                             if (unsupportedTypes.Count > 0)
                             {
                                 lastWarning = "Unsupported ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account.";
-                                MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
+                                CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
                                 ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastWarning}");
 
                                 // Log each unsupported ledger type
@@ -379,16 +387,16 @@ namespace ProjectCryptoGains
                 {
                     if (lastWarning == null)
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load done");
+                        ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Import done");
                     }
                     else
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load done with warnings");
+                        ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Import done with warnings");
                     }
                 }
                 else
                 {
-                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Load unsuccessful");
+                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Import unsuccessful");
                 }
             }
             finally

@@ -26,7 +26,7 @@ namespace ProjectCryptoGains.Common.Utils
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         string message = "There is already a trades refresh in progress. Please Wait.";
-                        MessageBoxResult result = CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         if (caller != Caller.Trades)
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[{caller}] {message}");
@@ -330,7 +330,7 @@ namespace ProjectCryptoGains.Common.Utils
                             {
                                 Application.Current.Dispatcher.Invoke(() =>
                                 {
-                                    MessageBoxResult result = CustomMessageBox.Show($"There were issues calculating some unit prices in {fiatCurrency}.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                    CustomMessageBox.Show($"There were issues calculating some unit prices in {fiatCurrency}.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                                 });
                             }
                         }

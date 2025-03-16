@@ -95,7 +95,7 @@ namespace ProjectCryptoGains
                 }
 
                 ConsoleLog(txtLog, $"[Settings] {lastError}");
-                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             // Rewards tax percentage
@@ -112,7 +112,7 @@ namespace ProjectCryptoGains
                 }
 
                 ConsoleLog(txtLog, $"[Settings] {lastError}");
-                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             // CoinDesk Data API key
@@ -129,7 +129,7 @@ namespace ProjectCryptoGains
                 }
 
                 ConsoleLog(txtLog, $"[Settings] {lastError}");
-                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             // Printout title prefix
@@ -146,7 +146,7 @@ namespace ProjectCryptoGains
                 }
 
                 ConsoleLog(txtLog, $"[Settings] {lastError}");
-                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         ////////////////////

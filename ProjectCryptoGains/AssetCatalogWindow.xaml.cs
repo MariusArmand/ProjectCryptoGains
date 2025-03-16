@@ -59,7 +59,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                     // Exit function early
                     return;
@@ -104,7 +104,7 @@ namespace ProjectCryptoGains
             {
                 lastInfo = "No data to save.";
                 ConsoleLog(_mainWindow.txtLog, $"[Asset Catalog] {lastInfo}");
-                MessageBoxResult result = CustomMessageBox.Show(lastInfo, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show(lastInfo, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Exit function early
                 return;
@@ -129,7 +129,7 @@ namespace ProjectCryptoGains
                 {
                     lastError = "Code and Asset cannot be empty.";
                     ConsoleLog(_mainWindow.txtLog, $"[Asset Catalog] {lastError}");
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else
                 {
@@ -173,7 +173,7 @@ namespace ProjectCryptoGains
 
                     if (lastError != null)
                     {
-                        MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         ConsoleLog(_mainWindow.txtLog, $"[Asset Catalog] {lastError}");
                     }
                 }

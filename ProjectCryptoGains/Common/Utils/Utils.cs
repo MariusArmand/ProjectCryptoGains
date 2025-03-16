@@ -121,7 +121,7 @@ namespace ProjectCryptoGains.Common.Utils
                         }
                         Application.Current.Dispatcher.Invoke(() =>
                         {
-                            MessageBoxResult result = CustomMessageBox.Show(error_message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            CustomMessageBox.Show(error_message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         });
                         throw new Exception(error_message);
                     }

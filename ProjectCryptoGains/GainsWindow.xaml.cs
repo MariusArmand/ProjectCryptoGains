@@ -93,7 +93,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                     // Exit function early
                     return;
@@ -278,13 +278,13 @@ namespace ProjectCryptoGains
 
             if (!IsValidDateFormat(txtFromDate.Text, "yyyy-MM-dd"))
             {
-                MessageBoxResult result = CustomMessageBox.Show("From date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show("From date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
             if (!IsValidDateFormat(txtToDate.Text, "yyyy-MM-dd"))
             {
-                MessageBoxResult result = CustomMessageBox.Show("To date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show("To date does not have a correct YYYY-MM-DD format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -397,7 +397,7 @@ namespace ProjectCryptoGains
                                             break;
                                     }
 
-                                    MessageBoxResult result = CustomMessageBox.Show(errorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    CustomMessageBox.Show(errorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                 });
                                 return;
                             }
@@ -524,12 +524,12 @@ namespace ProjectCryptoGains
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         errors += 1;
-                        string lastError = "Not enough buy transactions to cover this sell transaction." +
+                        string lastError = "Not enough buy transactions to cover this sell transaction" +
                                            Environment.NewLine + $"RefId: {stx.RefId}" +
                                            Environment.NewLine + $"Base currency: {asset}" +
                                            Environment.NewLine + $"Amount missing: {amountToSell - totalRelevantAmountBought}";
                         ConsoleLog(_mainWindow.txtLog, $"[Gains] {lastError}");
-                        MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     });
                     break;
                 }
@@ -623,7 +623,7 @@ namespace ProjectCryptoGains
         {
             if (!dgGains.HasItems)
             {
-                MessageBoxResult result = CustomMessageBox.Show("Nothing to print.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show("Nothing to print.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -639,7 +639,7 @@ namespace ProjectCryptoGains
             catch (Exception ex)
             {
                 ConsoleLog(_mainWindow.txtLog, $"[Gains] Printing failed: {ex.Message}");
-                MessageBoxResult result = CustomMessageBox.Show($"Printing failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Printing failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -696,7 +696,7 @@ namespace ProjectCryptoGains
         {
             if (!dgGainsSummary.HasItems)
             {
-                MessageBoxResult result = CustomMessageBox.Show("Nothing to print.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show("Nothing to print.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -712,7 +712,7 @@ namespace ProjectCryptoGains
             catch (Exception ex)
             {
                 ConsoleLog(_mainWindow.txtLog, $"[Gains] Printing failed: {ex.Message}");
-                MessageBoxResult result = CustomMessageBox.Show($"Printing failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Printing failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {

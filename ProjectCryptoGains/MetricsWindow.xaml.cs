@@ -68,7 +68,7 @@ namespace ProjectCryptoGains
                     }
                     catch (Exception ex)
                     {
-                        MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                         // Exit function early
                         return;
@@ -106,7 +106,7 @@ namespace ProjectCryptoGains
                 catch (Exception ex)
                 {
                     lastError = "There was a problem getting invest metrics" + Environment.NewLine + ex.Message;
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
 
                     // Exit function early
@@ -138,7 +138,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                     // Exit function early
                     return;
@@ -179,7 +179,7 @@ namespace ProjectCryptoGains
                 {
                     lastError = "There was a problem getting average buy prices" + Environment.NewLine + ex.Message;
 
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
 
                     // Exit function early
@@ -222,7 +222,7 @@ namespace ProjectCryptoGains
                 {
                     lastError = "There was a problem getting rewards" + Environment.NewLine + ex.Message;
 
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
 
                     // Exit function early
@@ -308,7 +308,7 @@ namespace ProjectCryptoGains
                         }
                         catch (Exception ex)
                         {
-                            MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                             // Exit function early
                             return;
@@ -452,7 +452,7 @@ namespace ProjectCryptoGains
                                     {
                                         Application.Current.Dispatcher.Invoke(() =>
                                         {
-                                            MessageBoxResult result = CustomMessageBox.Show($"There were issues calculating some reward amounts in {fiatCurrency}.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                            CustomMessageBox.Show($"There were issues calculating some reward amounts in {fiatCurrency}.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                                         });
                                     }
                                 }

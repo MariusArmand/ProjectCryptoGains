@@ -85,7 +85,7 @@ namespace ProjectCryptoGains
 
                     string message = "Settings have been saved.";
                     ConsoleLog(_mainWindow.txtLog, $"[Settings] {message}");
-                    MessageBoxResult result = CustomMessageBox.Show(message, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CustomMessageBox.Show(message, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -96,7 +96,7 @@ namespace ProjectCryptoGains
                     }
 
                     ConsoleLog(_mainWindow.txtLog, $"[Settings] {lastError}");
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
 
                 if (lastError == null)

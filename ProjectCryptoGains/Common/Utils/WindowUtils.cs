@@ -56,12 +56,12 @@ namespace ProjectCryptoGains.Common.Utils
                 }
                 catch (System.ComponentModel.Win32Exception ex)
                 {
-                    MessageBoxResult result = CustomMessageBox.Show("The help file could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("The help file could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
             {
-                MessageBoxResult result = CustomMessageBox.Show("The help file does not exist.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show("The help file does not exist.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

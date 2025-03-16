@@ -29,8 +29,6 @@ namespace ProjectCryptoGains
     {
         private readonly MainWindow _mainWindow;
 
-        private string filePath = "";
-
         public ExchangeRatesWindow(MainWindow mainWindow)
         {
             InitializeComponent();
@@ -43,7 +41,6 @@ namespace ProjectCryptoGains
 
         private void BlockUI()
         {
-            btnBrowse.IsEnabled = false;
             btnImport.IsEnabled = false;
 
             Cursor = Cursors.Wait;
@@ -51,7 +48,6 @@ namespace ProjectCryptoGains
 
         private void UnblockUI()
         {
-            btnBrowse.IsEnabled = true;
             btnImport.IsEnabled = true;
 
             Cursor = Cursors.Arrow;
@@ -70,7 +66,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                     // Exit function early
                     return;
@@ -107,12 +103,6 @@ namespace ProjectCryptoGains
             }
         }
 
-        private void BtnBrowse_Click(object sender, RoutedEventArgs e)
-        {
-            FileDialog(txtFileName);
-            filePath = txtFileName.Text;
-        }
-
         private void BtnHelp_Click(object sender, RoutedEventArgs e)
         {
             OpenHelp("exchange_rates_help.html");
@@ -122,7 +112,23 @@ namespace ProjectCryptoGains
         {
             string? lastError = null;
 
-            ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] Attempting to import {filePath}");
+            ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] Attempting to import exchange rates");
+
+            // Open file dialog
+            OpenFileDialog openFileDlg = new OpenFileDialog
+            {
+                Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                Title = "Import Exchange Rates"
+            };
+
+            bool? openFiledlgResult = openFileDlg.ShowDialog();
+            if (openFiledlgResult != true)
+            {
+                ConsoleLog(_mainWindow.txtLog, "[Exchange Rates] Import cancelled");
+                return;
+            }
+
+            string filePath = openFileDlg.FileName;
 
             BlockUI();
 
@@ -135,7 +141,7 @@ namespace ProjectCryptoGains
                 if (!File.Exists(filePath))
                 {
                     lastError = "The file does not exist.";
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] Import unsuccessful");
 
@@ -146,13 +152,14 @@ namespace ProjectCryptoGains
                 // Read the CSV file
                 StreamReader? reader;
                 try
-                {
+                {                    
                     reader = new(filePath);
+                    ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] Importing {filePath}");
                 }
                 catch (Exception ex)
                 {
                     lastError = "File could not be opened" + Environment.NewLine + ex.Message;
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] Import unsuccessful");
 
@@ -180,7 +187,7 @@ namespace ProjectCryptoGains
                             if (!Enumerable.SequenceEqual(columnNames, columnNamesExpected))
                             {
                                 lastError = "Unexpected inputfile header.";
-                                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                 ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
 
                                 // Exit loop early
@@ -205,7 +212,7 @@ namespace ProjectCryptoGains
                 catch (Exception ex)
                 {
                     lastError = "File could not be parsed" + Environment.NewLine + ex.Message;
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
                 }
 
@@ -256,7 +263,7 @@ namespace ProjectCryptoGains
                                 if (value == "")
                                 {
                                     lastError = $"Update or insert row {upsertCounter} failed: {columnName} cannot be null.";
-                                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
 
                                     // Exit loop early
@@ -266,7 +273,7 @@ namespace ProjectCryptoGains
                                 if (columnName == "DATE" && !IsValidDateFormat(value, "yyyy-MM-dd"))
                                 {
                                     lastError = $"Update or insert row {upsertCounter} failed: {columnName} should be in yyyy-MM-dd format.";
-                                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
 
                                     // Exit loop early
@@ -300,7 +307,7 @@ namespace ProjectCryptoGains
                             catch (Exception ex)
                             {
                                 lastError = $"Update or insert row {upsertCounter} failed: {ex.Message}";
-                                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                 ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
                                 transaction.Rollback();
                                 break;
@@ -346,13 +353,13 @@ namespace ProjectCryptoGains
         {
             string? lastError = null;
 
-            ConsoleLog(_mainWindow.txtLog, "[Exchange Rates] Attempting to export table to CSV");
+            ConsoleLog(_mainWindow.txtLog, "[Exchange Rates] Attempting to export exchange rates");
             BlockUI();
-
+            
             try
             {
                 // Create and configure SaveFileDialog
-                SaveFileDialog saveFileDialog = new SaveFileDialog
+                SaveFileDialog saveFileDlg = new SaveFileDialog
                 {
                     Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
                     Title = "Export Exchange Rates",
@@ -360,14 +367,14 @@ namespace ProjectCryptoGains
                 };
 
                 // Show dialog and get result
-                bool? dialogResult = saveFileDialog.ShowDialog();
-                if (dialogResult != true)
+                bool? saveFiledlgResult = saveFileDlg.ShowDialog();
+                if (saveFiledlgResult != true)
                 {
                     ConsoleLog(_mainWindow.txtLog, "[Exchange Rates] Export cancelled");
                     return;
                 }
 
-                string filePath = saveFileDialog.FileName;
+                string filePath = saveFileDlg.FileName;
 
                 // Create StringBuilder for CSV content
                 StringBuilder csvContent = new StringBuilder();
@@ -384,7 +391,7 @@ namespace ProjectCryptoGains
                     }
                     catch (Exception ex)
                     {
-                        MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                         // Exit function early
                         return;
@@ -431,14 +438,14 @@ namespace ProjectCryptoGains
                 catch (Exception ex)
                 {
                     lastError = "Failed to write CSV file" + Environment.NewLine + ex.Message;
-                    MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
                 }
             }
             catch (Exception ex)
             {
                 lastError = "Export failed" + Environment.NewLine + ex.Message;
-                MessageBoxResult result = CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
             }
             finally
@@ -458,8 +465,8 @@ namespace ProjectCryptoGains
 
         private void BtnDeleteAll_Click(object sender, RoutedEventArgs e)
         {
-            MessageBoxResult resultYesNo = CustomMessageBox.Show("Are you sure you want to delete all exchange rates?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (resultYesNo == MessageBoxResult.Yes)
+            MessageBoxResult msgBoxResultYesNo = CustomMessageBox.Show("Are you sure you want to delete all exchange rates?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (msgBoxResultYesNo == MessageBoxResult.Yes)
             {
                 ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] Deleting exchange rates");
 
@@ -471,7 +478,7 @@ namespace ProjectCryptoGains
                     }
                     catch (Exception ex)
                     {
-                        MessageBoxResult result = CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        CustomMessageBox.Show("Database could not be opened." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                         // Exit function early
                         return;

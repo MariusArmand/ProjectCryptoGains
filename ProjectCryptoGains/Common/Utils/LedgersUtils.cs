@@ -27,7 +27,7 @@ namespace ProjectCryptoGains.Common.Utils
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         string message = "There is already a ledgers refresh in progress. Please Wait.";
-                        MessageBoxResult result = CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         if (caller != Caller.Ledgers)
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[{caller}] {message}");
@@ -84,7 +84,7 @@ namespace ProjectCryptoGains.Common.Utils
                         lastWarning = "Unsupported manual ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account.";
                         Application.Current.Dispatcher.Invoke(() =>
                         {
-                            MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
+                            CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
                             ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} {lastWarning}");
 
                             // Log each unsupported ledger type
@@ -108,7 +108,7 @@ namespace ProjectCryptoGains.Common.Utils
                         lastWarning = "Unsupported kraken ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account.";
                         Application.Current.Dispatcher.Invoke(() =>
                         {
-                            MessageBoxResult result = CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
+                            CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
                             ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} {lastWarning}");
 
                             // Log each unsupported ledger type
@@ -210,7 +210,7 @@ namespace ProjectCryptoGains.Common.Utils
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    MessageBoxResult result = CustomMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 });
                 if (caller != Caller.Ledgers)
                 {
@@ -226,7 +226,7 @@ namespace ProjectCryptoGains.Common.Utils
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    MessageBoxResult result = CustomMessageBox.Show("Failed to refresh ledgers." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("Failed to refresh ledgers." + Environment.NewLine + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 });
                 if (caller != Caller.Ledgers)
                 {

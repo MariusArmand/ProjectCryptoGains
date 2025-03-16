@@ -465,7 +465,7 @@ namespace ProjectCryptoGains.Common.Utils
                     // Handle printing exceptions by showing an error message
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        MessageBoxResult result = CustomMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        CustomMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     });
                 }
             });
