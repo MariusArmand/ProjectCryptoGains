@@ -76,8 +76,8 @@ namespace ProjectCryptoGains
             string fiatCurrency = SettingFiatCurrency;
             decimal rewardsTaxPercentage = SettingRewardsTaxPercentage;
 
-            dgRewards.Columns[7].Header = "AMOUNT__" + fiatCurrency;
-            dgRewardsSummary.Columns[3].Header = "AMOUNT__" + fiatCurrency;
+            dgRewards.Columns[7].Header = $"AMOUNT__{fiatCurrency}";
+            dgRewardsSummary.Columns[3].Header = $"AMOUNT__{fiatCurrency}";
 
             // Create a collections of model objects
             ObservableCollection<RewardsModel> RewardsData = [];
@@ -105,7 +105,7 @@ namespace ProjectCryptoGains
                                                    ""DATE"",
                                                    TYPE,
                                                    EXCHANGE,
-                                                   CURRENCY,
+                                                   ASSET,
                                                    AMOUNT,
                                                    AMOUNT_FIAT,
                                                    TAX,
@@ -129,7 +129,7 @@ namespace ProjectCryptoGains
                             Date = reader.GetDateTime(1),
                             Type = reader.GetStringOrEmpty(2),
                             Exchange = reader.GetStringOrEmpty(3),
-                            Currency = reader.GetStringOrEmpty(4),
+                            Asset = reader.GetStringOrEmpty(4),
                             Amount = reader.GetDecimalOrDefault(5),
                             Amount_fiat = reader.GetDecimalOrDefault(6, 0.00m),
                             Tax = reader.GetDecimalOrDefault(7, 0.00m),
@@ -145,16 +145,19 @@ namespace ProjectCryptoGains
                 /////////////////////////////////
 
                 selectCommand.CommandText = $@"SELECT 
-                                                   CURRENCY,
-                                                   ROUND(SUM(AMOUNT), 10) AS AMOUNT,
-                                                   ROUND(SUM(AMOUNT_FIAT), 2) AS AMOUNT_FIAT,
-                                                   ROUND(SUM(TAX), 2) AS TAX,
-                                                   ROUND(AVG(UNIT_PRICE), 2) AS UNIT_PRICE,
-                                                   ROUND(AVG(UNIT_PRICE_BREAK_EVEN), 2) AS UNIT_PRICE_BREAK_EVEN,
-                                                   ROUND(SUM(AMOUNT_SELL_BREAK_EVEN), 10) AS AMOUNT_SELL_BREAK_EVEN
-                                               FROM TB_REWARDS
-                                               GROUP BY CURRENCY
-                                               ORDER BY CURRENCY";
+                                                   rewards.ASSET,
+                                                   asset_catalog.LABEL,
+                                                   ROUND(SUM(rewards.AMOUNT), 10) AS AMOUNT,
+                                                   ROUND(SUM(rewards.AMOUNT_FIAT), 2) AS AMOUNT_FIAT,
+                                                   ROUND(SUM(rewards.TAX), 2) AS TAX,
+                                                   ROUND(AVG(rewards.UNIT_PRICE), 2) AS UNIT_PRICE,
+                                                   ROUND(AVG(rewards.UNIT_PRICE_BREAK_EVEN), 2) AS UNIT_PRICE_BREAK_EVEN,
+                                                   ROUND(SUM(rewards.AMOUNT_SELL_BREAK_EVEN), 10) AS AMOUNT_SELL_BREAK_EVEN
+                                               FROM TB_REWARDS rewards
+                                               LEFT OUTER JOIN TB_ASSET_CATALOG asset_catalog
+                                                   ON rewards.ASSET = asset_catalog.ASSET
+                                               GROUP BY rewards.ASSET, asset_catalog.LABEL
+                                               ORDER BY rewards.ASSET";
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
                 {
@@ -165,24 +168,24 @@ namespace ProjectCryptoGains
                     {
                         dbLineNumber++;
 
-                        amnt_fiat = reader.GetDecimalOrDefault(2);
+                        amnt_fiat = reader.GetDecimalOrDefault(3);
                         RewardsSummaryData.Add(new RewardsSummaryModel
                         {
                             Row_number = dbLineNumber,
-                            Currency = reader.GetStringOrEmpty(0),
-                            Amount = reader.GetDecimalOrDefault(1),
+                            Asset = $"{reader.GetStringOrEmpty(0)} ({reader.GetStringOrEmpty(1)})",
+                            Amount = reader.GetDecimalOrDefault(2),
                             Amount_fiat = amnt_fiat,
-                            Tax = reader.GetDecimalOrDefault(3),
-                            Unit_price = reader.GetDecimalOrDefault(4),
-                            Unit_price_break_even = reader.GetDecimalOrDefault(5),
-                            Amount_sell_break_even = reader.GetDecimalOrDefault(6)
+                            Tax = reader.GetDecimalOrDefault(4),
+                            Unit_price = reader.GetDecimalOrDefault(5),
+                            Unit_price_break_even = reader.GetDecimalOrDefault(6),
+                            Amount_sell_break_even = reader.GetDecimalOrDefault(7)
                         });
                         tot_amnt_fiat += amnt_fiat;
                     }
                 }
             }
 
-            lblTotalAmountFiatData.Content = tot_amnt_fiat.ToString("F2") + " " + fiatCurrency;
+            lblTotalAmountFiatData.Content = $"{tot_amnt_fiat.ToString("F2")} {fiatCurrency}";
             dgRewardsSummary.ItemsSource = RewardsSummaryData;
         }
 
@@ -191,7 +194,7 @@ namespace ProjectCryptoGains
             string fiatCurrency = SettingFiatCurrency;
             dgRewards.ItemsSource = null;
             dgRewardsSummary.ItemsSource = null;
-            lblTotalAmountFiatData.Content = "0.00 " + fiatCurrency;
+            lblTotalAmountFiatData.Content = $"0.00 {fiatCurrency}";
         }
 
         private void TxtFromDate_GotFocus(object sender, RoutedEventArgs e)
@@ -370,11 +373,11 @@ namespace ProjectCryptoGains
                                                        ledgers.""DATE"",
                                                        ledgers.TYPE,
                                                        ledgers.EXCHANGE,
-                                                       catalog.CODE AS CURRENCY,
+                                                       asset_catalog.ASSET,
                                                        ROUND(ledgers.AMOUNT - ledgers.FEE, 10) AS AMOUNT
                                                    FROM TB_LEDGERS ledgers
-                                                       INNER JOIN TB_ASSET_CATALOG catalog 
-                                                           ON ledgers.CURRENCY = catalog.ASSET
+                                                       INNER JOIN TB_ASSET_CATALOG asset_catalog 
+                                                           ON ledgers.ASSET = asset_catalog .ASSET
                                                    WHERE ledgers.TYPE IN ('EARN', 'STAKING', 'AIRDROP')
                                                        AND ledgers.""DATE"" BETWEEN @FROM_DATE AND @TO_DATE
                                                    ORDER BY ledgers.""DATE"" ASC";
@@ -395,10 +398,10 @@ namespace ProjectCryptoGains
                             DateTime date = reader.GetDateTime(1);
                             string type = reader.GetStringOrEmpty(2);
                             string exchange = reader.GetStringOrEmpty(3);
-                            string currency = reader.GetStringOrEmpty(4);
+                            string asset = reader.GetStringOrEmpty(4);
                             decimal amount = reader.GetDecimalOrDefault(5);
 
-                            var (fiatAmount, source) = ConvertXToFiat(currency, date.Date, connection);
+                            var (fiatAmount, source) = ConvertXToFiat(asset, date.Date, connection);
                             decimal exchangeRate = fiatAmount;
 
                             // Rate limiting mechanism //
@@ -427,7 +430,7 @@ namespace ProjectCryptoGains
                             }
                             else
                             {
-                                lastWarning = $"[Rewards] Could not perform calculations for refid: {refid}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                lastWarning = $"[Rewards] Could not perform calculations for refid: {refid}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {asset} on {ConvertDateTimeToString(date, "yyyy-MM-dd")}";
                                 Application.Current.Dispatcher.Invoke(() =>
                                 {
                                     ConsoleLog(_mainWindow.txtLog, lastWarning);
@@ -440,7 +443,7 @@ namespace ProjectCryptoGains
                                                                 ""DATE"",
                                                                 TYPE,
                                                                 EXCHANGE,
-                                                                CURRENCY,
+                                                                ASSET,
                                                                 AMOUNT,
                                                                 AMOUNT_FIAT,
                                                                 TAX,
@@ -453,7 +456,7 @@ namespace ProjectCryptoGains
                                                                 @DATE,
                                                                 @TYPE,
                                                                 @EXCHANGE,
-                                                                @CURRENCY,
+                                                                @ASSET,
                                                                 @AMOUNT,
                                                                 ROUND(@AMOUNT_FIAT, 10),
                                                                 @TAX,
@@ -466,7 +469,7 @@ namespace ProjectCryptoGains
                             AddParameterWithValue(insertCommand, "@DATE", date);
                             AddParameterWithValue(insertCommand, "@TYPE", type);
                             AddParameterWithValue(insertCommand, "@EXCHANGE", exchange);
-                            AddParameterWithValue(insertCommand, "@CURRENCY", currency);
+                            AddParameterWithValue(insertCommand, "@ASSET", asset);
                             AddParameterWithValue(insertCommand, "@AMOUNT", amount);
                             AddParameterWithValue(insertCommand, "@AMOUNT_FIAT", amount_fiat);
                             AddParameterWithValue(insertCommand, "@TAX", tax);
@@ -529,7 +532,7 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
-                columnHeaders: new[] { "DATE", "REFID", "TYPE", "EXCHANGE", "CURRENCY", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
+                columnHeaders: new[] { "DATE", "REFID", "TYPE", "EXCHANGE", "ASSET", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
                 dataItems: rewards,
                 dataExtractor: item => new[]
                 {
@@ -537,7 +540,7 @@ namespace ProjectCryptoGains
                     (item.Refid ?? "", TextAlignment.Left, 1),
                     (item.Type ?? "", TextAlignment.Left, 1),
                     (string.IsNullOrEmpty(item.Exchange) ? "N/A" : item.Exchange, TextAlignment.Left, 1),
-                    (item.Currency ?? "", TextAlignment.Left, 1),
+                    (item.Asset ?? "", TextAlignment.Left, 1),
                     ($"{item.Amount,10:F10}", TextAlignment.Left, 1),
                     ($"{item.Amount_fiat,2:F2}", TextAlignment.Left, 1)
                 },
@@ -592,18 +595,18 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
-                columnHeaders: new[] { "CURRENCY", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
+                columnHeaders: new[] { "ASSET", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
                 dataItems: rewardsSummary,
                 dataExtractor: item => new[]
                 {
-                    (item.Currency ?? "", TextAlignment.Left, 1),
+                    (item.Asset ?? "", TextAlignment.Left, 1),
                     ($"{item.Amount,10:F10}", TextAlignment.Left, 1),
                     ($"{item.Amount_fiat,2:F2}", TextAlignment.Left, 1)
                 },
                 printDlg: printDlg,
                 title: "Rewards Summary",
                 subtitle: $"From\t{fromDate}\nTo\t{toDate}",
-                summaryText: "Total rewards converted " + totalAmountFiat,
+                summaryText: $"Total rewards converted {totalAmountFiat}",
                 maxColumnsPerRow: 8,
                 repeatHeadersPerItem: true
             );

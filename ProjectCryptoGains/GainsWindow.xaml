@@ -59,8 +59,8 @@
                     <TextBox x:Name="txtFromDate" Width="125" Margin="75,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" GotFocus="TxtFromDate_GotFocus" KeyUp="TxtFromDate_KeyUp" LostFocus="TxtFromDate_LostFocus" Text="YYYY-MM-DD" />
                     <Label x:Name="lblToDate" Width="125" Margin="25,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="To" />
                     <TextBox x:Name="txtToDate" Width="125" Margin="75,60,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" GotFocus="TxtToDate_GotFocus" KeyUp="TxtToDate_KeyUp" LostFocus="TxtToDate_LostFocus" Text="YYYY-MM-DD" />
-                    <Label x:Name="lblBaseCurrency" Width="125" Margin="225,20,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Base Currency" />
-                    <TextBox x:Name="txtBaseCurrency" Width="125" Margin="325,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" KeyUp="TextBoxBaseCurrency_KeyUp" />
+                    <Label x:Name="lblBaseAsset" Width="125" Margin="225,20,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Base Asset" />
+                    <TextBox x:Name="txtBaseAsset" Width="125" Margin="325,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" KeyUp="TextBoxBaseAsset_KeyUp" />
                     <Button x:Name="btnRefresh" Width="125" Height="40" Margin="475,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="BtnRefresh_Click" Content="Refresh" />
                     <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnPrint" Width="40" Height="40" Margin="625,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="BtnPrint_Click">
                         <Image x:Name="imgBtnPrint" Width="32" Height="32" Source="Resources/printer.png" />
@@ -81,11 +81,11 @@
                             <DataGridTextColumn Binding="{Binding Refid}" Header="REFID" />
                             <DataGridTextColumn Binding="{Binding Date, StringFormat=yyyy-MM-dd HH:mm:ss}" Header="DATE" />
                             <DataGridTextColumn Binding="{Binding Type}" Header="TYPE" />
-                            <DataGridTextColumn Binding="{Binding Base_currency}" Header="BASE__CURRENCY" />
+                            <DataGridTextColumn Binding="{Binding Base_asset}" Header="BASE__ASSET" />
                             <DataGridTextColumn Binding="{Binding Base_amount, StringFormat='0.0000000000'}"
                                     ElementStyle="{StaticResource CellRightAlign}"
                                     Header="BASE__AMOUNT" />
-                            <DataGridTextColumn Binding="{Binding Quote_currency}" Header="QUOTE__CURRENCY" />
+                            <DataGridTextColumn Binding="{Binding Quote_asset}" Header="QUOTE__ASSET" />
                             <DataGridTextColumn Binding="{Binding Quote_amount, StringFormat='0.0000000000'}"
                                     ElementStyle="{StaticResource CellRightAlign}"
                                     Header="QUOTE__AMOUNT" />
@@ -115,7 +115,7 @@
                         </DataGrid.Resources>
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Row_number}" Header="ROW__NR" />
-                            <DataGridTextColumn Binding="{Binding Currency}" Header="CURRENCY" />
+                            <DataGridTextColumn Binding="{Binding Asset}" Header="ASSET" />
                             <DataGridTextColumn Binding="{Binding Gain, StringFormat='0.00'}"
                                     ElementStyle="{StaticResource CellRightAlign}"
                                     Header="GAIN" />

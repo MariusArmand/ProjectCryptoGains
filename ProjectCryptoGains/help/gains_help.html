@@ -13,7 +13,7 @@
 
     <main>
 		<section>
-			Gains are calculated from the data produced in the Process => Trades, using the LIFO (Last In, First Out) method
+			Gains are calculated from the data produced by Process => Trades, using the LIFO (Last In, First Out) method
 		</section>
 		
 		<section>
@@ -50,10 +50,10 @@
 
 				<tr>
 					<td valign="top">
-						BASE_CURRENCY
+						BASE_ASSET
 					</td>
 					<td valign="top">
-						Base asset Class
+						Base asset code
 					</td>
 				</tr>
 				<tr><td></td></tr>
@@ -70,10 +70,10 @@
 			
 				<tr>
 					<td valign="top">
-						QUOTE_CURRENCY
+						QUOTE_ASSET
 					</td>
 					<td valign="top">
-						Quote asset Class
+						Quote asset code
 					</td>
 				</tr>
 				<tr><td></td></tr>
@@ -126,6 +126,30 @@
 						<p>The gain of the sell transaction calculated via the LIFO method
 						   Calculation (simplified): sell.PROCEEDS - (sell.AMOUNT * previous buy.BASE_UNIT_PRICE_FIAT)</p>
 					</td>
+				</tr>
+			</table>
+		</section>
+
+		<section>
+			<h2>Summary</h2>
+			<table>
+				<tr>
+					<td valign="top">
+						ASSET
+					</td>
+					<td valign="top">
+						Asset code paired with its descriptive label
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						GAIN
+					</td>
+                    <td valign="top">
+                        Sum of GAIN for each asset
+                    </td>
 				</tr>
 			</table>
 		</section>

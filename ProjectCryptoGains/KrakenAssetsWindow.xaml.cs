@@ -22,7 +22,7 @@ namespace ProjectCryptoGains
     public partial class KrakenAssetsWindow : SubwindowBase
     {
         private readonly MainWindow _mainWindow;
-        public ObservableCollection<AssetCodesKrakenModel> AssetCodesKrakenData { get; set; }
+        public ObservableCollection<AssetsKrakenModel> AssetsKrakenData { get; set; }
 
         public KrakenAssetsWindow(MainWindow mainWindow)
         {
@@ -30,7 +30,7 @@ namespace ProjectCryptoGains
             TitleBarElement = TitleBar;
 
             _mainWindow = mainWindow;
-            AssetCodesKrakenData = [];
+            AssetsKrakenData = [];
 
             BindGrid();
         }
@@ -54,9 +54,9 @@ namespace ProjectCryptoGains
         public void BindGrid()
         {
             // Clear existing data
-            AssetCodesKrakenData?.Clear();
+            AssetsKrakenData?.Clear();
 
-            if (AssetCodesKrakenData == null) return; // Add a null check
+            if (AssetsKrakenData == null) return; // Add a null check
 
             using (FbConnection connection = new(connectionString))
             {
@@ -74,12 +74,12 @@ namespace ProjectCryptoGains
 
                 using DbCommand selectCommand = connection.CreateCommand();
                 selectCommand.CommandText = @"SELECT 
-                                                  ledgers_kraken.ASSET AS CODE,
-                                                  asset_codes.ASSET
+                                                  ledgers_kraken.ASSET,
+                                                  assets_kraken.LABEL
                                               FROM 
                                                   (SELECT DISTINCT ASSET FROM TB_LEDGERS_KRAKEN) ledgers_kraken
-                                                  LEFT OUTER JOIN TB_ASSET_CODES_KRAKEN asset_codes
-                                                      ON ledgers_kraken.ASSET = asset_codes.CODE";
+                                                  LEFT OUTER JOIN TB_ASSETS_KRAKEN assets_kraken
+                                                      ON ledgers_kraken.ASSET = assets_kraken.ASSET";
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
                 {
@@ -88,16 +88,16 @@ namespace ProjectCryptoGains
                     {
                         dbLineNumber++;
 
-                        AssetCodesKrakenData.Add(new AssetCodesKrakenModel
+                        AssetsKrakenData.Add(new AssetsKrakenModel
                         {
-                            Code = reader.GetStringOrEmpty(0),
-                            Asset = reader.GetStringOrEmpty(1)
+                            Asset = reader.GetStringOrEmpty(0),
+                            Label = reader.GetStringOrEmpty(1)
                         });
                     }
                 }
             }
 
-            dgKrakenAssets.ItemsSource = AssetCodesKrakenData;
+            dgKrakenAssets.ItemsSource = AssetsKrakenData;
         }
 
         private void BtnHelp_Click(object sender, RoutedEventArgs e)
@@ -120,7 +120,7 @@ namespace ProjectCryptoGains
             string? lastInfo = null;
             string? lastError = null;
 
-            if (AssetCodesKrakenData == null || AssetCodesKrakenData.Count == 0)
+            if (AssetsKrakenData == null || AssetsKrakenData.Count == 0)
             {
                 lastInfo = "No data to save.";
                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastInfo}");
@@ -136,9 +136,9 @@ namespace ProjectCryptoGains
             {
                 await Task.Run(() =>
                 {
-                    foreach (var asset in AssetCodesKrakenData)
+                    foreach (var asset in AssetsKrakenData)
                     {
-                        if (string.IsNullOrWhiteSpace(asset.Code) || string.IsNullOrWhiteSpace(asset.Asset))
+                        if (string.IsNullOrWhiteSpace(asset.Asset) || string.IsNullOrWhiteSpace(asset.Label))
                         {
                             errors += 1;
                         }
@@ -147,7 +147,7 @@ namespace ProjectCryptoGains
 
                 if (errors > 0)
                 {
-                    lastError = "CODE and ASSET cannot be empty.";
+                    lastError = "ASSET and LABEL cannot be empty.";
                     ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
                     CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
@@ -161,17 +161,17 @@ namespace ProjectCryptoGains
                             connection.Open();
 
                             using DbCommand deleteCommand = connection.CreateCommand();
-                            deleteCommand.CommandText = "DELETE FROM TB_ASSET_CODES_KRAKEN";
+                            deleteCommand.CommandText = "DELETE FROM TB_ASSETS_KRAKEN";
                             deleteCommand.ExecuteNonQuery();
 
                             using DbCommand insertCommand = connection.CreateCommand();
-                            foreach (var krakenAsset in AssetCodesKrakenData)
+                            foreach (var krakenAsset in AssetsKrakenData)
                             {
-                                insertCommand.CommandText = "INSERT INTO TB_ASSET_CODES_KRAKEN (CODE, ASSET) VALUES (@CODE, @ASSET)";
+                                insertCommand.CommandText = "INSERT INTO TB_ASSETS_KRAKEN (ASSET, LABEL) VALUES (@ASSET, @LABEL)";
                                 insertCommand.Parameters.Clear();
 
-                                AddParameterWithValue(insertCommand, "@CODE", (object?)krakenAsset.Code ?? DBNull.Value);
                                 AddParameterWithValue(insertCommand, "@ASSET", (object?)krakenAsset.Asset ?? DBNull.Value);
+                                AddParameterWithValue(insertCommand, "@LABEL", (object?)krakenAsset.Label ?? DBNull.Value);
 
                                 try
                                 {
@@ -206,9 +206,9 @@ namespace ProjectCryptoGains
                         ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] {lastError}");
 
                         // Log each malconfigured asset
-                        foreach (string code in malconfiguredAssets)
+                        foreach (string asset in malconfiguredAssets)
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Malconfigured asset for code: {code}");
+                            ConsoleLog(_mainWindow.txtLog, $"[Kraken Assets] Malconfigured asset: {asset}");
                         }
                     }
                 }

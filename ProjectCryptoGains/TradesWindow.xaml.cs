@@ -69,12 +69,12 @@ namespace ProjectCryptoGains
         private void BindGrid()
         {
             string fiatCurrency = SettingFiatCurrency;
-            dgTrades.Columns[8].Header = "BASE__FEE__" + fiatCurrency;
-            dgTrades.Columns[11].Header = "QUOTE__AMOUNT__" + fiatCurrency;
-            dgTrades.Columns[13].Header = "QUOTE__FEE__" + fiatCurrency;
-            dgTrades.Columns[15].Header = "BASE__UNIT__PRICE__" + fiatCurrency;
-            dgTrades.Columns[17].Header = "QUOTE__UNIT__PRICE__" + fiatCurrency;
-            dgTrades.Columns[18].Header = "TOTAL__FEE__" + fiatCurrency;
+            dgTrades.Columns[8].Header = $"BASE__FEE__{fiatCurrency}";
+            dgTrades.Columns[11].Header = $"QUOTE__AMOUNT__{fiatCurrency}";
+            dgTrades.Columns[13].Header = $"QUOTE__FEE__{fiatCurrency}";
+            dgTrades.Columns[15].Header = $"BASE__UNIT__PRICE__{fiatCurrency}";
+            dgTrades.Columns[17].Header = $"QUOTE__UNIT__PRICE__{fiatCurrency}";
+            dgTrades.Columns[18].Header = $"TOTAL__FEE__{fiatCurrency}";
 
             // Create a collection of TradesModel objects
             ObservableCollection<TradesModel> TradesData = [];
@@ -100,11 +100,11 @@ namespace ProjectCryptoGains
                                                    ""DATE"",
                                                    TYPE,
                                                    EXCHANGE,
-                                                   BASE_CURRENCY,
+                                                   BASE_ASSET,
                                                    BASE_AMOUNT,
                                                    BASE_FEE,
                                                    BASE_FEE_FIAT,
-                                                   QUOTE_CURRENCY,
+                                                   QUOTE_ASSET,
                                                    QUOTE_AMOUNT,
                                                    QUOTE_AMOUNT_FIAT,
                                                    QUOTE_FEE,
@@ -137,11 +137,11 @@ namespace ProjectCryptoGains
                             Date = reader.GetDateTime(1),
                             Type = reader.GetStringOrEmpty(2),
                             Exchange = reader.GetStringOrEmpty(3),
-                            Base_currency = reader.GetStringOrEmpty(4),
+                            Base_asset = reader.GetStringOrEmpty(4),
                             Base_amount = reader.GetDecimalOrDefault(5),
                             Base_fee = reader.GetDecimalOrDefault(6),
                             Base_fee_fiat = reader.GetDecimal(7),
-                            Quote_currency = reader.GetStringOrEmpty(8),
+                            Quote_asset = reader.GetStringOrEmpty(8),
                             Quote_amount = reader.GetDecimalOrDefault(9),
                             Quote_amount_fiat = reader.GetDecimal(10),
                             Quote_fee = reader.GetDecimalOrDefault(11),
@@ -308,7 +308,7 @@ namespace ProjectCryptoGains
                         }
                         else
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Trades] " + tradesRefreshError);
+                            ConsoleLog(_mainWindow.txtLog, $"[Trades] {tradesRefreshError}");
                             ConsoleLog(_mainWindow.txtLog, $"[Trades] Refresh unsuccessful");
                         }
                     }
@@ -369,8 +369,8 @@ namespace ProjectCryptoGains
             await PrintUtils.PrintFlowDocumentAsync(
                 columnHeaders: new[]
                 {
-                    "DATE", "REFID", "TYPE", "EXCHANGE", "BASE_AMOUNT", "BASE_CURRENCY",
-                    "QUOTE_AMOUNT", "QUOTE_CURRENCY", $"QUOTE_AMOUNT_{fiatCurrency}",
+                    "DATE", "REFID", "TYPE", "EXCHANGE", "BASE_AMOUNT", "BASE_ASSET",
+                    "QUOTE_AMOUNT", "QUOTE_ASSET", $"QUOTE_AMOUNT_{fiatCurrency}",
                     $"TOTAL_FEE_{fiatCurrency}", "COSTS_PROCEEDS"
                 },
                 dataItems: trades,
@@ -381,9 +381,9 @@ namespace ProjectCryptoGains
                     (item.Type ?? "", TextAlignment.Left, 1),
                     (item.Exchange ?? "", TextAlignment.Left, 1),
                     ($"{item.Base_amount,10:F10}", TextAlignment.Left, 1),
-                    (item.Base_currency ?? "", TextAlignment.Left, 1),
+                    (item.Base_asset ?? "", TextAlignment.Left, 1),
                     ($"{item.Quote_amount,10:F10}", TextAlignment.Left, 1),
-                    (item.Quote_currency ?? "", TextAlignment.Left, 1),
+                    (item.Quote_asset ?? "", TextAlignment.Left, 1),
                     ($"{item.Quote_amount_fiat,2:F2}", TextAlignment.Left, 1),
                     ($"{item.Total_fee_fiat,2:F2}", TextAlignment.Left, 1),
                     ($"{item.Costs_proceeds,2:F2}", TextAlignment.Left, 1)

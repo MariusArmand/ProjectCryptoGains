@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Overview
-Project Crypto Gains is a tool designed to simplify tax management for cryptocurrency investments;  
+Project Crypto Gains(PCG) is a tool designed to simplify tax management for cryptocurrency investments;  
 It offers a user-friendly solution for tracking crypto transactions and calculating taxes using the LIFO (Last In, First Out) method
 
 ## Features
@@ -40,18 +40,16 @@ It offers a user-friendly solution for tracking crypto transactions and calculat
 
 ## Requirements
 - **API Access**: Users must have one of the [CoinDesk Data](https://developers.coindesk.com/pricing/) API licenses tailored to their needs for real-time price data
-- **Local Currency**: Optimized and tested for Euro (EUR); USD support is available but requires thorough testing for accuracy
+
+**Note**: Optimized and tested for Euro (EUR); USD support is available but requires thorough testing for accuracy
 
 ## Usage
 
-### Setup
-- Ensure you have a valid API key from CoinDesk Data
-
 ### Data Import
-- Import your transaction history from Kraken FX or use the manual CSV format
+- Import your ledgers from Kraken FX and/or import manual ledgers
 
 ### Execution
-Run the tool to process transactions and calculate:
+Let PCG process your data to generate the following reports:
 - Ledgers
 - Trades
 - Gains 

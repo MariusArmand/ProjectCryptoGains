@@ -13,7 +13,8 @@
     <main>
 		<section>
 			<h2>What is the Asset Catalog?</h2>
-            <p>The Asset Catalog contains per asset CODE, a more descriptive name (ASSET) to be used everywhere in PCG</p>
+            <p>The Asset Catalog assigns a descriptive label to each asset
+               All report processing in PCG relies on the assets defined within the Asset Catalog</p>
 		</section>
 
         <section>
@@ -22,21 +23,22 @@
             <table>
                 <tr>
                     <td valign="top">
-                        CODE
+                        ASSET
                     </td>
                     <td valign="top">
-                        Code for asset (e.g. BTC); Should be unique
+                        Asset code (e.g., BTC) used throughout PCG; Should be unique
                     </td>
                 </tr>
                 <tr><td></td></tr>
 
                 <tr>
                     <td valign="top">
-                        ASSET
+                        LABEL
                     </td>
                     <td valign="top">
-                        <p>- More descriptive name for the asset (e.g. BTC (Bitcoin)); Should be unique
-                           - This should match with ASSET in Kraken Assets.</p>
+                        <p>- Descriptive label for the asset (e.g., Bitcoin); Should be unique
+                           - This should match with LABEL in Kraken Assets
+                           - Appears in parentheses in summary reports and the Balances report, paired with the ASSET column (e.g., BTC (Bitcoin))</p>
                     </td>
                 </tr>
             </table>

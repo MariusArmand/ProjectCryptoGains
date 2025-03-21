@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
+using static ProjectCryptoGains.Common.Utils.CsvUtils;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
 using static ProjectCryptoGains.Common.Utils.DateUtils;
 using static ProjectCryptoGains.Common.Utils.ReaderUtils;
@@ -169,7 +170,7 @@ namespace ProjectCryptoGains
                             if (csvLineNumber == 0) // Add column headers to the DataTable
                             {
                                 // Get the column names from the first line
-                                string[] columnNames = Regex.Split(csvLine, pattern).Select(s => s.Trim('"')).ToArray();
+                                string[] columnNames = Regex.Split(csvLine, pattern).Select(s => CsvStripValue(s)).ToArray();
                                 string[] columnNamesExpected = ["txid", "refid", "time", "type", "subtype", "aclass", "asset", "wallet", "amount", "fee", "balance"];
 
                                 if (!Enumerable.SequenceEqual(columnNames, columnNamesExpected))
@@ -270,15 +271,15 @@ namespace ProjectCryptoGains
 
                                 if (columnName == "TIME")
                                 {
-                                    AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToIsoDateTime(value));
+                                    AddParameterWithValue(insertCommand, $"@{columnName}", ConvertStringToIsoDateTime(value));
                                 }
                                 else if (columnName == "AMOUNT" || columnName == "FEE" || columnName == "BALANCE")
                                 {
-                                    AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToDecimal(value));
+                                    AddParameterWithValue(insertCommand, $"@{columnName}", ConvertStringToDecimal(value));
                                 }
                                 else
                                 {
-                                    AddParameterWithValue(insertCommand, "@" + columnName, value);
+                                    AddParameterWithValue(insertCommand, $"@{columnName}", value);
                                 }
                             }
 
@@ -327,9 +328,9 @@ namespace ProjectCryptoGains
                                 ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastWarning}");
 
                                 // Log each missing asset
-                                foreach (string code in missingAssets)
+                                foreach (string asset in missingAssets)
                                 {
-                                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Missing asset for code: {code}");
+                                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Missing asset: {asset}");
                                 }
                             }
 

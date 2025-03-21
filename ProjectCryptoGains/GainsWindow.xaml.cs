@@ -35,7 +35,7 @@ namespace ProjectCryptoGains
         private int errors = 0;
         private string fromDate = "2009-01-03";
         private string toDate = GetTodayAsIsoDate();
-        private string baseCurrency = "";
+        private string baseAsset = "";
 
         public GainsWindow(MainWindow mainWindow)
         {
@@ -46,7 +46,7 @@ namespace ProjectCryptoGains
 
             txtFromDate.Text = fromDate;
             txtToDate.Text = toDate;
-            txtBaseCurrency.Text = baseCurrency;
+            txtBaseAsset.Text = baseAsset;
 
             BindGrid();
         }
@@ -78,7 +78,7 @@ namespace ProjectCryptoGains
         private void BindGrid()
         {
             string fiatCurrency = SettingFiatCurrency;
-            dgGains.Columns[8].Header = "BASE__UNIT__PRICE__" + fiatCurrency;
+            dgGains.Columns[8].Header = $"BASE__UNIT__PRICE__{fiatCurrency}";
 
             ObservableCollection<GainsModel> GainsData = [];
             ObservableCollection<GainsSummaryModel> GainsSummaryData = [];
@@ -104,9 +104,9 @@ namespace ProjectCryptoGains
                                                    trades.REFID,
                                                    trades.""DATE"",
                                                    trades.TYPE,
-                                                   trades.BASE_CURRENCY,
+                                                   trades.BASE_ASSET,
                                                    trades.BASE_AMOUNT,
-                                                   trades.QUOTE_CURRENCY,
+                                                   trades.QUOTE_ASSET,
                                                    trades.QUOTE_AMOUNT,
                                                    trades.BASE_UNIT_PRICE_FIAT,
                                                    trades.COSTS_PROCEEDS,
@@ -121,7 +121,7 @@ namespace ProjectCryptoGains
                                                FROM TB_GAINS gains
                                                    INNER JOIN TB_TRADES trades
                                                        ON gains.REFID = trades.REFID
-                                               WHERE trades.BASE_CURRENCY LIKE '%{baseCurrency}%'
+                                               WHERE trades.BASE_ASSET LIKE '%{baseAsset}%'
                                                ORDER BY ""DATE"" ASC";
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
@@ -137,9 +137,9 @@ namespace ProjectCryptoGains
                             Refid = reader.GetStringOrEmpty(0),
                             Date = reader.GetDateTime(1),
                             Type = reader.GetStringOrEmpty(2),
-                            Base_currency = reader.GetStringOrEmpty(3),
+                            Base_asset = reader.GetStringOrEmpty(3),
                             Base_amount = reader.GetDecimalOrDefault(4),
-                            Quote_currency = reader.GetStringOrEmpty(5),
+                            Quote_asset = reader.GetStringOrEmpty(5),
                             Quote_amount = reader.GetDecimalOrDefault(6),
                             Base_unit_price_fiat = reader.GetDecimal(7),
                             Costs_proceeds = reader.GetDecimal(8),
@@ -154,18 +154,21 @@ namespace ProjectCryptoGains
                 /////////////////////////////////
 
                 selectCommand.CommandText = $@"SELECT 
-                                                   trades.BASE_CURRENCY AS CURRENCY,
+                                                   trades.BASE_ASSET,
+                                                   asset_catalog.LABEL,
                                                    ROUND(SUM(gains.GAIN), 10) AS GAIN
                                                FROM TB_GAINS gains
                                                    INNER JOIN TB_TRADES trades
                                                        ON gains.REFID = trades.REFID
+                                                   LEFT OUTER JOIN TB_ASSET_CATALOG asset_catalog
+                                                       ON trades.BASE_ASSET = asset_catalog.ASSET
                                                WHERE gains.GAIN IS NOT NULL
-                                                   AND trades.BASE_CURRENCY LIKE @BASE_CURRENCY
+                                                   AND trades.BASE_ASSET LIKE @BASE_ASSET
                                                    AND trades.""DATE"" BETWEEN @FROM_DATE AND @TO_DATE
-                                               GROUP BY trades.BASE_CURRENCY
-                                               ORDER BY trades.BASE_CURRENCY";
+                                               GROUP BY trades.BASE_ASSET, asset_catalog.LABEL
+                                               ORDER BY trades.BASE_ASSET";
 
-                AddParameterWithValue(selectCommand, "@BASE_CURRENCY", $"%{baseCurrency}%");
+                AddParameterWithValue(selectCommand, "@BASE_ASSET", $"%{baseAsset}%");
                 AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(fromDate));
                 AddParameterWithValue(selectCommand, "@TO_DATE", ConvertStringToIsoDate(toDate).AddDays(1));
 
@@ -178,25 +181,25 @@ namespace ProjectCryptoGains
                     {
                         dbLineNumber++;
 
-                        gain = reader.GetDecimalOrDefault(1);
+                        gain = reader.GetDecimalOrDefault(2);
                         GainsSummaryData.Add(new GainsSummaryModel
                         {
                             Row_number = dbLineNumber,
-                            Currency = reader.GetStringOrEmpty(0),
-                            Gain = reader.GetDecimalOrDefault(1)
+                            Asset = $"{reader.GetStringOrEmpty(0)} ({reader.GetStringOrEmpty(1)})",
+                            Gain = reader.GetDecimalOrDefault(2)
                         });
                         tot_gain += gain;
                     }
                 }
             }
-            lblTotalGainsData.Content = tot_gain.ToString("F2") + " " + fiatCurrency;
+            lblTotalGainsData.Content = $"{tot_gain.ToString("F2")} {fiatCurrency}";
             dgGainsSummary.ItemsSource = GainsSummaryData;
         }
 
         private void UnbindGrid()
         {
             string fiatCurrency = SettingFiatCurrency;
-            lblTotalGainsData.Content = "0.00 " + fiatCurrency;
+            lblTotalGainsData.Content = $"0.00 {fiatCurrency}";
             dgGains.ItemsSource = null;
             dgGainsSummary.ItemsSource = null;
         }
@@ -257,14 +260,14 @@ namespace ProjectCryptoGains
             toDate = txtToDate.Text;
         }
 
-        private void TextBoxBaseCurrency_KeyUp(object sender, KeyboardEventArgs e)
+        private void TextBoxBaseAsset_KeyUp(object sender, KeyboardEventArgs e)
         {
-            SetBaseCurrency();
+            SetBaseAsset();
         }
 
-        private void SetBaseCurrency()
+        private void SetBaseAsset()
         {
-            baseCurrency = txtBaseCurrency.Text;
+            baseAsset = txtBaseAsset.Text;
         }
 
         private void BtnRefresh_Click(object sender, RoutedEventArgs e)
@@ -354,7 +357,7 @@ namespace ProjectCryptoGains
 
                                 // Read the assets into a list
                                 using DbCommand selectCommand = connection.CreateCommand();
-                                selectCommand.CommandText = $@"SELECT ASSET FROM TB_ASSET_CATALOG WHERE ASSET like '%{baseCurrency}%'";
+                                selectCommand.CommandText = $@"SELECT ASSET FROM TB_ASSET_CATALOG WHERE ASSET like '%{baseAsset}%'";
 
                                 List<string> assets = [];
 
@@ -427,7 +430,7 @@ namespace ProjectCryptoGains
                     UnbindGrid();
                     if (tradesRefreshError != null)
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Gains] " + tradesRefreshError);
+                        ConsoleLog(_mainWindow.txtLog, $"[Gains] {tradesRefreshError}");
                         ConsoleLog(_mainWindow.txtLog, $"[Gains] Refreshing trades unsuccessful");
                     }
                     ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh unsuccessful");
@@ -458,7 +461,7 @@ namespace ProjectCryptoGains
                                                        COSTS_PROCEEDS,
                                                        BASE_AMOUNT AS TX_BALANCE_REMAINING
                                                    FROM TB_TRADES
-                                                   WHERE BASE_CURRENCY = '{asset}'
+                                                   WHERE BASE_ASSET = '{asset}'
                                                        AND TYPE = '{tx_type}'
                                                    ORDER BY ""DATE"" {orderBy}";
 
@@ -526,7 +529,7 @@ namespace ProjectCryptoGains
                         errors += 1;
                         string lastError = "Not enough buy transactions to cover this sell transaction" +
                                            Environment.NewLine + $"RefId: {stx.RefId}" +
-                                           Environment.NewLine + $"Base currency: {asset}" +
+                                           Environment.NewLine + $"Base asset: {asset}" +
                                            Environment.NewLine + $"Amount missing: {amountToSell - totalRelevantAmountBought}";
                         ConsoleLog(_mainWindow.txtLog, $"[Gains] {lastError}");
                         CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -657,7 +660,7 @@ namespace ProjectCryptoGains
             await PrintUtils.PrintFlowDocumentAsync(
                 columnHeaders: new[]
                 {
-                    "DATE", "REFID", "TYPE", "BASE_CURRENCY", "BASE_AMOUNT", "QUOTE_CURRENCY",
+                    "DATE", "REFID", "TYPE", "BASE_ASSET", "BASE_AMOUNT", "QUOTE_ASSET",
                     "QUOTE_AMOUNT", $"BASE_UNIT_PRICE_{fiatCurrency}", "COSTS_PROCEEDS",
                     "TX_BALANCE_REMAINING", "GAIN"
                 },
@@ -667,9 +670,9 @@ namespace ProjectCryptoGains
                     (ConvertDateTimeToString(item.Date) ?? "", TextAlignment.Left, 1),
                     (item.Refid ?? "", TextAlignment.Left, 2),
                     (item.Type ?? "", TextAlignment.Left, 1),
-                    (item.Base_currency ?? "", TextAlignment.Left, 1),
+                    (item.Base_asset ?? "", TextAlignment.Left, 1),
                     ($"{item.Base_amount,10:F10}", TextAlignment.Left, 1),
-                    (item.Quote_currency ?? "", TextAlignment.Left, 1),
+                    (item.Quote_asset ?? "", TextAlignment.Left, 1),
                     ($"{item.Quote_amount,10:F10}", TextAlignment.Left, 1),
                     ($"{item.Base_unit_price_fiat,2:F2}", TextAlignment.Left, 1),
                     ($"{item.Costs_proceeds,2:F2}", TextAlignment.Left, 1),
@@ -728,17 +731,17 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
-                columnHeaders: new[] { "CURRENCY", "GAIN" },
+                columnHeaders: new[] { "ASSET", "GAIN" },
                 dataItems: gainsSummary,
                 dataExtractor: item => new[]
                 {
-                    (item.Currency ?? "", TextAlignment.Left, 1),
+                    (item.Asset ?? "", TextAlignment.Left, 1),
                     ($"{item.Gain,2:F2}", TextAlignment.Left, 1)
                 },
                 printDlg: printDlg,
                 title: "Gains Summary",
                 subtitle: $"From\t{fromDate}\nTo\t{toDate}",
-                summaryText: "Total gains " + totalGains,
+                summaryText: $"Total gains {totalGains}",
                 maxColumnsPerRow: 7,
                 repeatHeadersPerItem: true
             );

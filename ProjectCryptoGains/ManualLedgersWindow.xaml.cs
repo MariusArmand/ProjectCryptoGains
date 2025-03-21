@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
+using static ProjectCryptoGains.Common.Utils.CsvUtils;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
 using static ProjectCryptoGains.Common.Utils.DateUtils;
 using static ProjectCryptoGains.Common.Utils.ReaderUtils;
@@ -181,7 +182,7 @@ namespace ProjectCryptoGains
                         if (csvLineNumber == 0) // Add column headers to the DataTable
                         {
                             // Get the column names from the first line
-                            string[] columnNames = Regex.Split(csvLine, pattern).Select(s => s.Trim('"')).ToArray();
+                            string[] columnNames = Regex.Split(csvLine, pattern).Select(s => CsvStripValue(s)).ToArray();
                             string[] columnNamesExpected = ["refid", "date", "type", "exchange", "asset", "amount", "fee", "source", "target", "notes"];
 
                             if (!Enumerable.SequenceEqual(columnNames, columnNamesExpected))
@@ -279,7 +280,7 @@ namespace ProjectCryptoGains
 
                                 if (i != 3 && i != 7 && i != 8 && i != 9 && value == "")
                                 {
-                                    lastError = "Insert row " + insertCounter + " failed: " + columnName + " cannot be null.";
+                                    lastError = $"Insert row {insertCounter} failed: {columnName} cannot be null.";
                                     CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
 
@@ -289,7 +290,7 @@ namespace ProjectCryptoGains
 
                                 if (columnName == "DATE" && !IsValidDateFormat(value, "yyyy-MM-dd HH:mm:ss"))
                                 {
-                                    lastError = "Insert row " + insertCounter + " failed: " + columnName + " should be in yyyy-MM-dd HH:mm:ss format.";
+                                    lastError = $"Insert row {insertCounter} failed: {columnName} should be in yyyy-MM-dd HH:mm:ss format.";
                                     CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                     ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
 
@@ -299,15 +300,15 @@ namespace ProjectCryptoGains
 
                                 if (columnName == "DATE")
                                 {
-                                    AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToIsoDateTime(value));
+                                    AddParameterWithValue(insertCommand, $"@{columnName}", ConvertStringToIsoDateTime(value));
                                 }
                                 else if (columnName == "AMOUNT" || columnName == "FEE")
                                 {
-                                    AddParameterWithValue(insertCommand, "@" + columnName, ConvertStringToDecimal(value));
+                                    AddParameterWithValue(insertCommand, $"@{columnName}", ConvertStringToDecimal(value));
                                 }
                                 else
                                 {
-                                    AddParameterWithValue(insertCommand, "@" + columnName, value);
+                                    AddParameterWithValue(insertCommand, $"@{columnName}", value);
                                 }
                             }
 

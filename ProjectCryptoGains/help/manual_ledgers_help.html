@@ -70,7 +70,7 @@
 						asset
 					</td>
 					<td valign="top">
-						The transaction asset; This should match with an ASSET from the Asset Catalog, which can be reached via Configure => Asset Catalog
+						The transaction asset code; This should match with an ASSET from the Asset Catalog, which can be reached via Configure => Asset Catalog
 					</td>
 				</tr>
 				<tr><td></td></tr>
@@ -80,7 +80,7 @@
 						amount
 					</td>
 					<td valign="top">
-						The transaction amount without the fee
+						The transaction amount debited (-) or credited (+), fee excluded
 					</td>
 				</tr>
 				<tr><td></td></tr>
@@ -127,13 +127,13 @@
 			<p class="small-italic">*optional</p>
 			<h3>Example</h3>
 			<div class="csv-display">
-				<div>refid,date,type,exchange,asset,amount,fee,source,target,notes</div>
-				<div>MANUAL-0,2018-02-27 08:10:00,DEPOSIT,Coinbase,EUR,1000,0,BANK,Coinbase,From Bank to Coinbase</div>
-				<div>MANUAL-1,2018-02-27 15:19:00,TRADE,Coinbase,BTC (Bitcoin),0.1165775,0,,,</div>
-				<div>MANUAL-1,2018-02-27 15:19:00,TRADE,Coinbase,EUR,-985.32,14.68,,,</div>
-				<div>MANUAL-2,2018-03-20 10:45:00,WITHDRAWAL,Coinbase,BTC (Bitcoin),0.1165775,0.00176159,Coinbase,WALLET,From Coinbase to wallet</div>
-				<div>MANUAL-3,2024-05-15 12:38:13,AIRDROP,Kraken,STRK (Starknet),100.47216,0,Kraken futures,Kraken spot,Airdrop</div>
-				<div>MANUAL-4,2024-12-31 23:59:59,STAKING,,TAO (Bittensor),0.003,0,WALLET,WALLET,TAO (Bittensor) staking reward</div>
+				<div>"refid","date","type","exchange","asset","amount","fee","source","target","notes"</div>
+				<div>"MANUAL-0","2018-02-27 08:10:00","DEPOSIT","Coinbase","EUR",1000,0,"BANK","Coinbase","From Bank to Coinbase"</div>
+				<div>"MANUAL-1","2018-02-27 15:19:00","TRADE","Coinbase","BTC",0.1165775,0,"","",""</div>
+				<div>"MANUAL-1","2018-02-27 15:19:00","TRADE","Coinbase","EUR",-985.32,14.68,"","",""</div>
+				<div>"MANUAL-2","2018-03-20 10:45:00","WITHDRAWAL","Coinbase","BTC",0.1165775,0.00176159,"Coinbase","WALLET","From Coinbase to wallet"</div>
+				<div>"MANUAL-3","2024-05-15 12:38:13","AIRDROP","Kraken","STRK",100.47216,0,"Kraken futures","Kraken spot","Airdrop"</div>
+				<div>"MANUAL-4","2024-12-31 23:59:59","STAKING","","TAO",0.003,0,"WALLET","WALLET","TAO staking reward"</div>
 			</div>
 		</section>
 
@@ -141,8 +141,7 @@
 			<h2>Importing Manual Ledgers</h2>
 			<ul>
 				<li>Go to Sources => Manual Ledgers</li>
-				<li>Via Browse, select the csv that contains your manual ledgers</li>
-				<li>Click on Import			
+				<li>Click on Import and select the csv that contains your manual ledgers
 					<p><i>- If you see a message showing there were missing assets detected, check the log in the main window for more details on the missing assets
 						  - The transaction asset should match the Asset Catalog, which can be reached via Configure => Asset Catalog
 						  - If the asset is indeed missing in the Asset Catalog, it can be added and saved in that window</i></p>

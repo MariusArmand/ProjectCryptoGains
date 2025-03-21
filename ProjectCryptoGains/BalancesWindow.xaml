@@ -67,7 +67,7 @@
                         </DataGrid.Resources>
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Row_number}" Header="ROW__NR" />
-                            <DataGridTextColumn Binding="{Binding Currency}" Header="CURRENCY" />
+                            <DataGridTextColumn Binding="{Binding Asset}" Header="ASSET" />
                             <DataGridTextColumn Binding="{Binding Amount, StringFormat='0.0000000000'}"
                                                 ElementStyle="{StaticResource CellRightAlign}"
                                                 Header="AMOUNT" />

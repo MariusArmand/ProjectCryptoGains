@@ -72,7 +72,7 @@
                             <DataGridTextColumn Binding="{Binding Date, StringFormat=yyyy-MM-dd HH:mm:ss}" Header="DATE" />
                             <DataGridTextColumn Binding="{Binding Type}" Header="TYPE" />
                             <DataGridTextColumn Binding="{Binding Exchange}" Header="EXCHANGE" />
-                            <DataGridTextColumn Binding="{Binding Base_currency}" Header="BASE__CURRENCY" />
+                            <DataGridTextColumn Binding="{Binding Base_asset}" Header="BASE__ASSET" />
                             <DataGridTextColumn Binding="{Binding Base_amount, StringFormat='0.0000000000'}"
                                     ElementStyle="{StaticResource CellRightAlign}"
                                     Header="BASE__AMOUNT" />
@@ -82,7 +82,7 @@
                             <DataGridTextColumn Binding="{Binding Base_fee_fiat, StringFormat='0.00'}"
                                     ElementStyle="{StaticResource CellRightAlign}"
                                     Header="BASE__FEE__FIAT" />
-                            <DataGridTextColumn Binding="{Binding Quote_currency}" Header="QUOTE__CURRENCY" />
+                            <DataGridTextColumn Binding="{Binding Quote_asset}" Header="QUOTE__ASSET" />
                             <DataGridTextColumn Binding="{Binding Quote_amount, StringFormat='0.0000000000'}"
                                     ElementStyle="{StaticResource CellRightAlign}"
                                     Header="QUOTE__AMOUNT" />

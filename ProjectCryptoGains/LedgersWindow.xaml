@@ -71,7 +71,7 @@
                             <DataGridTextColumn Binding="{Binding Date, StringFormat=yyyy-MM-dd HH:mm:ss}" Header="DATE" />
                             <DataGridTextColumn Binding="{Binding Type}" Header="TYPE" />
                             <DataGridTextColumn Binding="{Binding Exchange}" Header="EXCHANGE" />
-                            <DataGridTextColumn Binding="{Binding Currency}" Header="CURRENCY" />
+                            <DataGridTextColumn Binding="{Binding Asset}" Header="ASSET" />
                             <DataGridTextColumn Binding="{Binding Amount, StringFormat='0.0000000000'}"
                                     ElementStyle="{StaticResource CellRightAlign}"
                                     Header="AMOUNT" />

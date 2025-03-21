@@ -77,7 +77,7 @@ namespace ProjectCryptoGains
         private void BindGrid()
         {
             string fiatCurrency = SettingFiatCurrency;
-            dgBalances.Columns[3].Header = "AMOUNT__" + fiatCurrency;
+            dgBalances.Columns[3].Header = $"AMOUNT__{fiatCurrency}";
 
             // Create a collection of BalancesModel objects
             ObservableCollection<BalancesModel> BalancesData = [];
@@ -97,16 +97,25 @@ namespace ProjectCryptoGains
                 }
 
                 using DbCommand selectCommand = connection.CreateCommand();
-                selectCommand.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_BALANCES";
+                selectCommand.CommandText = @"SELECT 
+                                                  balances.ASSET, 
+                                                  asset_catalog.LABEL,
+                                                  balances.AMOUNT, 
+                                                  balances.AMOUNT_FIAT 
+                                              FROM TB_BALANCES balances
+                                              LEFT OUTER JOIN TB_ASSET_CATALOG asset_catalog
+                                                  ON balances.ASSET = asset_catalog.ASSET
+                                              ORDER BY balances.ASSET";
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
                 {
                     int dbLineNumber = 0;
 
-                    List<string> currencies = [];
+                    List<string> assets = [];
                     List<decimal> amounts_fiat = [];
 
-                    string curr = "";
+                    string asset = "";
+                    string assetWithLabel = "";
 
                     decimal amnt = 0.00m;
                     decimal amnt_fiat = 0.00m;
@@ -118,29 +127,30 @@ namespace ProjectCryptoGains
                         {
                             dbLineNumber++;
 
-                            curr = reader.GetStringOrEmpty(0);
-                            amnt = reader.GetDecimalOrDefault(1);
-                            amnt_fiat = reader.GetDecimalOrDefault(2, 0.00m);
+                            asset = reader.GetStringOrEmpty(0);
+                            assetWithLabel = $"{asset} ({reader.GetStringOrEmpty(1)})";
+                            amnt = reader.GetDecimalOrDefault(2);
+                            amnt_fiat = reader.GetDecimalOrDefault(3, 0.00m);
 
                             BalancesData.Add(new BalancesModel
                             {
                                 Row_number = dbLineNumber,
-                                Currency = curr,
+                                Asset = assetWithLabel,
                                 Amount = amnt,
                                 Amount_fiat = amnt_fiat
                             });
 
                             tot_amnt_fiat += amnt_fiat;
 
-                            currencies.Add(curr); // Add currency to list
+                            assets.Add(asset); // Add asset to list
                             amounts_fiat.Add(amnt_fiat);
                         }
 
                         if (chkConvertToFiat.IsChecked == true)
                         {
-                            lblTotalAmountFiatData.Content = tot_amnt_fiat + " " + fiatCurrency;
+                            lblTotalAmountFiatData.Content = $"{tot_amnt_fiat} {fiatCurrency}";
 
-                            RefreshPie([.. currencies], [.. amounts_fiat]); // Spreads collection items into new arrays for method argument
+                            RefreshPie([.. assets], [.. amounts_fiat]); // Spreads collection items into new arrays for method argument
                             ToggleDataUIVisibility(Visibility.Visible);
                         }
                         else
@@ -186,7 +196,7 @@ namespace ProjectCryptoGains
                         Title = title,
                         Values = new ChartValues<decimal> { amounts_fiat[i] },
                         DataLabels = true,
-                        LabelPoint = chartPoint => (chartPoint.Participation * 100).ToString("F2") + "%",
+                        LabelPoint = chartPoint => $"{(chartPoint.Participation * 100).ToString("F2")}%",
                         Stroke = null,
                         StrokeThickness = 0
                     });
@@ -308,17 +318,15 @@ namespace ProjectCryptoGains
                                 // Insert into db table
                                 using DbCommand selectCommand = connection.CreateCommand();
                                 selectCommand.CommandText = @"SELECT 
-                                                                  catalog.CODE, 
-                                                                  catalog.ASSET
+                                                                  asset_catalog.ASSET
                                                               FROM
-                                                                  (SELECT CODE, ASSET 
-                                                                   FROM TB_ASSET_CATALOG) catalog
+                                                                  (SELECT ASSET 
+                                                                   FROM TB_ASSET_CATALOG) asset_catalog
                                                                   INNER JOIN
-                                                                  (SELECT DISTINCT CURRENCY 
+                                                                  (SELECT DISTINCT ASSET 
                                                                    FROM TB_LEDGERS) ledgers
-                                                                  ON catalog.ASSET = ledgers.CURRENCY
+                                                                  ON asset_catalog.ASSET = ledgers.ASSET
                                                               ORDER BY 
-                                                                  CODE, 
                                                                   ASSET";
 
                                 using (DbDataReader reader = selectCommand.ExecuteReader())
@@ -330,22 +338,21 @@ namespace ProjectCryptoGains
                                     /////////////////////////////
                                     while (reader.Read())
                                     {
-                                        string code = reader.GetStringOrEmpty(0);
-                                        string asset = reader.GetStringOrEmpty(1);
+                                        string asset = reader.GetStringOrEmpty(0);
 
                                         using DbCommand insertCommand = connection.CreateCommand();
-                                        if (code == fiatCurrency)
+                                        if (asset == fiatCurrency)
                                         {
                                             insertCommand.CommandText = CreateFiatBalancesInsert(asset, untilDate);
                                         }
                                         else
                                         {
-                                            var (xInFiat, sqlCommand, conversionSource) = CreateCryptoBalancesInsert(asset, code, untilDate, convertToFiat, connection);
+                                            var (xInFiat, sqlCommand, conversionSource) = CreateCryptoBalancesInsert(asset, untilDate, convertToFiat, connection);
                                             insertCommand.CommandText = sqlCommand;
 
                                             if (xInFiat == 0m)
                                             {
-                                                lastWarning = $"[Balances] Could not calculate balance for currency: {asset}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                                lastWarning = $"[Balances] Unable to calculate balance" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {asset} on {untilDate}";
                                                 Application.Current.Dispatcher.Invoke(() =>
                                                 {
                                                     ConsoleLog(_mainWindow.txtLog, lastWarning);
@@ -403,7 +410,7 @@ namespace ProjectCryptoGains
                     }
                     else
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Balances] " + lastError);
+                        ConsoleLog(_mainWindow.txtLog, $"[Balances] {lastError}");
                         ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh unsuccessful");
                     }
                 }
@@ -419,7 +426,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        private static (decimal xInFiat, string sqlCommand, string conversionSource) CreateCryptoBalancesInsert(string currency, string currency_code, string untilDate, bool? convertToFiat, FbConnection connection)
+        private static (decimal xInFiat, string sqlCommand, string conversionSource) CreateCryptoBalancesInsert(string asset, string untilDate, bool? convertToFiat, FbConnection connection)
         {
             try
             {
@@ -428,34 +435,34 @@ namespace ProjectCryptoGains
 
                 if (convertToFiat == true)
                 {
-                    var (fiatAmount, source) = ConvertXToFiat(currency_code, ConvertStringToIsoDate(untilDate), connection);
+                    var (fiatAmount, source) = ConvertXToFiat(asset, ConvertStringToIsoDate(untilDate), connection);
                     xInFiat = fiatAmount;
                     conversionSource = source;
                 }
 
-                string sqlCommand = $@"INSERT INTO TB_BALANCES (CURRENCY, AMOUNT, AMOUNT_FIAT)
+                string sqlCommand = $@"INSERT INTO TB_BALANCES (ASSET, AMOUNT, AMOUNT_FIAT)
                                            SELECT 
-                                               CURRENCY, 
+                                               ASSET, 
                                                AMOUNT, 
                                                AMOUNT_FIAT 
                                            FROM
                                                (
                                                    SELECT 
-                                                       '{currency}' AS CURRENCY,
+                                                       '{asset}' AS ASSET,
                                                        ROUND(SUM(AMNT), 10) AS AMOUNT,
                                                        ROUND({xInFiat} * SUM(AMNT), 2) AS AMOUNT_FIAT
                                                    FROM (
                                                        SELECT 
                                                            SUM(AMOUNT) AS AMNT
                                                        FROM TB_LEDGERS
-                                                       WHERE CURRENCY = '{currency}'
+                                                       WHERE ASSET = '{asset}'
                                                            AND TYPE NOT IN ('WITHDRAWAL', 'DEPOSIT')
                                                            AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
                                                        UNION ALL
                                                        SELECT 
                                                            -SUM(FEE) AS AMNT
                                                        FROM TB_LEDGERS
-                                                       WHERE CURRENCY = '{currency}'
+                                                       WHERE ASSET = '{asset}'
                                                            AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
                                                    )
                                                )
@@ -469,24 +476,24 @@ namespace ProjectCryptoGains
             }
         }
 
-        private static string CreateFiatBalancesInsert(string fiat_code, string untilDate)
+        private static string CreateFiatBalancesInsert(string asset, string untilDate)
         {
-            string query = $@"INSERT INTO TB_BALANCES (CURRENCY, AMOUNT, AMOUNT_FIAT)
+            string query = $@"INSERT INTO TB_BALANCES (ASSET, AMOUNT, AMOUNT_FIAT)
                                   SELECT 
-                                      '{fiat_code}' AS CURRENCY,
+                                      '{asset}' AS ASSET,
                                       ROUND(SUM(AMNT), 10) AS AMOUNT,
                                       ROUND(SUM(AMNT), 2) AS AMOUNT_FIAT
                                   FROM (
                                       SELECT 
                                           SUM(AMOUNT) AS AMNT
                                       FROM TB_LEDGERS
-                                      WHERE CURRENCY = '{fiat_code}'
+                                      WHERE ASSET = '{asset}'
                                           AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
                                       UNION ALL
                                       SELECT 
                                           -SUM(FEE) AS AMNT
                                       FROM TB_LEDGERS
-                                      WHERE CURRENCY = '{fiat_code}'
+                                      WHERE ASSET = '{asset}'
                                           AND ""DATE"" < DATEADD(DAY, 1, CAST('{untilDate}' AS TIMESTAMP))
                                   )";
             return query;
@@ -529,12 +536,12 @@ namespace ProjectCryptoGains
 
             await PrintUtils.PrintFlowDocumentAsync(
                 title: "Balances",
-                subtitle: "Until\t" + untilDate,
-                columnHeaders: new[] { "CURRENCY", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
+                subtitle: $"Until\t{untilDate}",
+                columnHeaders: new[] { "ASSET", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
                 dataItems: balances,
                 dataExtractor: item => new[]
                 {
-                    (item.Currency ?? "", TextAlignment.Left, 1),
+                    (item.Asset ?? "", TextAlignment.Left, 1),
                     ($"{item.Amount,10:F10}", TextAlignment.Right, 1),
                     ($"{item.Amount_fiat,2:F2}", TextAlignment.Right, 1)
                 },

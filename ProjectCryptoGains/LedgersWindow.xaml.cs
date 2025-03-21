@@ -90,7 +90,7 @@ namespace ProjectCryptoGains
                                                    TYPE,
                                                    EXCHANGE,
                                                    AMOUNT,
-                                                   CURRENCY,
+                                                   ASSET,
                                                    FEE,
                                                    SOURCE,
                                                    TARGET,
@@ -118,7 +118,7 @@ namespace ProjectCryptoGains
                             Type = reader.GetStringOrEmpty(2),
                             Exchange = reader.GetStringOrEmpty(3),
                             Amount = reader.GetDecimalOrDefault(4),
-                            Currency = reader.GetStringOrEmpty(5),
+                            Asset = reader.GetStringOrEmpty(5),
                             Fee = reader.GetDecimalOrDefault(6),
                             Source = reader.GetStringOrEmpty(7),
                             Target = reader.GetStringOrEmpty(8),
@@ -239,7 +239,7 @@ namespace ProjectCryptoGains
                         {
                             if (ex.InnerException != null)
                             {
-                                ConsoleLog(_mainWindow.txtLog, $"[Ledgers] " + ex.InnerException.Message);
+                                ConsoleLog(_mainWindow.txtLog, $"[Ledgers] {ex.InnerException.Message}");
                             }
                         });
                     }
@@ -311,7 +311,7 @@ namespace ProjectCryptoGains
             await PrintUtils.PrintFlowDocumentAsync(
                 columnHeaders: new[]
                 {
-                    "DATE", "REFID", "TYPE", "EXCHANGE", "AMOUNT", "CURRENCY",
+                    "DATE", "REFID", "TYPE", "EXCHANGE", "AMOUNT", "ASSET",
                     "FEE", "SOURCE", "TARGET", "NOTES"
                 },
                 dataItems: ledgers,
@@ -322,7 +322,7 @@ namespace ProjectCryptoGains
                     (item.Type ?? "", TextAlignment.Left, 1),
                     (string.IsNullOrEmpty(item.Exchange) ? "N/A" : item.Exchange, TextAlignment.Left, 1),
                     ($"{item.Amount,10:F10}", TextAlignment.Left, 1),
-                    (item.Currency ?? "", TextAlignment.Left, 1),
+                    (item.Asset ?? "", TextAlignment.Left, 1),
                     ($"{item.Fee,10:F10}", TextAlignment.Left, 1),
                     (string.IsNullOrEmpty(item.Source) ? "N/A" : item.Source, TextAlignment.Left, 1),
                     (string.IsNullOrEmpty(item.Target) ? "N/A" : item.Target, TextAlignment.Left, 1),

@@ -75,11 +75,11 @@ namespace ProjectCryptoGains
                 using DbCommand selectCommand = connection.CreateCommand();
                 selectCommand.CommandText = $@"SELECT 
                                                    ""DATE"",
-                                                   CURRENCY,                                                   
+                                                   ASSET,                                                   
                                                    FIAT_CURRENCY,
                                                    EXCHANGE_RATE
                                                FROM TB_EXCHANGE_RATES
-                                               ORDER BY ""DATE"", CURRENCY, FIAT_CURRENCY ASC";
+                                               ORDER BY ""DATE"", ASSET, FIAT_CURRENCY ASC";
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
                 {
@@ -92,7 +92,7 @@ namespace ProjectCryptoGains
                         {
                             Row_number = dbLineNumber,
                             Date = reader.GetDateTime(0),
-                            Currency = reader.GetStringOrEmpty(1),
+                            Asset = reader.GetStringOrEmpty(1),
                             Fiat_currency = reader.GetStringOrEmpty(2),
                             Exchange_rate = reader.GetDecimal(3)
                         });
@@ -152,7 +152,7 @@ namespace ProjectCryptoGains
                 // Read the CSV file
                 StreamReader? reader;
                 try
-                {                    
+                {
                     reader = new(filePath);
                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] Importing {filePath}");
                 }
@@ -181,8 +181,8 @@ namespace ProjectCryptoGains
                         if (csvLineNumber == 0) // Add column headers to the DataTable
                         {
                             // Get the column names from the first line
-                            string[] columnNames = Regex.Split(csvLine, pattern).Select(s => s.Trim('"')).ToArray();
-                            string[] columnNamesExpected = ["date", "currency", "fiat_currency", "exchange_rate"];
+                            string[] columnNames = Regex.Split(csvLine, pattern).Select(s => CsvStripValue(s)).ToArray();
+                            string[] columnNamesExpected = ["date", "asset", "fiat_currency", "exchange_rate"];
 
                             if (!Enumerable.SequenceEqual(columnNames, columnNamesExpected))
                             {
@@ -234,16 +234,16 @@ namespace ProjectCryptoGains
                         upsertCommand.Transaction = transaction;
                         upsertCommand.CommandText = @"UPDATE OR INSERT INTO TB_EXCHANGE_RATES (
                                                       ""DATE"",
-                                                      CURRENCY,
+                                                      ASSET,
                                                       FIAT_CURRENCY,
                                                       EXCHANGE_RATE
                                                   ) VALUES (
                                                       @DATE,
-                                                      @CURRENCY,
+                                                      @ASSET,
                                                       @FIAT_CURRENCY,
                                                       ROUND(@EXCHANGE_RATE, 10)
                                                   )
-                                                  MATCHING (""DATE"", CURRENCY, FIAT_CURRENCY)";
+                                                  MATCHING (""DATE"", ASSET, FIAT_CURRENCY)";
 
                         upsertCommand.Prepare();
 
@@ -282,15 +282,15 @@ namespace ProjectCryptoGains
 
                                 if (columnName == "DATE")
                                 {
-                                    AddParameterWithValue(upsertCommand, "@" + columnName, ConvertStringToIsoDateTime($"{value} 00:00:00"));
+                                    AddParameterWithValue(upsertCommand, $"@{columnName}", ConvertStringToIsoDateTime($"{value} 00:00:00"));
                                 }
                                 else if (columnName == "EXCHANGE_RATE")
                                 {
-                                    AddParameterWithValue(upsertCommand, "@" + columnName, ConvertStringToDecimal(value));
+                                    AddParameterWithValue(upsertCommand, $"@{columnName}", ConvertStringToDecimal(value));
                                 }
                                 else
                                 {
-                                    AddParameterWithValue(upsertCommand, "@" + columnName, value);
+                                    AddParameterWithValue(upsertCommand, $"@{columnName}", value);
                                 }
                             }
 
@@ -355,7 +355,7 @@ namespace ProjectCryptoGains
 
             ConsoleLog(_mainWindow.txtLog, "[Exchange Rates] Attempting to export exchange rates");
             BlockUI();
-            
+
             try
             {
                 // Create and configure SaveFileDialog
@@ -380,7 +380,7 @@ namespace ProjectCryptoGains
                 StringBuilder csvContent = new StringBuilder();
 
                 // Add header row
-                csvContent.AppendLine("\"date\",\"currency\",\"fiat_currency\",\"exchange_rate\"");
+                csvContent.AppendLine("\"date\",\"asset\",\"fiat_currency\",\"exchange_rate\"");
 
                 // Connect to database and retrieve data
                 using (FbConnection connection = new FbConnection(connectionString))
@@ -400,7 +400,7 @@ namespace ProjectCryptoGains
                     using DbCommand selectCommand = connection.CreateCommand();
                     selectCommand.CommandText = @"SELECT 
                                                       ""DATE"", 
-                                                      CURRENCY, 
+                                                      ASSET, 
                                                       FIAT_CURRENCY, 
                                                       EXCHANGE_RATE 
                                                   FROM TB_EXCHANGE_RATES";
@@ -411,7 +411,7 @@ namespace ProjectCryptoGains
                         {
                             // Format date as yyyy-MM-dd
                             string date = reader.GetDateTime(0).ToString("yyyy-MM-dd");
-                            string currency = reader.GetString(1);
+                            string asset = reader.GetString(1);
                             string fiatCurrency = reader.GetString(2);
                             decimal exchangeRate = reader.GetDecimal(3);
 
@@ -419,7 +419,7 @@ namespace ProjectCryptoGains
                             string[] values = new[]
                             {
                                 CsvEscapeValue(date),
-                                CsvEscapeValue(currency),
+                                CsvEscapeValue(asset),
                                 CsvEscapeValue(fiatCurrency),
                                 exchangeRate.ToString(CultureInfo.InvariantCulture)
                             };

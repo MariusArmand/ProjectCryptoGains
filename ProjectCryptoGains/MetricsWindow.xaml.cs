@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.DateUtils;
 using static ProjectCryptoGains.Common.Utils.LedgersUtils;
 using static ProjectCryptoGains.Common.Utils.ReaderUtils;
 using static ProjectCryptoGains.Common.Utils.SettingUtils;
@@ -86,7 +87,7 @@ namespace ProjectCryptoGains
                         {
                             totalInvested = reader.GetDecimalOrDefault(0, 0.00m);
                         }
-                        lblTotalInvestedData.Content = totalInvested.ToString("F2") + " " + fiatCurrency;
+                        lblTotalInvestedData.Content = $"{totalInvested.ToString("F2")} {fiatCurrency}";
                     }
 
                     // Last Invested
@@ -118,17 +119,17 @@ namespace ProjectCryptoGains
         private void UnbindLabels()
         {
             string fiatCurrency = SettingFiatCurrency;
-            lblTotalInvestedData.Content = "0.00 " + fiatCurrency;
+            lblTotalInvestedData.Content = $"0.00 {fiatCurrency}";
             lblLastInvestedData.Content = "";
         }
 
         private void BindGrid()
         {
             string fiatCurrency = SettingFiatCurrency;
-            dgAvgBuyPrice.Columns[2].Header = "AMOUNT__" + fiatCurrency;
-            dgRewardsSummary.Columns[3].Header = "AMOUNT__" + fiatCurrency;
+            dgAvgBuyPrice.Columns[2].Header = $"AMOUNT__{fiatCurrency}";
+            dgRewardsSummary.Columns[3].Header = $"AMOUNT__{fiatCurrency}";
 
-            lblTotalAmountFiatData.Content = "0.00 " + fiatCurrency;
+            lblTotalAmountFiatData.Content = $"0.00 {fiatCurrency}";
 
             using (FbConnection connection = new(connectionString))
             {
@@ -154,7 +155,7 @@ namespace ProjectCryptoGains
                     ObservableCollection<AvgBuyPriceModel> AvgBuyPriceData = [];
 
                     using DbCommand selectCommand = connection.CreateCommand();
-                    selectCommand.CommandText = "SELECT CURRENCY, COALESCE(AMOUNT_FIAT, 0.00) FROM TB_AVG_BUY_PRICE";
+                    selectCommand.CommandText = "SELECT ASSET, COALESCE(AMOUNT_FIAT, 0.00) FROM TB_AVG_BUY_PRICE";
 
                     using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
@@ -167,7 +168,7 @@ namespace ProjectCryptoGains
                             AvgBuyPriceData.Add(new AvgBuyPriceModel
                             {
                                 Row_number = dbLineNumber,
-                                Currency = reader.GetStringOrEmpty(0),
+                                Asset = reader.GetStringOrEmpty(0),
                                 Amount_fiat = amnt_fiat
                             });
                         }
@@ -193,7 +194,7 @@ namespace ProjectCryptoGains
                     ObservableCollection<MetricsRewardsSummaryModel> MetricsRewardsSummaryData = [];
 
                     using DbCommand selectCommand = connection.CreateCommand();
-                    selectCommand.CommandText = "SELECT CURRENCY, AMOUNT, AMOUNT_FIAT FROM TB_REWARDS_SUMMARY where AMOUNT > 0";
+                    selectCommand.CommandText = "SELECT ASSET, AMOUNT, AMOUNT_FIAT FROM TB_REWARDS_SUMMARY where AMOUNT > 0";
 
                     using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
@@ -207,13 +208,13 @@ namespace ProjectCryptoGains
                             MetricsRewardsSummaryData.Add(new MetricsRewardsSummaryModel
                             {
                                 Row_number = dbLineNumber,
-                                Currency = reader.GetStringOrEmpty(0),
+                                Asset = reader.GetStringOrEmpty(0),
                                 Amount = reader.GetDecimalOrDefault(1),
                                 Amount_fiat = amnt_fiat
                             });
                             tot_amnt_fiat += amnt_fiat;
                         }
-                        lblTotalAmountFiatData.Content = tot_amnt_fiat.ToString("F2") + " " + fiatCurrency;
+                        lblTotalAmountFiatData.Content = $"{tot_amnt_fiat.ToString("F2")} {fiatCurrency}";
                     }
 
                     dgRewardsSummary.ItemsSource = MetricsRewardsSummaryData;
@@ -234,7 +235,7 @@ namespace ProjectCryptoGains
         private void UnbindGrid()
         {
             string fiatCurrency = SettingFiatCurrency;
-            lblTotalAmountFiatData.Content = "0.00 " + fiatCurrency;
+            lblTotalAmountFiatData.Content = $"0.00 {fiatCurrency}";
             dgAvgBuyPrice.ItemsSource = null;
             dgRewardsSummary.ItemsSource = null;
         }
@@ -331,7 +332,7 @@ namespace ProjectCryptoGains
                                                                'TOTAL_INVESTED' AS METRIC,
                                                                ROUND(SUM(AMOUNT), 2) AS ""VALUE""
                                                            FROM TB_LEDGERS
-                                                           WHERE CURRENCY = '{fiatCurrency}'
+                                                           WHERE ASSET = '{fiatCurrency}'
                                                                AND TYPE = 'DEPOSIT'";
 
                             insertCommand.ExecuteNonQuery();
@@ -342,7 +343,7 @@ namespace ProjectCryptoGains
                                                                'LAST_INVESTED' AS METRIC,
 													           SUBSTRING(CAST(MAX(""DATE"") AS VARCHAR(50)) FROM 1 FOR 19) AS ""VALUE""
 													       FROM TB_LEDGERS
-                                                           WHERE CURRENCY = '{fiatCurrency}'
+                                                           WHERE ASSET = '{fiatCurrency}'
                                                                AND TYPE = 'DEPOSIT'";
 
                             insertCommand.ExecuteNonQuery();
@@ -367,14 +368,13 @@ namespace ProjectCryptoGains
 
                             // Insert into standard DB table for each asset
                             using DbCommand selectCommand = connection.CreateCommand();
-                            selectCommand.CommandText = $"SELECT CODE, ASSET FROM TB_ASSET_CATALOG WHERE CODE != '{fiatCurrency}' ORDER BY CODE, ASSET";
+                            selectCommand.CommandText = $"SELECT ASSET FROM TB_ASSET_CATALOG WHERE ASSET != '{fiatCurrency}' ORDER BY ASSET";
 
                             using (DbDataReader reader = selectCommand.ExecuteReader())
                             {
                                 while (reader.Read())
                                 {
-                                    string code = reader.GetStringOrEmpty(0);
-                                    string asset = reader.GetStringOrEmpty(1);
+                                    string asset = reader.GetStringOrEmpty(0);
 
                                     using DbCommand insertCommand = connection.CreateCommand();
                                     insertCommand.CommandText = CreateAvgBuyPriceInsert(asset);
@@ -399,14 +399,13 @@ namespace ProjectCryptoGains
                                 // Insert into standard DB table
                                 using DbCommand selectCommand = connection.CreateCommand();
                                 selectCommand.CommandText = @"SELECT 
-                                                                  catalog.CODE,
                                                                   catalog.ASSET
                                                               FROM
-                                                                  (SELECT CODE, ASSET FROM TB_ASSET_CATALOG) catalog
+                                                                  (SELECT ASSET FROM TB_ASSET_CATALOG) catalog
                                                                   INNER JOIN
-                                                                      (SELECT DISTINCT CURRENCY FROM TB_LEDGERS) ledgers
-                                                                      ON catalog.ASSET = ledgers.CURRENCY
-                                                              ORDER BY CODE, ASSET";
+                                                                      (SELECT DISTINCT ASSET FROM TB_LEDGERS) ledgers
+                                                                      ON catalog.ASSET = ledgers.ASSET
+                                                              ORDER BY ASSET";
 
                                 using (DbDataReader reader = selectCommand.ExecuteReader())
                                 {
@@ -417,17 +416,16 @@ namespace ProjectCryptoGains
                                     /////////////////////////////
                                     while (reader.Read())
                                     {
-                                        string code = reader.GetStringOrEmpty(0);
-                                        string asset = reader.GetStringOrEmpty(1);
+                                        string asset = reader.GetStringOrEmpty(0);
 
                                         using DbCommand insertCommand = connection.CreateCommand();
 
-                                        var (xInFiat, sqlCommand, conversionSource) = CreateRewardsSummaryInsert(asset, code, date, connection);
+                                        var (xInFiat, sqlCommand, conversionSource) = CreateRewardsSummaryInsert(asset, date, connection);
                                         insertCommand.CommandText = sqlCommand;
 
                                         if (xInFiat == 0m)
                                         {
-                                            lastWarning = $"[Metrics] Could not calculate AMOUNT_{fiatCurrency} for currency: {asset}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                            lastWarning = $"[Metrics] Unable to calculate AMOUNT_{fiatCurrency}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {asset} on {ConvertDateTimeToString(date, "yyyy-MM-dd")}";
                                             Application.Current.Dispatcher.Invoke(() =>
                                             {
                                                 ConsoleLog(_mainWindow.txtLog, lastWarning);
@@ -480,7 +478,7 @@ namespace ProjectCryptoGains
                         }
                         else
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] " + lastError);
+                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
                             ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards unsuccessful");
                         }
                     }
@@ -512,7 +510,7 @@ namespace ProjectCryptoGains
                     UnbindGrid();
                     if (tradesRefreshError != null)
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] " + tradesRefreshError);
+                        ConsoleLog(_mainWindow.txtLog, $"[Metrics] {tradesRefreshError}");
                         ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refreshing trades unsuccessful");
                     }
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh unsuccessful");
@@ -524,15 +522,15 @@ namespace ProjectCryptoGains
             }
         }
 
-        private static string CreateAvgBuyPriceInsert(string currency)
+        private static string CreateAvgBuyPriceInsert(string asset)
         {
-            return $@"INSERT INTO TB_AVG_BUY_PRICE (CURRENCY, AMOUNT_FIAT)
+            return $@"INSERT INTO TB_AVG_BUY_PRICE (ASSET, AMOUNT_FIAT)
                           SELECT 
-                              CURRENCY,
+                              ASSET,
                               ROUND(AMOUNT_FIAT, 2) AS AMOUNT_FIAT
                           FROM (
                               SELECT 
-                                  '{currency}' AS CURRENCY,
+                                  '{asset}' AS ASSET,
                                   SUM(AMOUNT * UNIT_PRICE_FIAT) / SUM(AMOUNT) AS AMOUNT_FIAT
                               FROM (
                                   SELECT 
@@ -540,37 +538,37 @@ namespace ProjectCryptoGains
                                       BASE_UNIT_PRICE_FIAT AS UNIT_PRICE_FIAT
                                   FROM TB_TRADES
                                   WHERE TYPE = 'BUY'
-                                      AND BASE_CURRENCY = '{currency}'
+                                      AND BASE_ASSET = '{asset}'
                                   UNION ALL
                                   SELECT 
                                       QUOTE_AMOUNT AS AMOUNT,
                                       QUOTE_UNIT_PRICE_FIAT AS UNIT_PRICE_FIAT
                                   FROM TB_TRADES
                                   WHERE TYPE = 'SELL'
-                                      AND QUOTE_CURRENCY = '{currency}'
+                                      AND QUOTE_ASSET = '{asset}'
                               )
                           )
                           WHERE AMOUNT_FIAT IS NOT NULL";
         }
 
-        private static (decimal xInFiat, string sqlCommand, string conversionSource) CreateRewardsSummaryInsert(string currency, string currency_code, DateTime date, FbConnection connection)
+        private static (decimal xInFiat, string sqlCommand, string conversionSource) CreateRewardsSummaryInsert(string asset, DateTime date, FbConnection connection)
         {
             try
             {
-                var (fiatAmount, source) = ConvertXToFiat(currency_code, date.Date, connection);
+                var (fiatAmount, source) = ConvertXToFiat(asset, date.Date, connection);
                 decimal xInFiat = fiatAmount;
                 string conversionSource = source;
 
-                string sqlCommand = $@"INSERT INTO TB_REWARDS_SUMMARY (CURRENCY, AMOUNT, AMOUNT_FIAT)
+                string sqlCommand = $@"INSERT INTO TB_REWARDS_SUMMARY (ASSET, AMOUNT, AMOUNT_FIAT)
                                        WITH cas AS (
                                            SELECT 
                                                ROUND(SUM(AMOUNT) - SUM(FEE), 10) AS REWARD_SUM
                                            FROM TB_LEDGERS
                                            WHERE TYPE IN ('EARN', 'STAKING', 'AIRDROP')
-                                               AND CURRENCY IN ('{currency}')
+                                               AND ASSET IN ('{asset}')
                                        )
                                        SELECT 
-                                           '{currency_code}' AS CURRENCY,
+                                           '{asset}' AS ASSET,
                                            COALESCE(cas.REWARD_SUM, 0.00) AS AMOUNT,
                                            ROUND(COALESCE({xInFiat} * cas.REWARD_SUM, 0.00), 2) AS AMOUNT_FIAT
                                        FROM cas";

@@ -77,8 +77,8 @@ namespace ProjectCryptoGains
 
                         AssetCatalogData.Add(new AssetCatalogModel
                         {
-                            Code = reader.GetStringOrEmpty(0),
-                            Asset = reader.GetStringOrEmpty(1)
+                            Asset = reader.GetStringOrEmpty(0),
+                            Label = reader.GetStringOrEmpty(1)
                         });
                     }
                 }
@@ -118,7 +118,7 @@ namespace ProjectCryptoGains
                 {
                     foreach (var asset in AssetCatalogData)
                     {
-                        if (string.IsNullOrWhiteSpace(asset.Code) || string.IsNullOrWhiteSpace(asset.Asset))
+                        if (string.IsNullOrWhiteSpace(asset.Asset) || string.IsNullOrWhiteSpace(asset.Label))
                         {
                             errors += 1;
                         }
@@ -127,7 +127,7 @@ namespace ProjectCryptoGains
 
                 if (errors > 0)
                 {
-                    lastError = "Code and Asset cannot be empty.";
+                    lastError = "Asset and label cannot be empty.";
                     ConsoleLog(_mainWindow.txtLog, $"[Asset Catalog] {lastError}");
                     CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
@@ -146,11 +146,11 @@ namespace ProjectCryptoGains
                             using DbCommand insertCommand = connection.CreateCommand();
                             foreach (var asset in AssetCatalogData)
                             {
-                                insertCommand.CommandText = "INSERT INTO TB_ASSET_CATALOG (CODE, ASSET) VALUES (@CODE, @ASSET)";
+                                insertCommand.CommandText = "INSERT INTO TB_ASSET_CATALOG (ASSET, LABEL) VALUES (@ASSET, @LABEL)";
                                 insertCommand.Parameters.Clear();
 
-                                AddParameterWithValue(insertCommand, "@CODE", (object?)asset.Code ?? DBNull.Value);
                                 AddParameterWithValue(insertCommand, "@ASSET", (object?)asset.Asset ?? DBNull.Value);
+                                AddParameterWithValue(insertCommand, "@LABEL", (object?)asset.Label ?? DBNull.Value);
 
                                 try
                                 {
@@ -160,7 +160,7 @@ namespace ProjectCryptoGains
                                 {
                                     if (ex.Message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        lastError = "Failed to insert data" + Environment.NewLine + "ASSET and CODE must be unique";
+                                        lastError = "Failed to insert data" + Environment.NewLine + "ASSET and LABEL must be unique";
                                     }
                                     else
                                     {

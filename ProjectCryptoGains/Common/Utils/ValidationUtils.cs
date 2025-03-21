@@ -15,9 +15,9 @@ namespace ProjectCryptoGains.Common.Utils
             using DbCommand selectCommand = connection.CreateCommand();
             selectCommand.CommandText = @"SELECT DISTINCT ledgers_kraken.ASSET
                                           FROM TB_LEDGERS_KRAKEN ledgers_kraken
-                                              LEFT OUTER JOIN TB_ASSET_CODES_KRAKEN assets_kraken
-                                                  ON ledgers_kraken.ASSET = assets_kraken.CODE
-                                          WHERE assets_kraken.ASSET IS NULL";
+                                              LEFT OUTER JOIN TB_ASSETS_KRAKEN assets_kraken
+                                                  ON ledgers_kraken.ASSET = assets_kraken.ASSET
+                                          WHERE assets_kraken.LABEL IS NULL";
 
             using (DbDataReader reader = selectCommand.ExecuteReader())
             {
@@ -38,19 +38,19 @@ namespace ProjectCryptoGains.Common.Utils
             List<string> malfconfiguredAsset = [];
 
             using DbCommand selectCommand = connection.CreateCommand();
-            selectCommand.CommandText = @"SELECT assets_kraken.CODE 
-                                          FROM TB_ASSET_CODES_KRAKEN assets_kraken
+            selectCommand.CommandText = @"SELECT assets_kraken.ASSET 
+                                          FROM TB_ASSETS_KRAKEN assets_kraken
 									          LEFT OUTER JOIN TB_ASSET_CATALOG catalog
-									              ON assets_kraken.ASSET = catalog.ASSET
-									      WHERE catalog.CODE IS NULL";
+									              ON assets_kraken.LABEL = catalog.LABEL
+									      WHERE catalog.ASSET IS NULL";
 
             using (DbDataReader reader = selectCommand.ExecuteReader())
             {
                 while (reader.Read())
                 {
-                    if (reader[0] is string code)
+                    if (reader[0] is string asset)
                     {
-                        malfconfiguredAsset.Add(code);
+                        malfconfiguredAsset.Add(asset);
                     }
                 }
             }
@@ -65,9 +65,9 @@ namespace ProjectCryptoGains.Common.Utils
             using DbCommand selectCommand = connection.CreateCommand();
             selectCommand.CommandText = @"SELECT DISTINCT ledgers_manual.ASSET 
                                           FROM TB_LEDGERS_MANUAL ledgers_manual
-                                              LEFT OUTER JOIN TB_ASSET_CATALOG catalog
-                                                  ON ledgers_manual.ASSET = catalog.ASSET
-                                          WHERE catalog.CODE IS NULL";
+                                          LEFT OUTER JOIN TB_ASSET_CATALOG catalog
+                                              ON ledgers_manual.ASSET = catalog.ASSET
+                                          WHERE catalog.ASSET IS NULL";
 
             using (DbDataReader reader = selectCommand.ExecuteReader())
             {

@@ -19,12 +19,12 @@
 			Select the fiat currency you wish to use for conversions in Project Crypto Gains (PCG)
 			<h3>Rewards tax percentage</h3>
 			<p>This is the tax rate applied to your rewards, used in the Rewards reports
-			Enter the percentage that matches your local tax rules (e.g. 30)</p>
+			   Enter the percentage that matches your local tax rules (e.g., 30)</p>
 			<h3>CoinDesk Data API key</h3>
 			PCG uses the CoinDesk Data API for conversions to fiat; Go to the CoinDesk Data website to sign up for an API key that suits your needs
 			<h3>Printout title prefix</h3>
 			<p>Prefixes the title of each printout (e.g., Set it to 'PCG' to get 'PCG - Balances' for the Balances report)
-			If left blank, printouts will use their default titles</p>
+			   If left blank, printouts will use their default titles</p>
         </section>
 		
         <section>
@@ -73,9 +73,10 @@
 	
     <main>
 	    <section>
-			<h3>Retrieved 0.00 exchange rate</h3>
-			<p>In rare cases, the CoinDesk Data API might return 0.00 as the exchange rate; In this case, PCG will show a warning 
-			   and log the problematic record in the main window; This will obviously impact calculation accuracy<p>
+			<h3>Retrieved 0.00 exchange rate for asset X on YYYY-MM-DD</h3>
+			<p>In rare cases, the CoinDesk Data API may return an exchange rate of 0.00 for an asset (e.g., BTC on 2010-03-21)
+			   When this happens, PCG will display a warning and log the issue in the main window; This will affect calculation accuracy
+			   To fix this, you can manually import an exchange rate for the affected date and asset via Sources => Exchange Rates</p>
         </section>
 	</main>	
 </body>

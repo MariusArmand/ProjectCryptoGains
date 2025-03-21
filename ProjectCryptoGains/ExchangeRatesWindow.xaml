@@ -63,7 +63,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Row_number}" Header="ROW__NR" />
                             <DataGridTextColumn Binding="{Binding Date, StringFormat=yyyy-MM-dd}" Header="DATE" />
-                            <DataGridTextColumn Binding="{Binding Currency}" Header="CURRENCY" />
+                            <DataGridTextColumn Binding="{Binding Asset}" Header="ASSET" />
                             <DataGridTextColumn Binding="{Binding Fiat_currency}" Header="FIAT__CURRENCY" />
                             <DataGridTextColumn Binding="{Binding Exchange_rate, StringFormat='0.0000000000'}"
                                     ElementStyle="{StaticResource CellRightAlign}"

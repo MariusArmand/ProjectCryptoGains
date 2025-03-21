@@ -62,7 +62,7 @@ namespace ProjectCryptoGains.Common.Utils
             txtLog.ScrollToEnd();
         }
 
-        public static (decimal fiatAmount, string source) ConvertXToFiat(string xCurrency, DateTime date, FbConnection connection)
+        public static (decimal fiatAmount, string source) ConvertXToFiat(string xAsset, DateTime date, FbConnection connection)
         {
             try
             {
@@ -75,12 +75,12 @@ namespace ProjectCryptoGains.Common.Utils
                 selectCommand.CommandText = $@"SELECT EXCHANGE_RATE
                                                FROM TB_EXCHANGE_RATES
                                                WHERE ""DATE"" = @DATE
-                                                  AND CURRENCY = @CURRENCY
+                                                  AND ASSET = @ASSET
                                                   AND FIAT_CURRENCY = @FIAT_CURRENCY";
 
                 // Add parameters
                 AddParameterWithValue(selectCommand, "@DATE", date);
-                AddParameterWithValue(selectCommand, "@CURRENCY", xCurrency);
+                AddParameterWithValue(selectCommand, "@ASSET", xAsset);
                 AddParameterWithValue(selectCommand, "@FIAT_CURRENCY", fiatCurrency);
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
@@ -101,7 +101,7 @@ namespace ProjectCryptoGains.Common.Utils
                     client.BaseAddress = new Uri("https://min-api.cryptocompare.com");
                     string fiat_currency = SettingFiatCurrency;
                     string? api_key = SettingCoinDeskDataApiKey;
-                    var response = client.GetAsync($"/data/v2/histoday?limit=1&fsym=" + xCurrency + "&tsym=" + fiat_currency + "&toTs=" + unixTimestamp + "&api_key={" + api_key + "}").Result;
+                    var response = client.GetAsync($"/data/v2/histoday?limit=1&fsym={xAsset}&tsym={fiat_currency}&toTs={unixTimestamp}&api_key={api_key}").Result;
                     var result = response.Content.ReadAsStringAsync().Result;
                     var json = JObject.Parse(result);
 
@@ -117,7 +117,7 @@ namespace ProjectCryptoGains.Common.Utils
                         }
                         else
                         {
-                            error_message = "CoinDesk Data API call failed: " + api_response_message;
+                            error_message = $"CoinDesk Data API call failed: {api_response_message}";
                         }
                         Application.Current.Dispatcher.Invoke(() =>
                         {
@@ -135,18 +135,18 @@ namespace ProjectCryptoGains.Common.Utils
                     using DbCommand insertCommand = connection.CreateCommand();
                     insertCommand.CommandText = @"INSERT INTO TB_EXCHANGE_RATES (
                                                       ""DATE"",
-                                                      CURRENCY,                                                      
+                                                      ASSET,                                                      
                                                       FIAT_CURRENCY,
                                                       EXCHANGE_RATE
                                                   )
                                                   VALUES (
                                                       @DATE,
-                                                      @CURRENCY,
+                                                      @ASSET,
                                                       @FIAT_CURRENCY,
                                                       ROUND(@EXCHANGE_RATE, 10)
                                                   )";
 
-                    AddParameterWithValue(insertCommand, "@CURRENCY", xCurrency);
+                    AddParameterWithValue(insertCommand, "@ASSET", xAsset);
                     AddParameterWithValue(insertCommand, "@DATE", date);
                     AddParameterWithValue(insertCommand, "@FIAT_CURRENCY", fiatCurrency);
                     AddParameterWithValue(insertCommand, "@EXCHANGE_RATE", exchangeRateApi);

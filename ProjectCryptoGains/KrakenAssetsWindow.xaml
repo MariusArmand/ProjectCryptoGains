@@ -55,12 +55,12 @@
                     </Button>
                     <DataGrid x:Name="dgKrakenAssets" Margin="25,75,25,80" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="CODE" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" >
+                            <DataGridTextColumn Header="ASSET" Binding="{Binding Asset, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" >
                                 <DataGridTextColumn.EditingElementStyle>
                                     <StaticResource ResourceKey="CustomDataGridEditingTextBoxStyle" />
                                 </DataGridTextColumn.EditingElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="ASSET" Binding="{Binding Asset, UpdateSourceTrigger=PropertyChanged}" >
+                            <DataGridTextColumn Header="LABEL" Binding="{Binding Label, UpdateSourceTrigger=PropertyChanged}" >
                                 <DataGridTextColumn.EditingElementStyle>
                                     <StaticResource ResourceKey="CustomDataGridEditingTextBoxStyle" />
                                 </DataGridTextColumn.EditingElementStyle>

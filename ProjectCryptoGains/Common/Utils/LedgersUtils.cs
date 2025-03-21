@@ -67,7 +67,7 @@ namespace ProjectCryptoGains.Common.Utils
                     List<string> malconfiguredAssets = MalconfiguredAssets(connection);
                     if (missingAssets.Count > 0 || malconfiguredAssets.Count > 0)
                     {
-                        throw new ValidationException("Kraken asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Kraken Assets]");
+                        throw new ValidationException("Kraken asset(s) missing in asset catalog." + Environment.NewLine + "[Configure => Asset Catalog]");
                     }
 
                     // Check for unsupported ledger types
@@ -128,58 +128,60 @@ namespace ProjectCryptoGains.Common.Utils
 
                     // Insert into db table
                     using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText = $@"INSERT INTO TB_LEDGERS (REFID, ""DATE"", TYPE_SOURCE, TYPE, EXCHANGE, AMOUNT, CURRENCY, FEE, SOURCE, TARGET, NOTES)
+                    insertCommand.CommandText = $@"INSERT INTO TB_LEDGERS (REFID, ""DATE"", TYPE_SOURCE, TYPE, EXCHANGE, AMOUNT, ASSET, FEE, SOURCE, TARGET, NOTES)
                                                    SELECT 
-                                                       REFID AS REFID,
-                                                       ""TIME"" AS ""DATE"",
-                                                       UPPER(TYPE) AS TYPE_SOURCE,
+                                                       ledgers_kraken.REFID,
+                                                       ledgers_kraken.""TIME"" AS ""DATE"",
+                                                       UPPER(ledgers_kraken.TYPE) AS TYPE_SOURCE,
                                                        CASE
-                                                           WHEN UPPER(TYPE) = 'SPEND' THEN 'TRADE'
-                                                           WHEN UPPER(TYPE) = 'RECEIVE' THEN 'TRADE'
-                                                           WHEN UPPER(TYPE) = 'EARN' THEN 'STAKING'
-                                                           ELSE UPPER(TYPE)
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'SPEND' THEN 'TRADE'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'RECEIVE' THEN 'TRADE'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'EARN' THEN 'STAKING'
+                                                           ELSE UPPER(ledgers_kraken.TYPE)
                                                        END AS TYPE,
                                                        'Kraken' AS EXCHANGE,
-                                                       ROUND(AMOUNT, 10) AS AMOUNT,
-                                                       assets_kraken.ASSET AS CURRENCY,
-                                                       ROUND(FEE, 10) AS FEE,
+                                                       ROUND(ledgers_kraken.AMOUNT, 10) AS AMOUNT,
+                                                       asset_catalog.ASSET,
+                                                       ROUND(ledgers_kraken.FEE, 10) AS FEE,
                                                        CASE
-                                                           WHEN UPPER(TYPE) IN ('STAKING', 'EARN') THEN 'Kraken'
-                                                           WHEN UPPER(TYPE) = 'DEPOSIT' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'BANK'
-                                                           WHEN UPPER(TYPE) = 'DEPOSIT' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
-                                                           WHEN UPPER(TYPE) = 'WITHDRAWAL' THEN 'Kraken'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) IN ('STAKING', 'EARN') THEN 'Kraken'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'DEPOSIT' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'BANK'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'DEPOSIT' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'WITHDRAWAL' THEN 'Kraken'
                                                            ELSE TRIM('')
                                                        END AS SOURCE,
                                                        CASE
-                                                           WHEN UPPER(TYPE) IN ('STAKING', 'EARN') THEN 'Kraken'
-                                                           WHEN UPPER(TYPE) = 'DEPOSIT' THEN 'Kraken'
-                                                           WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
-                                                           WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'BANK'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) IN ('STAKING', 'EARN') THEN 'Kraken'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'DEPOSIT' THEN 'Kraken'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'WALLET'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'BANK'
                                                            ELSE TRIM('')
                                                        END AS TARGET,
                                                        CASE
-                                                           WHEN UPPER(TYPE) IN ('STAKING', 'EARN') THEN assets_kraken.ASSET || ' staking reward'
-                                                           WHEN UPPER(TYPE) = 'DEPOSIT' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'From Bank to Kraken'
-                                                           WHEN UPPER(TYPE) = 'DEPOSIT' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From wallet to Kraken'
-                                                           WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From Kraken to wallet'
-                                                           WHEN UPPER(TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'From Kraken to Bank'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) IN ('STAKING', 'EARN') THEN assets_kraken.ASSET || ' staking reward'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'DEPOSIT' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'From Bank to Kraken'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'DEPOSIT' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From wallet to Kraken'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET != '{fiatCurrency}' THEN 'From Kraken to wallet'
+                                                           WHEN UPPER(ledgers_kraken.TYPE) = 'WITHDRAWAL' AND assets_kraken.ASSET = '{fiatCurrency}' THEN 'From Kraken to Bank'
                                                            ELSE TRIM('')
                                                        END AS NOTES
                                                    FROM TB_LEDGERS_KRAKEN ledgers_kraken
-                                                   INNER JOIN TB_ASSET_CODES_KRAKEN assets_kraken
-                                                       ON ledgers_kraken.ASSET = assets_kraken.CODE
+                                                   INNER JOIN TB_ASSETS_KRAKEN assets_kraken
+                                                       ON ledgers_kraken.ASSET = assets_kraken.ASSET
+                                                   INNER JOIN TB_ASSET_CATALOG asset_catalog
+                                                       ON assets_kraken.LABEL = asset_catalog.LABEL
                                                    WHERE REFID != ''
-                                                       AND NOT (UPPER(TYPE) = 'TRANSFER' AND UPPER(SUBTYPE) IN ('STAKINGFROMSPOT', 'SPOTTOSTAKING', 'SPOTFROMSTAKING', 'STAKINGTOSPOT', 'SPOTFROMFUTURES'))
-                                                       AND NOT (UPPER(TYPE) = 'EARN' AND UPPER(SUBTYPE) IN ('MIGRATION', 'ALLOCATION', 'DEALLOCATION'))
+                                                       AND NOT (UPPER(ledgers_kraken.TYPE) = 'TRANSFER' AND UPPER(ledgers_kraken.SUBTYPE) IN ('STAKINGFROMSPOT', 'SPOTTOSTAKING', 'SPOTFROMSTAKING', 'STAKINGTOSPOT', 'SPOTFROMFUTURES'))
+                                                       AND NOT (UPPER(ledgers_kraken.TYPE) = 'EARN' AND UPPER(ledgers_kraken.SUBTYPE) IN ('MIGRATION', 'ALLOCATION', 'DEALLOCATION'))
                                                    UNION ALL
                                                    SELECT 
-                                                       REFID AS REFID,
+                                                       REFID,
                                                        ""DATE"",
                                                        UPPER(TYPE) AS TYPE_SOURCE,
                                                        UPPER(TYPE) AS TYPE,
                                                        EXCHANGE,
                                                        ROUND(AMOUNT, 10) AS AMOUNT,
-                                                       ASSET AS CURRENCY,
+                                                       ASSET,
                                                        ROUND(FEE, 10) AS FEE,
                                                        SOURCE,
                                                        TARGET,
@@ -232,7 +234,7 @@ namespace ProjectCryptoGains.Common.Utils
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[{caller}] " + ex.Message);
+                        ConsoleLog(_mainWindow.txtLog, $"[{caller}] {ex.Message}");
                         ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing ledgers unsuccessful");
                     });
                 }

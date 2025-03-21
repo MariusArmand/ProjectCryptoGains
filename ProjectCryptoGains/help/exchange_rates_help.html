@@ -1,0 +1,90 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCG - Help - Exchange Rates</title>
+    <link rel="stylesheet" href="style_help.css">
+	<link rel="icon" type="image/png" href="help.png">
+</head>
+<body>
+    <header>
+        <h1>Exchange Rates Help</h1>
+    </header>
+
+    <main>
+        <section>
+            <h2>What are Exchange Rates?</h2>
+			<p>Exchange rates in PCG are stored per DATE, ASSET, FIAT_CURRENCY combination;
+			   Every time an exchange rate is needed and it is not yet stored by PCG, PCG will retrieve the exchange rate 
+			   via the CoinDesk Data API and store it for later use
+			
+               <i>Exchange rates from the CoinDesk Data API are retrieved using the opening price on the relevant date;
+			   This approach limits API calls and maintains performance, with the assumption that consistently using 
+			   opening prices provides a balanced representation of historical price data</i></p>
+        </section>
+
+		<section>
+			<h2>Import csv requirements</h2>
+			<h3>Layout</h3>
+			The exchange rates csv should have columns seperated with a , and use . as decimal seperator
+			<h3>Columns</h3>
+			<table>
+				<tr>
+					<td valign="top">
+						date
+					</td>
+					<td valign="top">
+						The date of the exchange rate in YYYY-MM-DD format
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						asset
+					</td>
+					<td valign="top">
+						The asset code
+					</td>
+				</tr>
+				<tr><td></td></tr>
+				
+				<tr>
+					<td valign="top">
+						fiat_currency
+					</td>
+					<td valign="top">
+						The fiat currency to which the asset is converted
+					</td>
+				</tr>
+				<tr><td></td></tr>
+
+				<tr>
+					<td valign="top">
+						exchange_rate
+					</td>
+                    <td valign="top">
+                        The price of the asset in the fiat currency on the date
+                    </td>
+				</tr>
+			</table>		
+			<h3>Example</h3>
+			<div class="csv-display">
+				<div>"date","asset","fiat_currency","exchange_rate"</div>
+				<div>"2020-11-13","LTC","EUR",51.54</div>
+				<div>"2020-11-13","ETH","EUR",392.37</div>
+				<div>"2021-01-02","XMR","EUR",111.16</div>
+				<div>"2021-01-02","BTC","EUR",24028.41</div>
+			</div>
+		</section>
+
+		<section>
+			<h2>Importing Exchange Rates</h2>
+			<ul>
+				<li>Go to Sources => Exchange Rates and select the csv that contains the exchange rates</li>
+				<li>Click on Import</li>
+			</ul>
+		</section>
+    </main>
+</body>
+</html>

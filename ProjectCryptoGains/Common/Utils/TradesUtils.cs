@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Threading.Tasks;
 using System.Windows;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
+using static ProjectCryptoGains.Common.Utils.DateUtils;
 using static ProjectCryptoGains.Common.Utils.SettingUtils;
 using static ProjectCryptoGains.Common.Utils.Utils;
 
@@ -65,25 +66,25 @@ namespace ProjectCryptoGains.Common.Utils
 
                     // Insert into db table
                     using DbCommand insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText = $@"INSERT INTO TB_TRADES (REFID, ""DATE"", TYPE, EXCHANGE, BASE_CURRENCY, BASE_AMOUNT, BASE_FEE, BASE_FEE_FIAT, QUOTE_CURRENCY, QUOTE_AMOUNT, QUOTE_AMOUNT_FIAT, QUOTE_FEE, QUOTE_FEE_FIAT, BASE_UNIT_PRICE, BASE_UNIT_PRICE_FIAT, QUOTE_UNIT_PRICE, QUOTE_UNIT_PRICE_FIAT, TOTAL_FEE_FIAT, COSTS_PROCEEDS)
+                    insertCommand.CommandText = $@"INSERT INTO TB_TRADES (REFID, ""DATE"", TYPE, EXCHANGE, BASE_ASSET, BASE_AMOUNT, BASE_FEE, BASE_FEE_FIAT, QUOTE_ASSET, QUOTE_AMOUNT, QUOTE_AMOUNT_FIAT, QUOTE_FEE, QUOTE_FEE_FIAT, BASE_UNIT_PRICE, BASE_UNIT_PRICE_FIAT, QUOTE_UNIT_PRICE, QUOTE_UNIT_PRICE_FIAT, TOTAL_FEE_FIAT, COSTS_PROCEEDS)
                                                    SELECT 
                                                         REFID,
                                                         ""DATE"",
                                                         TYPE,
                                                         EXCHANGE,
-                                                        BASE_CURRENCY,
+                                                        BASE_ASSET,
                                                         ROUND(ABS(BASE_AMOUNT), 10) AS BASE_AMOUNT,
                                                         BASE_FEE,
                                                         CASE 
-                                                            WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                            WHEN QUOTE_ASSET != '{fiatCurrency}' THEN NULL
                                                             ELSE ROUND(BASE_FEE * BASE_UNIT_PRICE_FIAT, 10)
                                                         END AS BASE_FEE_FIAT,
-                                                        QUOTE_CURRENCY,
+                                                        QUOTE_ASSET,
                                                         ROUND(ABS(QUOTE_AMOUNT), 10) AS QUOTE_AMOUNT,
                                                         ROUND(ABS(QUOTE_AMOUNT_FIAT), 10) AS QUOTE_AMOUNT_FIAT,
                                                         QUOTE_FEE,
                                                         CASE 
-                                                            WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                            WHEN QUOTE_ASSET != '{fiatCurrency}' THEN NULL
                                                             ELSE QUOTE_FEE
                                                         END AS QUOTE_FEE_FIAT,
                                                         BASE_UNIT_PRICE,
@@ -92,8 +93,8 @@ namespace ProjectCryptoGains.Common.Utils
                                                         QUOTE_UNIT_PRICE_FIAT,
                                                         ROUND(BASE_FEE_FIAT + QUOTE_FEE_FIAT, 10) AS TOTAL_FEE_FIAT,
                                                         CASE 
-                                                            WHEN QUOTE_CURRENCY = '{fiatCurrency}' AND TYPE = 'BUY' THEN ROUND(ABS(QUOTE_AMOUNT) + BASE_FEE_FIAT + QUOTE_FEE_FIAT, 10)
-                                                            WHEN QUOTE_CURRENCY = '{fiatCurrency}' AND TYPE = 'SELL' THEN ROUND(ABS(QUOTE_AMOUNT) - BASE_FEE_FIAT - QUOTE_FEE_FIAT, 10)
+                                                            WHEN QUOTE_ASSET = '{fiatCurrency}' AND TYPE = 'BUY' THEN ROUND(ABS(QUOTE_AMOUNT) + BASE_FEE_FIAT + QUOTE_FEE_FIAT, 10)
+                                                            WHEN QUOTE_ASSET = '{fiatCurrency}' AND TYPE = 'SELL' THEN ROUND(ABS(QUOTE_AMOUNT) - BASE_FEE_FIAT - QUOTE_FEE_FIAT, 10)
                                                             ELSE NULL
                                                         END AS COSTS_PROCEEDS
                                                     FROM (
@@ -102,19 +103,19 @@ namespace ProjectCryptoGains.Common.Utils
                                                             ""DATE"",
                                                             TYPE,
                                                             EXCHANGE,
-                                                            BASE_CURRENCY,
+                                                            BASE_ASSET,
                                                             BASE_AMOUNT,
                                                             BASE_FEE,
                                                             CASE 
-                                                                WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                                WHEN QUOTE_ASSET != '{fiatCurrency}' THEN NULL
                                                                 ELSE ROUND(BASE_FEE * BASE_UNIT_PRICE_FIAT, 10)
                                                             END AS BASE_FEE_FIAT,
-                                                            QUOTE_CURRENCY,
+                                                            QUOTE_ASSET,
                                                             QUOTE_AMOUNT,
                                                             QUOTE_AMOUNT_FIAT,
                                                             QUOTE_FEE,
                                                             CASE 
-                                                                WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                                WHEN QUOTE_ASSET != '{fiatCurrency}' THEN NULL
                                                                 ELSE QUOTE_FEE
                                                             END AS QUOTE_FEE_FIAT,
                                                             BASE_UNIT_PRICE,
@@ -127,24 +128,24 @@ namespace ProjectCryptoGains.Common.Utils
                                                                 ""DATE"",
                                                                 TYPE,
                                                                 EXCHANGE,
-                                                                BASE_CURRENCY,
+                                                                BASE_ASSET,
                                                                 BASE_AMOUNT,
                                                                 BASE_FEE,
-                                                                QUOTE_CURRENCY,
+                                                                QUOTE_ASSET,
                                                                 QUOTE_AMOUNT,
                                                                 CASE 
-                                                                    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                                    WHEN QUOTE_ASSET != '{fiatCurrency}' THEN NULL
                                                                     ELSE QUOTE_AMOUNT
                                                                 END AS QUOTE_AMOUNT_FIAT,
                                                                 QUOTE_FEE,
                                                                 ROUND(ABS(QUOTE_AMOUNT / BASE_AMOUNT), 10) AS BASE_UNIT_PRICE,
                                                                 CASE 
-                                                                    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                                    WHEN QUOTE_ASSET != '{fiatCurrency}' THEN NULL
                                                                     ELSE ROUND(ABS(QUOTE_AMOUNT / BASE_AMOUNT), 10)
                                                                 END AS BASE_UNIT_PRICE_FIAT,
                                                                 ROUND(ABS(BASE_AMOUNT / QUOTE_AMOUNT), 10) AS QUOTE_UNIT_PRICE,
                                                                 CASE 
-                                                                    WHEN QUOTE_CURRENCY != '{fiatCurrency}' THEN NULL
+                                                                    WHEN QUOTE_ASSET != '{fiatCurrency}' THEN NULL
                                                                     ELSE 1
                                                                 END AS QUOTE_UNIT_PRICE_FIAT
                                                             FROM (
@@ -154,16 +155,16 @@ namespace ProjectCryptoGains.Common.Utils
                                                                     b.""DATE"",
                                                                     'BUY' AS TYPE,
                                                                     b.EXCHANGE,
-                                                                    b.CURRENCY AS BASE_CURRENCY,
+                                                                    b.ASSET AS BASE_ASSET,
                                                                     b.AMOUNT AS BASE_AMOUNT,
                                                                     b.FEE AS BASE_FEE,
-                                                                    q.CURRENCY AS QUOTE_CURRENCY,
+                                                                    q.ASSET AS QUOTE_ASSET,
                                                                     q.AMOUNT AS QUOTE_AMOUNT,
                                                                     q.FEE AS QUOTE_FEE
                                                                 FROM 
                                                                     (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT > 0) b
                                                                     INNER JOIN 
-                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND CURRENCY = '{fiatCurrency}') q
+                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND ASSET = '{fiatCurrency}') q
                                                                     ON b.REFID = q.REFID
 
                                                                 UNION ALL
@@ -174,16 +175,16 @@ namespace ProjectCryptoGains.Common.Utils
                                                                     b.""DATE"",
                                                                     'SELL' AS TYPE,
                                                                     b.EXCHANGE,
-                                                                    b.CURRENCY AS BASE_CURRENCY,
+                                                                    b.ASSET AS BASE_ASSET,
                                                                     b.AMOUNT AS BASE_AMOUNT,
                                                                     b.FEE AS BASE_FEE,
-                                                                    q.CURRENCY AS QUOTE_CURRENCY,
+                                                                    q.ASSET AS QUOTE_ASSET,
                                                                     q.AMOUNT AS QUOTE_AMOUNT,
                                                                     q.FEE AS QUOTE_FEE
                                                                 FROM 
                                                                     (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT < 0) b
                                                                     INNER JOIN 
-                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND CURRENCY = '{fiatCurrency}') q
+                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND ASSET = '{fiatCurrency}') q
                                                                     ON b.REFID = q.REFID
 
                                                                 UNION ALL
@@ -194,16 +195,16 @@ namespace ProjectCryptoGains.Common.Utils
                                                                     b.""DATE"",
                                                                     'SELL' AS TYPE,
                                                                     b.EXCHANGE,
-                                                                    b.CURRENCY AS BASE_CURRENCY,
+                                                                    b.ASSET AS BASE_ASSET,
                                                                     b.AMOUNT AS BASE_AMOUNT,
                                                                     b.FEE AS BASE_FEE,
-                                                                    q.CURRENCY AS QUOTE_CURRENCY,
+                                                                    q.ASSET AS QUOTE_ASSET,
                                                                     q.AMOUNT AS QUOTE_AMOUNT,
                                                                     q.FEE AS QUOTE_FEE
                                                                 FROM 
-                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND CURRENCY != '{fiatCurrency}') b
+                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT < 0 AND ASSET != '{fiatCurrency}') b
                                                                     INNER JOIN 
-                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND CURRENCY != '{fiatCurrency}') q
+                                                                    (SELECT * FROM TB_LEDGERS WHERE TYPE = 'TRADE' AND AMOUNT > 0 AND ASSET != '{fiatCurrency}') q
                                                                     ON b.REFID = q.REFID
                                                             )
                                                         )
@@ -218,18 +219,18 @@ namespace ProjectCryptoGains.Common.Utils
                         selectCommand.CommandText = $@"SELECT 
                                                            trades.REFID,
                                                            trades.""DATE"",
-                                                           catalog_base.CODE AS BASE_CODE,
+                                                           asset_catalog_base.ASSET AS BASE_ASSET,
                                                            trades.BASE_FEE,
-                                                           catalog_quote.CODE AS QUOTE_CODE,
+                                                           asset_catalog_quote.ASSET AS QUOTE_ASSET,
                                                            trades.QUOTE_AMOUNT,
                                                            trades.QUOTE_FEE
                                                        FROM TB_TRADES trades
-                                                           LEFT JOIN TB_ASSET_CATALOG catalog_base
-                                                               ON trades.BASE_CURRENCY = catalog_base.ASSET
-                                                           LEFT JOIN TB_ASSET_CATALOG catalog_quote
-                                                               ON trades.QUOTE_CURRENCY = catalog_quote.ASSET
-                                                       WHERE trades.BASE_CURRENCY != '{fiatCurrency}'
-                                                           AND trades.QUOTE_CURRENCY != '{fiatCurrency}'";
+                                                           LEFT JOIN TB_ASSET_CATALOG asset_catalog_base
+                                                               ON trades.BASE_ASSET = asset_catalog_base.ASSET
+                                                           LEFT JOIN TB_ASSET_CATALOG asset_catalog_quote
+                                                               ON trades.QUOTE_ASSET = asset_catalog_quote.ASSET
+                                                       WHERE trades.BASE_ASSET != '{fiatCurrency}'
+                                                           AND trades.QUOTE_ASSET != '{fiatCurrency}'";
 
                         List<(string RefId, Dictionary<string, decimal> UpdateData)> updates = [];
 
@@ -242,14 +243,14 @@ namespace ProjectCryptoGains.Common.Utils
                             {
                                 string refid = reader.GetStringOrEmpty(0);
                                 DateTime date = reader.GetDateTime(1);
-                                string base_code = reader.GetStringOrEmpty(2);
+                                string base_asset = reader.GetStringOrEmpty(2);
                                 decimal base_fee = reader.GetDecimalOrDefault(3);
-                                string quote_code = reader.GetStringOrEmpty(4);
+                                string quote_asset = reader.GetStringOrEmpty(4);
                                 decimal quote_amount = reader.GetDecimalOrDefault(5);
                                 decimal quote_fee = reader.GetDecimalOrDefault(6);
 
                                 // Calculate base fiat
-                                var (base_unit_price_fiat, baseConversionSource) = ConvertXToFiat(base_code, date.Date, connection);
+                                var (base_unit_price_fiat, baseConversionSource) = ConvertXToFiat(base_asset, date.Date, connection);
 
                                 string lastWarningPrefix = $"[{caller}]";
                                 if (caller != Caller.Trades)
@@ -259,7 +260,7 @@ namespace ProjectCryptoGains.Common.Utils
 
                                 if (base_unit_price_fiat == 0m)
                                 {
-                                    lastWarning = $"{lastWarningPrefix} Could not calculate BASE_UNIT_PRICE_{fiatCurrency} for asset: {base_code}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                    lastWarning = $"{lastWarningPrefix} Unable to calculate BASE_UNIT_PRICE_{fiatCurrency}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {base_asset} on {ConvertDateTimeToString(date.Date, "yyyy-MM-dd")}";
                                     Application.Current.Dispatcher.Invoke(() =>
                                     {
                                         ConsoleLog(_mainWindow.txtLog, lastWarning);
@@ -282,11 +283,11 @@ namespace ProjectCryptoGains.Common.Utils
                                 /////////////////////////////
 
                                 // Calculate quote fiat
-                                var (quote_unit_price_fiat, quoteConversionSource) = ConvertXToFiat(quote_code, date.Date, connection);
+                                var (quote_unit_price_fiat, quoteConversionSource) = ConvertXToFiat(quote_asset, date.Date, connection);
 
                                 if (quote_unit_price_fiat == 0m)
                                 {
-                                    lastWarning = $"{lastWarningPrefix} Could not calculate QUOTE_UNIT_PRICE_{fiatCurrency} for asset: {quote_code}" + Environment.NewLine + "Retrieved 0.00 exchange rate";
+                                    lastWarning = $"{lastWarningPrefix} Unable to calculate QUOTE_UNIT_PRICE_{fiatCurrency}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {base_asset} on {ConvertDateTimeToString(date.Date, "yyyy-MM-dd")}";
                                     Application.Current.Dispatcher.Invoke(() =>
                                     {
                                         ConsoleLog(_mainWindow.txtLog, lastWarning);
@@ -371,7 +372,7 @@ namespace ProjectCryptoGains.Common.Utils
                                 // Update parameter values based on the key-value pairs in UpdateData
                                 foreach (var kvp in UpdateData) // kvp = Key-Value Pair from the dictionary
                                 {
-                                    updateCommand.Parameters["@" + kvp.Key].Value = kvp.Value;
+                                    updateCommand.Parameters[$"@{kvp.Key}"].Value = kvp.Value;
                                 }
                                 updateCommand.ExecuteNonQuery();
                             }
