@@ -179,7 +179,7 @@ namespace ProjectCryptoGains
                                 }
                                 catch (Exception ex)
                                 {
-                                    lastError = "Failed to insert data" + Environment.NewLine + ex.Message;
+                                    lastError = "Failed to insert data." + Environment.NewLine + ex.Message;
                                 }
                             }
                         }

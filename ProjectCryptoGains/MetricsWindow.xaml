@@ -10,7 +10,7 @@
         xmlns:ctzex="clr-namespace:ControlzEx.Behaviors;assembly=ControlzEx"
         Title="Metrics" 
         Width="500" 
-        Height="768"
+        Height="790"
         ResizeMode="NoResize"
         WindowStyle="SingleBorderWindow">
 
@@ -51,14 +51,14 @@
                     <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnHelp" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Click="BtnHelp_Click">
                         <Image x:Name="imgBtnHelp" Width="32" Height="32" Source="Resources/help.png" />
                     </Button>
-                    <CheckBox x:Name="chkRefreshLedgers" Width="150" Margin="30,75,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh ledgers" />
-                    <CheckBox x:Name="chkRefreshTrades" Width="150" Margin="30,100,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh trades" />
-                    <Label x:Name="lblTotalInvested" Width="125" Margin="25,125,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total invested" />
-                    <Label x:Name="lblTotalInvestedData" Width="125" Margin="125,125,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="0.00 FIAT" />
-                    <Label x:Name="lblLastInvested" Width="125" Margin="25,150,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Last invested" />
-                    <Label x:Name="lblLastInvestedData" Width="125" Margin="125,150,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="" />
-                    <Label x:Name="lblAvgBuyPrice" Width="125" Margin="25,200,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Average buy price" FontWeight="Bold" />
-                    <DataGrid x:Name="dgAvgBuyPrice" Width="400" Height="200" Margin="25,230,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
+                    <CheckBox x:Name="chkRefreshLedgers" Width="150" Margin="30,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh ledgers" />
+                    <CheckBox x:Name="chkRefreshTrades" Width="150" Margin="30,115,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh trades" />
+                    <Label x:Name="lblTotalInvested" Width="125" Margin="25,140,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total invested" />
+                    <Label x:Name="lblTotalInvestedData" Width="125" Margin="125,140,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="0.00 FIAT" />
+                    <Label x:Name="lblLastInvested" Width="125" Margin="25,165,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Last invested" />
+                    <Label x:Name="lblLastInvestedData" Width="125" Margin="125,165,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="" />
+                    <Label x:Name="lblAvgBuyPrice" Width="125" Margin="25,215,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Average buy price" FontWeight="Bold" />
+                    <DataGrid x:Name="dgAvgBuyPrice" Width="400" Height="200" Margin="25,245,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
                         <DataGrid.Resources>
                             <Style x:Key="CellRightAlign">
                                 <Setter Property="Control.HorizontalAlignment" Value="Right" />
@@ -72,8 +72,8 @@
                                     Header="AMOUNT__FIAT" />
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Label x:Name="lblRewards" Width="125" Margin="25,455,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total rewards" FontWeight="Bold" />
-                    <DataGrid x:Name="dgRewardsSummary" Width="400" Height="200" Margin="25,485,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
+                    <Label x:Name="lblRewards" Width="125" Margin="25,470,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total rewards" FontWeight="Bold" />
+                    <DataGrid x:Name="dgRewardsSummary" Width="400" Height="200" Margin="25,500,25,0" HorizontalAlignment="Left" VerticalAlignment="Top" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
                         <DataGrid.Resources>
                             <Style x:Key="CellRightAlign">
                                 <Setter Property="Control.HorizontalAlignment" Value="Right" />
@@ -90,8 +90,8 @@
                                     Header="AMOUNT__FIAT" />
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Label x:Name="lblTotalAmountFiat" Width="140" Margin="25,695,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total rewards converted" />
-                    <Label x:Name="lblTotalAmountFiatData" Width="125" Margin="175,695,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="0.00 FIAT" />
+                    <Label x:Name="lblTotalAmountFiat" Width="140" Margin="25,710,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Total rewards converted" />
+                    <Label x:Name="lblTotalAmountFiatData" Width="125" Margin="175,710,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Content="0.00 FIAT" />
                 </Grid>
             </Grid>
         </Grid>

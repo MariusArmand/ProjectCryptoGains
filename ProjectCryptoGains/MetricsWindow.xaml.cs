@@ -106,7 +106,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "There was a problem getting invest metrics" + Environment.NewLine + ex.Message;
+                    lastError = "There was a problem getting invest metrics." + Environment.NewLine + ex.Message;
                     CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
 
@@ -178,7 +178,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "There was a problem getting average buy prices" + Environment.NewLine + ex.Message;
+                    lastError = "There was a problem getting average buy prices." + Environment.NewLine + ex.Message;
 
                     CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
@@ -221,7 +221,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "There was a problem getting rewards" + Environment.NewLine + ex.Message;
+                    lastError = "There was a problem getting rewards." + Environment.NewLine + ex.Message;
 
                     CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");

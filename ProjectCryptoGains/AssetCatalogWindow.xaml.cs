@@ -160,11 +160,11 @@ namespace ProjectCryptoGains
                                 {
                                     if (ex.Message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        lastError = "Failed to insert data" + Environment.NewLine + "ASSET and LABEL must be unique";
+                                        lastError = "Failed to insert data." + Environment.NewLine + "ASSET and LABEL must be unique.";
                                     }
                                     else
                                     {
-                                        lastError = "Failed to insert data" + Environment.NewLine + ex.Message;
+                                        lastError = "Failed to insert data." + Environment.NewLine + ex.Message;
                                     }
                                 }
                             }

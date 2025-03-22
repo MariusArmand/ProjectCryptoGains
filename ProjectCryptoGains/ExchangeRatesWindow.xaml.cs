@@ -158,7 +158,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "File could not be opened" + Environment.NewLine + ex.Message;
+                    lastError = "File could not be opened." + Environment.NewLine + ex.Message;
                     CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] Import unsuccessful");
@@ -211,7 +211,7 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "File could not be parsed" + Environment.NewLine + ex.Message;
+                    lastError = "File could not be parsed." + Environment.NewLine + ex.Message;
                     CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
                 }
@@ -437,14 +437,14 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "Failed to write CSV file" + Environment.NewLine + ex.Message;
+                    lastError = "Failed to write CSV file." + Environment.NewLine + ex.Message;
                     CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
                 }
             }
             catch (Exception ex)
             {
-                lastError = "Export failed" + Environment.NewLine + ex.Message;
+                lastError = "Export failed." + Environment.NewLine + ex.Message;
                 CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 ConsoleLog(_mainWindow.txtLog, $"[Exchange Rates] {lastError}");
             }

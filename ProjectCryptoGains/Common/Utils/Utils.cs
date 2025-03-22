@@ -45,8 +45,8 @@ namespace ProjectCryptoGains.Common.Utils
             // Get the current time in the specified format
             string timestamp = DateTime.Now.ToString("HH:mm:ss");
 
-            // Remove trailing period from logText
-            string trimmedLogText = logText.TrimEnd('.');
+            // Replace any dot followed by a newline with just the newline and remove trailing period from logText
+            string trimmedLogText = logText.Replace("." + Environment.NewLine, Environment.NewLine).TrimEnd('.');
 
             // Append text
             if (string.IsNullOrWhiteSpace(txtLog.Text))

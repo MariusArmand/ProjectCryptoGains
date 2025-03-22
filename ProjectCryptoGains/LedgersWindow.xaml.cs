@@ -97,7 +97,7 @@ namespace ProjectCryptoGains
                                                    NOTES
                                                FROM TB_LEDGERS
                                                WHERE ""DATE"" BETWEEN @FROM_DATE AND @TO_DATE
-                                               ORDER BY ""DATE"", AMOUNT ASC";
+                                               ORDER BY ""DATE"", REFID, AMOUNT ASC";
 
                 // Convert string dates to DateTime and add parameters
                 AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(fromDate));
