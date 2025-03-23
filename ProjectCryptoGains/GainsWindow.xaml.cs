@@ -32,10 +32,10 @@ namespace ProjectCryptoGains
     {
         private readonly MainWindow _mainWindow;
 
-        private int errors = 0;
-        private string fromDate = "2009-01-03";
-        private string toDate = GetTodayAsIsoDate();
-        private string baseAsset = "";
+        private int _errors = 0;
+        private string _fromDate = "2009-01-03";
+        private string _toDate = GetTodayAsIsoDate();
+        private string _baseAsset = "";
 
         public GainsWindow(MainWindow mainWindow)
         {
@@ -44,9 +44,9 @@ namespace ProjectCryptoGains
 
             _mainWindow = mainWindow;
 
-            txtFromDate.Text = fromDate;
-            txtToDate.Text = toDate;
-            txtBaseAsset.Text = baseAsset;
+            txtFromDate.Text = _fromDate;
+            txtToDate.Text = _toDate;
+            txtBaseAsset.Text = _baseAsset;
 
             BindGrid();
         }
@@ -121,7 +121,7 @@ namespace ProjectCryptoGains
                                                FROM TB_GAINS gains
                                                    INNER JOIN TB_TRADES trades
                                                        ON gains.REFID = trades.REFID
-                                               WHERE trades.BASE_ASSET LIKE '%{baseAsset}%'
+                                               WHERE trades.BASE_ASSET LIKE '%{_baseAsset}%'
                                                ORDER BY ""DATE"" ASC";
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
@@ -168,9 +168,9 @@ namespace ProjectCryptoGains
                                                GROUP BY trades.BASE_ASSET, asset_catalog.LABEL
                                                ORDER BY trades.BASE_ASSET";
 
-                AddParameterWithValue(selectCommand, "@BASE_ASSET", $"%{baseAsset}%");
-                AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(fromDate));
-                AddParameterWithValue(selectCommand, "@TO_DATE", ConvertStringToIsoDate(toDate).AddDays(1));
+                AddParameterWithValue(selectCommand, "@BASE_ASSET", $"%{_baseAsset}%");
+                AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(_fromDate));
+                AddParameterWithValue(selectCommand, "@TO_DATE", ConvertStringToIsoDate(_toDate).AddDays(1));
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
                 {
@@ -229,7 +229,7 @@ namespace ProjectCryptoGains
 
         private void SetFromDate()
         {
-            fromDate = txtFromDate.Text;
+            _fromDate = txtFromDate.Text;
         }
 
         private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
@@ -257,7 +257,7 @@ namespace ProjectCryptoGains
 
         private void SetToDate()
         {
-            toDate = txtToDate.Text;
+            _toDate = txtToDate.Text;
         }
 
         private void TextBoxBaseAsset_KeyUp(object sender, KeyboardEventArgs e)
@@ -267,7 +267,7 @@ namespace ProjectCryptoGains
 
         private void SetBaseAsset()
         {
-            baseAsset = txtBaseAsset.Text;
+            _baseAsset = txtBaseAsset.Text;
         }
 
         private void BtnRefresh_Click(object sender, RoutedEventArgs e)
@@ -277,7 +277,7 @@ namespace ProjectCryptoGains
 
         private async void Refresh()
         {
-            errors = 0;
+            _errors = 0;
 
             if (!IsValidDateFormat(txtFromDate.Text, "yyyy-MM-dd"))
             {
@@ -357,7 +357,7 @@ namespace ProjectCryptoGains
 
                                 // Read the assets into a list
                                 using DbCommand selectCommand = connection.CreateCommand();
-                                selectCommand.CommandText = $@"SELECT ASSET FROM TB_ASSET_CATALOG WHERE ASSET like '%{baseAsset}%'";
+                                selectCommand.CommandText = $@"SELECT ASSET FROM TB_ASSET_CATALOG WHERE ASSET like '%{_baseAsset}%'";
 
                                 List<string> assets = [];
 
@@ -407,7 +407,7 @@ namespace ProjectCryptoGains
                         }
                     });
 
-                    if (errors == 0)
+                    if (_errors == 0)
                     {
                         BindGrid();
                         if (ledgersRefreshWarning == null && tradesRefreshWarning == null)
@@ -526,7 +526,7 @@ namespace ProjectCryptoGains
                     // Instead of showing directly, schedule MessageBox on the UI thread to not block this thread
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        errors += 1;
+                        _errors += 1;
                         string lastError = "Not enough buy transactions to cover this sell transaction" +
                                            Environment.NewLine + $"RefId: {stx.RefId}" +
                                            Environment.NewLine + $"Base asset: {asset}" +
@@ -658,6 +658,8 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
+                mainWindow: _mainWindow,
+                caller: Caller.Gains,
                 columnHeaders: new[]
                 {
                     "DATE", "REFID", "TYPE", "BASE_ASSET", "BASE_AMOUNT", "QUOTE_ASSET",
@@ -682,7 +684,7 @@ namespace ProjectCryptoGains
                 printDlg: printDlg,
                 titlePage: true,
                 title: "Gains",
-                subtitle: $"From\t{fromDate}\nTo\t{toDate}",
+                subtitle: $"From\t{_fromDate}\nTo\t{_toDate}",
                 footerHeight: 20,
                 maxColumnsPerRow: 7,
                 repeatHeadersPerItem: true,
@@ -731,6 +733,8 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
+                mainWindow: _mainWindow,
+                caller: Caller.Gains,
                 columnHeaders: new[] { "ASSET", "GAIN" },
                 dataItems: gainsSummary,
                 dataExtractor: item => new[]
@@ -740,7 +744,7 @@ namespace ProjectCryptoGains
                 },
                 printDlg: printDlg,
                 title: "Gains Summary",
-                subtitle: $"From\t{fromDate}\nTo\t{toDate}",
+                subtitle: $"From\t{_fromDate}\nTo\t{_toDate}",
                 summaryText: $"Total gains {totalGains}",
                 maxColumnsPerRow: 7,
                 repeatHeadersPerItem: true

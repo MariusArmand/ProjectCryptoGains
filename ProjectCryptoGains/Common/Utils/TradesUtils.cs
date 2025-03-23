@@ -15,12 +15,12 @@ namespace ProjectCryptoGains.Common.Utils
     {
         // Parallel run prevention //
         public static bool TradesRefreshBusy { get; private set; } = false;
-        private static readonly object TradesRefreshlock = new();
+        private static readonly object _TradesRefreshlock = new();
         /////////////////////////////
 
-        public static async Task<string?> RefreshTrades(MainWindow _mainWindow, Caller caller)
+        public static async Task<string?> RefreshTrades(MainWindow mainWindow, Caller caller)
         {
-            lock (TradesRefreshlock) // Only one thread can enter this block at a time
+            lock (_TradesRefreshlock) // Only one thread can enter this block at a time
             {
                 if (TradesRefreshBusy)
                 {
@@ -30,7 +30,7 @@ namespace ProjectCryptoGains.Common.Utils
                         CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         if (caller != Caller.Trades)
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[{caller}] {message}");
+                            ConsoleLog(mainWindow.txtLog, $"[{caller}] {message}");
                         }
                     });
                     return null; // Exit the method here if refresh is already in progress
@@ -41,6 +41,11 @@ namespace ProjectCryptoGains.Common.Utils
 
             try
             {
+                string logPrefix = $"[{caller}]";
+                if (caller != Caller.Trades)
+                {
+                    logPrefix = $"[{caller}][Trades]";
+                }
                 string? lastWarning = null;
                 string fiatCurrency = SettingFiatCurrency;
                 string? exceptionMessage = null;
@@ -50,7 +55,7 @@ namespace ProjectCryptoGains.Common.Utils
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing trades");
+                        ConsoleLog(mainWindow.txtLog, $"[{caller}] Refreshing trades");
                     });
                 }
 
@@ -236,11 +241,28 @@ namespace ProjectCryptoGains.Common.Utils
 
                         using (DbDataReader reader = selectCommand.ExecuteReader())
                         {
-                            // Rate limiting mechanism //
+                            // Rate limiting mechanism    //
                             DateTime lastCallTime = DateTime.Now;
-                            /////////////////////////////
+                            // Progress logging mechanism //
+                            DateTime lastLogTime = DateTime.Now;
+                            int recordsProcessed = 0;
+                            ////////////////////////////////
                             while (reader.Read())
                             {
+                                recordsProcessed++;
+
+                                // Progress logging mechanism //
+                                if ((DateTime.Now - lastLogTime).TotalSeconds >= 30)
+                                {
+                                    string progressMessage = $"{logPrefix} Processed {recordsProcessed} records...";
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
+                                        ConsoleLog(mainWindow.txtLog, progressMessage);
+                                    });
+                                    lastLogTime = DateTime.Now;
+                                }
+                                ////////////////////////////////
+
                                 string refid = reader.GetStringOrEmpty(0);
                                 DateTime date = reader.GetDateTime(1);
                                 string base_asset = reader.GetStringOrEmpty(2);
@@ -252,18 +274,12 @@ namespace ProjectCryptoGains.Common.Utils
                                 // Calculate base fiat
                                 var (base_unit_price_fiat, baseConversionSource) = ConvertXToFiat(base_asset, date.Date, connection);
 
-                                string lastWarningPrefix = $"[{caller}]";
-                                if (caller != Caller.Trades)
-                                {
-                                    lastWarningPrefix = $"[{caller}][Trades]";
-                                }
-
                                 if (base_unit_price_fiat == 0m)
                                 {
-                                    lastWarning = $"{lastWarningPrefix} Unable to calculate BASE_UNIT_PRICE_{fiatCurrency}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {base_asset} on {ConvertDateTimeToString(date.Date, "yyyy-MM-dd")}";
+                                    lastWarning = $"{logPrefix} Unable to calculate BASE_UNIT_PRICE_{fiatCurrency}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {base_asset} on {ConvertDateTimeToString(date.Date, "yyyy-MM-dd")}";
                                     Application.Current.Dispatcher.Invoke(() =>
                                     {
-                                        ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                        ConsoleLog(mainWindow.txtLog, lastWarning);
                                     });
                                 }
 
@@ -287,10 +303,10 @@ namespace ProjectCryptoGains.Common.Utils
 
                                 if (quote_unit_price_fiat == 0m)
                                 {
-                                    lastWarning = $"{lastWarningPrefix} Unable to calculate QUOTE_UNIT_PRICE_{fiatCurrency}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {base_asset} on {ConvertDateTimeToString(date.Date, "yyyy-MM-dd")}";
+                                    lastWarning = $"{logPrefix} Unable to calculate QUOTE_UNIT_PRICE_{fiatCurrency}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {base_asset} on {ConvertDateTimeToString(date.Date, "yyyy-MM-dd")}";
                                     Application.Current.Dispatcher.Invoke(() =>
                                     {
-                                        ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                        ConsoleLog(mainWindow.txtLog, lastWarning);
                                     });
                                 }
 
@@ -404,11 +420,11 @@ namespace ProjectCryptoGains.Common.Utils
                         {
                             if (lastWarning == null)
                             {
-                                ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing trades done");
+                                ConsoleLog(mainWindow.txtLog, $"[{caller}] Refreshing trades done");
                             }
                             else
                             {
-                                ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing trades done with warnings");
+                                ConsoleLog(mainWindow.txtLog, $"[{caller}] Refreshing trades done with warnings");
                             }
                         });
                     }
@@ -425,7 +441,7 @@ namespace ProjectCryptoGains.Common.Utils
             }
             finally
             {
-                lock (TradesRefreshlock) // Lock again to safely update TradesRefreshBusy
+                lock (_TradesRefreshlock) // Lock again to safely update TradesRefreshBusy
                 {
                     TradesRefreshBusy = false;
                 }

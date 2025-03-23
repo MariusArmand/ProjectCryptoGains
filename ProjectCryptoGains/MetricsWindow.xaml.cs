@@ -26,9 +26,9 @@ namespace ProjectCryptoGains
     {
         private readonly MainWindow _mainWindow;
 
-        private string? lastError = null;
+        private string? _lastError = null;
 
-        private string? lastWarning = null;
+        private string? _lastWarning = null;
 
         public MetricsWindow(MainWindow mainWindow)
         {
@@ -106,9 +106,9 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "There was a problem getting invest metrics." + Environment.NewLine + ex.Message;
-                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
+                    _lastError = "There was a problem getting invest metrics." + Environment.NewLine + ex.Message;
+                    CustomMessageBox.Show(_lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] {_lastError}");
 
                     // Exit function early
                     return;
@@ -178,10 +178,10 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "There was a problem getting average buy prices." + Environment.NewLine + ex.Message;
+                    _lastError = "There was a problem getting average buy prices." + Environment.NewLine + ex.Message;
 
-                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
+                    CustomMessageBox.Show(_lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] {_lastError}");
 
                     // Exit function early
                     return;
@@ -221,10 +221,10 @@ namespace ProjectCryptoGains
                 }
                 catch (Exception ex)
                 {
-                    lastError = "There was a problem getting rewards." + Environment.NewLine + ex.Message;
+                    _lastError = "There was a problem getting rewards." + Environment.NewLine + ex.Message;
 
-                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
+                    CustomMessageBox.Show(_lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ConsoleLog(_mainWindow.txtLog, $"[Metrics] {_lastError}");
 
                     // Exit function early
                     return;
@@ -242,14 +242,14 @@ namespace ProjectCryptoGains
 
         private void BtnRefresh_Click(object sender, RoutedEventArgs e)
         {
-            lastWarning = null;
+            _lastWarning = null;
             Refresh();
         }
 
         private async void Refresh()
         {
             string fiatCurrency = SettingFiatCurrency;
-            lastError = null;
+            _lastError = null;
 
             BlockUI();
 
@@ -425,10 +425,10 @@ namespace ProjectCryptoGains
 
                                         if (xInFiat == 0m)
                                         {
-                                            lastWarning = $"[Metrics] Unable to calculate AMOUNT_{fiatCurrency}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {asset} on {ConvertDateTimeToString(date, "yyyy-MM-dd")}";
+                                            _lastWarning = $"[Metrics] Unable to calculate AMOUNT_{fiatCurrency}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {asset} on {ConvertDateTimeToString(date, "yyyy-MM-dd")}";
                                             Application.Current.Dispatcher.Invoke(() =>
                                             {
-                                                ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                                ConsoleLog(_mainWindow.txtLog, _lastWarning);
                                             });
                                         }
 
@@ -446,7 +446,7 @@ namespace ProjectCryptoGains
                                         /////////////////////////////
                                         insertCommand.ExecuteNonQuery();
                                     }
-                                    if (lastWarning != null)
+                                    if (_lastWarning != null)
                                     {
                                         Application.Current.Dispatcher.Invoke(() =>
                                         {
@@ -461,13 +461,13 @@ namespace ProjectCryptoGains
                                 {
                                     ex = ex.InnerException;
                                 }
-                                lastError = ex.Message;
+                                _lastError = ex.Message;
                             }
                         });
 
-                        if (lastError == null)
+                        if (_lastError == null)
                         {
-                            if (ledgersRefreshWarning == null && lastWarning == null)
+                            if (ledgersRefreshWarning == null && _lastWarning == null)
                             {
                                 ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards done");
                             }
@@ -478,7 +478,7 @@ namespace ProjectCryptoGains
                         }
                         else
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] {lastError}");
+                            ConsoleLog(_mainWindow.txtLog, $"[Metrics] {_lastError}");
                             ConsoleLog(_mainWindow.txtLog, $"[Metrics] Calulating rewards unsuccessful");
                         }
                     }
@@ -486,9 +486,9 @@ namespace ProjectCryptoGains
                     BindLabels();
                     BindGrid();
 
-                    if (lastError == null)
+                    if (_lastError == null)
                     {
-                        if (ledgersRefreshWarning == null && tradesRefreshWarning == null && lastWarning == null)
+                        if (ledgersRefreshWarning == null && tradesRefreshWarning == null && _lastWarning == null)
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[Metrics] Refresh done");
                         }

@@ -32,11 +32,9 @@ namespace ProjectCryptoGains
     {
         private readonly MainWindow _mainWindow;
 
-        private string untilDate = GetTodayAsIsoDate();
+        private string _untilDate = GetTodayAsIsoDate();
 
-        public string Amount_fiat_header { get; set; } = "AMOUNT__FIAT";
-
-        private string? lastWarning = null;
+        private string? _lastWarning = null;
 
         public BalancesWindow(MainWindow mainWindow)
         {
@@ -45,7 +43,7 @@ namespace ProjectCryptoGains
 
             _mainWindow = mainWindow;
 
-            txtUntilDate.Text = untilDate;
+            txtUntilDate.Text = _untilDate;
             lblTotalAmountFiat.Visibility = Visibility.Collapsed;
             lblTotalAmountFiatData.Visibility = Visibility.Collapsed;
 
@@ -239,12 +237,12 @@ namespace ProjectCryptoGains
 
         private void SetUntilDate()
         {
-            untilDate = txtUntilDate.Text;
+            _untilDate = txtUntilDate.Text;
         }
 
         private void BtnRefresh_Click(object sender, RoutedEventArgs e)
         {
-            lastWarning = null;
+            _lastWarning = null;
             Refresh();
         }
 
@@ -343,19 +341,19 @@ namespace ProjectCryptoGains
                                         using DbCommand insertCommand = connection.CreateCommand();
                                         if (asset == fiatCurrency)
                                         {
-                                            insertCommand.CommandText = CreateFiatBalancesInsert(asset, untilDate);
+                                            insertCommand.CommandText = CreateFiatBalancesInsert(asset, _untilDate);
                                         }
                                         else
                                         {
-                                            var (xInFiat, sqlCommand, conversionSource) = CreateCryptoBalancesInsert(asset, untilDate, convertToFiat, connection);
+                                            var (xInFiat, sqlCommand, conversionSource) = CreateCryptoBalancesInsert(asset, _untilDate, convertToFiat, connection);
                                             insertCommand.CommandText = sqlCommand;
 
                                             if (xInFiat == 0m)
                                             {
-                                                lastWarning = $"[Balances] Unable to calculate balance" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {asset} on {untilDate}";
+                                                _lastWarning = $"[Balances] Unable to calculate balance" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {asset} on {_untilDate}";
                                                 Application.Current.Dispatcher.Invoke(() =>
                                                 {
-                                                    ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                                    ConsoleLog(_mainWindow.txtLog, _lastWarning);
                                                 });
                                             }
 
@@ -374,7 +372,7 @@ namespace ProjectCryptoGains
                                         }
                                         insertCommand.ExecuteNonQuery();
                                     }
-                                    if (lastWarning != null)
+                                    if (_lastWarning != null)
                                     {
                                         Application.Current.Dispatcher.Invoke(() =>
                                         {
@@ -399,7 +397,7 @@ namespace ProjectCryptoGains
 
                     if (lastError == null)
                     {
-                        if (ledgersRefreshWarning == null && lastWarning == null)
+                        if (ledgersRefreshWarning == null && _lastWarning == null)
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[Balances] Refresh done");
                         }
@@ -535,8 +533,10 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
+                mainWindow: _mainWindow,
+                caller: Caller.Balances,
                 title: "Balances",
-                subtitle: $"Until\t{untilDate}",
+                subtitle: $"Until\t{_untilDate}",
                 columnHeaders: new[] { "ASSET", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
                 dataItems: balances,
                 dataExtractor: item => new[]

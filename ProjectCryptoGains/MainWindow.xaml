@@ -80,6 +80,9 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
+                <!-- Border to capture clicks -->
+                <Border Background="Transparent" Focusable="True" Grid.ColumnSpan="2" MouseDown="Background_MouseDown" />
+
                 <Button Style="{StaticResource SquareButtonStyle}" x:Name="btnHelp" Width="40" Height="40" Margin="0,25,25,0" HorizontalAlignment="Right" VerticalAlignment="Top" Grid.ColumnSpan="2" Click="BtnHelp_Click">
                     <Image x:Name="imgBtnHelp" Width="32" Height="32" Source="Resources/help.png" Stretch="Uniform"/>
                 </Button>

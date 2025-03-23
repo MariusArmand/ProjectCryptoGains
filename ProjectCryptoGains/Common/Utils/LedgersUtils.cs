@@ -15,12 +15,12 @@ namespace ProjectCryptoGains.Common.Utils
     {
         // Parallel run prevention //
         public static bool LedgersRefreshBusy { get; private set; } = false;
-        private static readonly object LedgerRefreshlock = new();
+        private static readonly object _LedgerRefreshlock = new();
         /////////////////////////////
 
-        public static string? RefreshLedgers(MainWindow _mainWindow, Caller caller)
+        public static string? RefreshLedgers(MainWindow mainWindow, Caller caller)
         {
-            lock (LedgerRefreshlock) // Only one thread can enter this block at a time
+            lock (_LedgerRefreshlock) // Only one thread can enter this block at a time
             {
                 if (LedgersRefreshBusy)
                 {
@@ -30,7 +30,7 @@ namespace ProjectCryptoGains.Common.Utils
                         CustomMessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         if (caller != Caller.Ledgers)
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[{caller}] {message}");
+                            ConsoleLog(mainWindow.txtLog, $"[{caller}] {message}");
                         }
                     });
                     return null; // Exit the method here if refresh is already in progress
@@ -41,6 +41,11 @@ namespace ProjectCryptoGains.Common.Utils
 
             try
             {
+                string logPrefix = $"[{caller}]";
+                if (caller != Caller.Trades)
+                {
+                    logPrefix = $"[{caller}][Trades]";
+                }
                 string? lastWarning = null;
                 string fiatCurrency = SettingFiatCurrency;
 
@@ -48,7 +53,7 @@ namespace ProjectCryptoGains.Common.Utils
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing ledgers");
+                        ConsoleLog(mainWindow.txtLog, $"[{caller}] Refreshing ledgers");
                     });
                 }
 
@@ -85,12 +90,12 @@ namespace ProjectCryptoGains.Common.Utils
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
-                            ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} {lastWarning}");
+                            ConsoleLog(mainWindow.txtLog, $"{lastWarningPrefix} {lastWarning}");
 
                             // Log each unsupported ledger type
                             foreach ((string RefId, string Type) in unsupportedTypes)
                             {
-                                ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} Unsupported manual ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                                ConsoleLog(mainWindow.txtLog, $"{lastWarningPrefix} Unsupported manual ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
                             }
                         });
                     }
@@ -99,22 +104,16 @@ namespace ProjectCryptoGains.Common.Utils
                     unsupportedTypes = UnsupportedTypes(connection, LedgerSource.Kraken);
                     if (unsupportedTypes.Count > 0)
                     {
-                        string lastWarningPrefix = $"[{caller}]";
-                        if (caller != Caller.Ledgers)
-                        {
-                            lastWarningPrefix = $"[{caller}][Ledgers]";
-                        }
-
                         lastWarning = "Unsupported kraken ledger type(s) detected." + Environment.NewLine + "Review csv; Unsupported ledger type(s) will not be taken into account.";
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             CustomMessageBox.Show(lastWarning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning, TextAlignment.Left);
-                            ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} {lastWarning}");
+                            ConsoleLog(mainWindow.txtLog, $"{logPrefix} {lastWarning}");
 
                             // Log each unsupported ledger type
                             foreach ((string RefId, string Type) in unsupportedTypes)
                             {
-                                ConsoleLog(_mainWindow.txtLog, $"{lastWarningPrefix} Unsupported kraken ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
+                                ConsoleLog(mainWindow.txtLog, $"{logPrefix} Unsupported kraken ledger type:" + Environment.NewLine + $"REFID: {RefId}, TYPE: {Type}");
                             }
                         });
                     }
@@ -197,11 +196,11 @@ namespace ProjectCryptoGains.Common.Utils
                     {
                         if (lastWarning == null)
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing ledgers done");
+                            ConsoleLog(mainWindow.txtLog, $"[{caller}] Refreshing ledgers done");
                         }
                         else
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing ledgers done with warnings");
+                            ConsoleLog(mainWindow.txtLog, $"[{caller}] Refreshing ledgers done with warnings");
                         }
                     });
                 }
@@ -218,8 +217,8 @@ namespace ProjectCryptoGains.Common.Utils
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[{caller}] Ledgers asset validation error");
-                        ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing ledgers unsuccessful");
+                        ConsoleLog(mainWindow.txtLog, $"[{caller}] Ledgers asset validation error");
+                        ConsoleLog(mainWindow.txtLog, $"[{caller}] Refreshing ledgers unsuccessful");
                     });
                 }
                 throw new Exception("RefreshLedgers failed", ex);
@@ -234,15 +233,15 @@ namespace ProjectCryptoGains.Common.Utils
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        ConsoleLog(_mainWindow.txtLog, $"[{caller}] {ex.Message}");
-                        ConsoleLog(_mainWindow.txtLog, $"[{caller}] Refreshing ledgers unsuccessful");
+                        ConsoleLog(mainWindow.txtLog, $"[{caller}] {ex.Message}");
+                        ConsoleLog(mainWindow.txtLog, $"[{caller}] Refreshing ledgers unsuccessful");
                     });
                 }
                 throw new Exception("RefreshLedgers failed", ex);
             }
             finally
             {
-                lock (LedgerRefreshlock) // Lock again to safely update LedgersRefreshBusy
+                lock (_LedgerRefreshlock) // Lock again to safely update LedgersRefreshBusy
                 {
                     LedgersRefreshBusy = false;
                 }

@@ -151,63 +151,51 @@ namespace ProjectCryptoGains
                 }
 
                 // Read the CSV file
-                StreamReader? reader;
                 try
                 {
-                    reader = new(filePath);
-                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Importing {filePath}");
-                }
-                catch (Exception ex)
-                {
-                    lastError = "File could not be opened." + Environment.NewLine + ex.Message;
-                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
-                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Import unsuccessful");
-
-                    // Exit function early
-                    return;
-                }
-
-                string csvLine;
-                string pattern = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
-
-                int csvLineNumber = 0;
-                try
-                {
-                    while (!reader.EndOfStream)
+                    using (StreamReader reader = new StreamReader(filePath))
                     {
-                        csvLine = reader.ReadLine() ?? "";
+                        ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] Importing {filePath}");
 
-                        // Add rows to the DataTable
-                        if (csvLineNumber == 0) // Add column headers to the DataTable
+                        string csvLine;
+                        string pattern = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
+
+                        int csvLineNumber = 0;
+                        while (!reader.EndOfStream)
                         {
-                            // Get the column names from the first line
-                            string[] columnNames = Regex.Split(csvLine, pattern).Select(s => CsvStripValue(s)).ToArray();
-                            string[] columnNamesExpected = ["refid", "date", "type", "exchange", "asset", "amount", "fee", "source", "target", "notes"];
+                            csvLine = reader.ReadLine() ?? "";
 
-                            if (!Enumerable.SequenceEqual(columnNames, columnNamesExpected))
+                            // Add rows to the DataTable
+                            if (csvLineNumber == 0) // Add column headers to the DataTable
                             {
-                                lastError = "Unexpected inputfile header.";
-                                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                                ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
+                                // Get the column names from the first line
+                                string[] columnNames = Regex.Split(csvLine, pattern).Select(s => CsvStripValue(s)).ToArray();
+                                string[] columnNamesExpected = ["refid", "date", "type", "exchange", "asset", "amount", "fee", "source", "target", "notes"];
 
-                                // Exit loop early
-                                break;
+                                if (!Enumerable.SequenceEqual(columnNames, columnNamesExpected))
+                                {
+                                    lastError = "Unexpected inputfile header.";
+                                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    ConsoleLog(_mainWindow.txtLog, $"[Manual Ledgers] {lastError}");
+
+                                    // Exit loop early
+                                    break;
+                                }
+
+                                // Add the column names to the DataTable
+                                foreach (string columnName in columnNames)
+                                {
+                                    dataTable.Columns.Add(columnName);
+                                }
                             }
-
-                            // Add the column names to the DataTable
-                            foreach (string columnName in columnNames)
+                            else // Add the rest of the rows to the DataTable
                             {
-                                dataTable.Columns.Add(columnName);
-                            }
-                        }
-                        else // Add the rest of the rows to the DataTable
-                        {
-                            string[] dataValues = Regex.Split(csvLine, pattern).Select(s => s.Trim('"')).ToArray();
+                                string[] dataValues = Regex.Split(csvLine, pattern).Select(s => s.Trim('"')).ToArray();
 
-                            dataTable.Rows.Add(dataValues);
+                                dataTable.Rows.Add(dataValues);
+                            }
+                            csvLineNumber++;
                         }
-                        csvLineNumber++;
                     }
                 }
                 catch (Exception ex)

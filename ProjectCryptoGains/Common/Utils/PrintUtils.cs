@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using static ProjectCryptoGains.Common.Utils.SettingUtils;
+using static ProjectCryptoGains.Common.Utils.Utils;
 
 namespace ProjectCryptoGains.Common.Utils
 {
@@ -18,6 +19,8 @@ namespace ProjectCryptoGains.Common.Utils
         /// The caller must provide a PrintDialog instance created on the UI thread
         /// </summary>
         /// <typeparam name="T">Type of items in the data collection</typeparam>
+        /// <param name="mainWindow">Main window</param>
+        /// <param name="caller">Caller type (e.g., Caller.Ledgers)</param>
         /// <param name="columnHeaders">Array of column header names</param>
         /// <param name="dataItems">Collection of data items for the table</param>
         /// <param name="dataExtractor">Function to extract values, alignments, and optional column spans from each item</param>
@@ -35,6 +38,8 @@ namespace ProjectCryptoGains.Common.Utils
         /// <param name="repeatHeadersPerItem">Repeat headers per item if true, otherwise once at the top</param>
         /// <param name="itemsPerPage">Number of items per page (default: 100)</param>
         public static async Task PrintFlowDocumentAsync<T>(
+            MainWindow mainWindow,
+            Caller caller,
             string[] columnHeaders,
             IEnumerable<T> dataItems,
             Func<T, (string Value, TextAlignment Alignment, int ColumnSpan)[]> dataExtractor,
@@ -55,6 +60,11 @@ namespace ProjectCryptoGains.Common.Utils
         {
             await Task.Run(() =>
             {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ConsoleLog(mainWindow.txtLog, $"[{caller}] Starting document preparation for PDF");
+                });
+
                 // Calculate the effective page height by subtracting the footer height from the total page height
                 double effectivePageHeight = pageHeight - footerHeight;
                 // Define page padding with extra space at the bottom to accommodate the footer
@@ -206,6 +216,15 @@ namespace ProjectCryptoGains.Common.Utils
                 {
                     // Skip content generation for the first page if it’s a title page
                     if (titlePage && page == 0) continue;
+
+                    // Log preparing progress every 10 pages
+                    if ((page + 1) % 10 == 0)
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ConsoleLog(mainWindow.txtLog, $"[{caller}] Preparing page {page + 1}...");
+                        });
+                    }
 
                     // Adjust page index for content pages when titlePage is true
                     int adjustedPageIndex = titlePage ? page - 1 : page;
@@ -450,22 +469,52 @@ namespace ProjectCryptoGains.Common.Utils
                 IDocumentPaginatorSource idpSource = flowDocument;
                 DocumentPaginator paginator = idpSource.DocumentPaginator;
                 int totalPages = GetTotalPageCount(paginator); // Calculate the total number of pages
-                CustomPaginator customPaginator = new CustomPaginator(paginator, footerHeight, fontSize, pageWidth, flowDocument.FontFamily, totalPages);
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ConsoleLog(mainWindow.txtLog, $"[{caller}] Document preparation for PDF complete");
+                });
+
+                CustomPaginator customPaginator = new CustomPaginator(mainWindow, caller, paginator, footerHeight, fontSize, pageWidth, flowDocument.FontFamily, totalPages);
 
                 // Attempt to print the document, handling any exceptions
                 try
                 {
                     flowDocument.Name = "FlowDoc";
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        if (totalPages == 1)
+                        {
+                            ConsoleLog(mainWindow.txtLog, $"[{caller}] Start rendering page for PDF (1 page)");
+                        }
+                        else
+                        {
+                            ConsoleLog(mainWindow.txtLog, $"[{caller}] Start rendering pages for PDF ({totalPages} pages)");
+                        }
+                    });
+
+                    DateTime printStart = DateTime.Now;
+
                     // Tell the printer to use our CustomPaginator, which adds "Page X of Y" to each page
                     // This pulls pages one by one through our overridden GetPage, so we get content with numbers on every printed page (e.g., "Page 1 of 12" for a 12-page document)
                     printDlg.PrintDocument(customPaginator, pdfTitle);
+
+                    DateTime printEnd = DateTime.Now;
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        ConsoleLog(mainWindow.txtLog, $"[{caller}] PDF generation and file writing complete; Took {(printEnd - printStart).TotalSeconds:F2} seconds");
+                    });
                 }
                 catch (Exception ex)
                 {
                     // Handle printing exceptions by showing an error message
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        CustomMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        string lastError = "Error during printing to PDF." + Environment.NewLine + ex.Message;
+                        ConsoleLog(mainWindow.txtLog, lastError);
+                        CustomMessageBox.Show($"[{caller}] lastError", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     });
                 }
             });
@@ -501,15 +550,20 @@ namespace ProjectCryptoGains.Common.Utils
         // PrintDialog uses this to render numbered pages (e.g., "Page 1 of 12" for a 12-page document)
         private class CustomPaginator : DocumentPaginator
         {
+            private readonly MainWindow _mainWindow;
+            private readonly Caller _caller;
             private readonly DocumentPaginator _inner;
             private readonly double _footerHeight;
             private readonly double _fontSize;
             private readonly double _pageWidth;
             private readonly FontFamily _fontFamily;
             private readonly int _totalPages;
+            private bool _paginationCompleteLogged = false;
 
-            public CustomPaginator(DocumentPaginator inner, double footerHeight, double fontSize, double pageWidth, FontFamily fontFamily, int totalPages)
+            public CustomPaginator(MainWindow mainWindow, Caller caller, DocumentPaginator inner, double footerHeight, double fontSize, double pageWidth, FontFamily fontFamily, int totalPages)
             {
+                _mainWindow = mainWindow;
+                _caller = caller;
                 _inner = inner;
                 _footerHeight = footerHeight;
                 _fontSize = fontSize;
@@ -527,6 +581,32 @@ namespace ProjectCryptoGains.Common.Utils
                 if (originalPage.Visual == null)
                 {
                     return originalPage;
+                }
+
+                // Log rendering progress every 10 pages
+                if ((pageNumber + 1) % 10 == 0)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        ConsoleLog(_mainWindow.txtLog, $"[{_caller}] Rendering page {pageNumber + 1} of {_totalPages}...");
+                    });
+                }
+
+                // Log when the last page is rendered (pagination complete)
+                if (pageNumber == _totalPages - 1 && !_paginationCompleteLogged)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        if (_totalPages == 1)
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[{_caller}] Page rendered for PDF; Finalizing file...");
+                        }
+                        else
+                        {
+                            ConsoleLog(_mainWindow.txtLog, $"[{_caller}] All pages rendered for PDF; Finalizing file...");
+                        }
+                    });
+                    _paginationCompleteLogged = true; // Ensure it logs only once
                 }
 
                 // Create a new visual canvas to draw our customized page

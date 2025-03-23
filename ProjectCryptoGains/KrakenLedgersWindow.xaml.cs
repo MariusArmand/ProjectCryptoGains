@@ -152,16 +152,16 @@ namespace ProjectCryptoGains
                 }
 
                 // Read the CSV file
-                using (StreamReader reader = new(filePath))
+                try
                 {
-                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Importing {filePath}");
-
-                    string csvLine;
-                    string pattern = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
-
-                    int csvLineNumber = 0;
-                    try
+                    using (StreamReader reader = new(filePath))
                     {
+                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] Importing {filePath}");
+
+                        string csvLine;
+                        string pattern = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
+
+                        int csvLineNumber = 0;
                         while (!reader.EndOfStream)
                         {
                             csvLine = reader.ReadLine() ?? "";
@@ -198,12 +198,12 @@ namespace ProjectCryptoGains
                             csvLineNumber++;
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        lastError = "File could not be parsed." + Environment.NewLine + ex.Message;
-                        CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
-                    }
+                }
+                catch (Exception ex)
+                {
+                    lastError = "File could not be parsed." + Environment.NewLine + ex.Message;
+                    CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ConsoleLog(_mainWindow.txtLog, $"[Kraken Ledgers] {lastError}");
                 }
 
                 if (lastError == null)

@@ -29,10 +29,10 @@ namespace ProjectCryptoGains
     {
         private readonly MainWindow _mainWindow;
 
-        private string fromDate = "2009-01-03";
-        private string toDate = GetTodayAsIsoDate();
+        private string _fromDate = "2009-01-03";
+        private string _toDate = GetTodayAsIsoDate();
 
-        private string? lastWarning = null;
+        private string? _lastWarning = null;
 
         public RewardsWindow(MainWindow mainWindow)
         {
@@ -41,8 +41,8 @@ namespace ProjectCryptoGains
 
             _mainWindow = mainWindow;
 
-            txtFromDate.Text = fromDate;
-            txtToDate.Text = toDate;
+            txtFromDate.Text = _fromDate;
+            txtToDate.Text = _toDate;
 
             BindGrid();
         }
@@ -222,7 +222,7 @@ namespace ProjectCryptoGains
 
         private void SetFromDate()
         {
-            fromDate = txtFromDate.Text;
+            _fromDate = txtFromDate.Text;
         }
 
         private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
@@ -250,12 +250,12 @@ namespace ProjectCryptoGains
 
         private void SetToDate()
         {
-            toDate = txtToDate.Text;
+            _toDate = txtToDate.Text;
         }
 
         private void BtnRefresh_Click(object sender, RoutedEventArgs e)
         {
-            lastWarning = null;
+            _lastWarning = null;
             Refresh();
         }
 
@@ -322,7 +322,7 @@ namespace ProjectCryptoGains
                     if (rewardsRefreshError == null)
                     {
                         BindGrid();
-                        if (ledgersRefreshWarning == null && lastWarning == null)
+                        if (ledgersRefreshWarning == null && _lastWarning == null)
                         {
                             ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh done");
                         }
@@ -383,17 +383,34 @@ namespace ProjectCryptoGains
                                                    ORDER BY ledgers.""DATE"" ASC";
 
                     // Convert string dates to DateTime and add parameters
-                    AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(fromDate));
-                    AddParameterWithValue(selectCommand, "@TO_DATE", ConvertStringToIsoDate(toDate).AddDays(1));
+                    AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(_fromDate));
+                    AddParameterWithValue(selectCommand, "@TO_DATE", ConvertStringToIsoDate(_toDate).AddDays(1));
 
                     // Insert into rewards db table
                     using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
-                        // Rate limiting mechanism //
+                        // Rate limiting mechanism    //
                         DateTime lastCallTime = DateTime.Now;
-                        /////////////////////////////
+                        // Progress logging mechanism //
+                        DateTime lastLogTime = DateTime.Now;
+                        int recordsProcessed = 0;
+                        ////////////////////////////////
                         while (reader.Read())
                         {
+                            recordsProcessed++;
+
+                            // Progress logging mechanism //
+                            if ((DateTime.Now - lastLogTime).TotalSeconds >= 30)
+                            {
+                                string progressMessage = $"[Rewards] Processed {recordsProcessed} records...";
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    ConsoleLog(_mainWindow.txtLog, progressMessage);
+                                });
+                                lastLogTime = DateTime.Now;
+                            }
+                            ////////////////////////////////
+
                             string refid = reader.GetStringOrEmpty(0);
                             DateTime date = reader.GetDateTime(1);
                             string type = reader.GetStringOrEmpty(2);
@@ -430,10 +447,10 @@ namespace ProjectCryptoGains
                             }
                             else
                             {
-                                lastWarning = $"[Rewards] Could not perform calculations for refid: {refid}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {asset} on {ConvertDateTimeToString(date, "yyyy-MM-dd")}";
+                                _lastWarning = $"[Rewards] Could not perform calculations for refid: {refid}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {asset} on {ConvertDateTimeToString(date, "yyyy-MM-dd")}";
                                 Application.Current.Dispatcher.Invoke(() =>
                                 {
-                                    ConsoleLog(_mainWindow.txtLog, lastWarning);
+                                    ConsoleLog(_mainWindow.txtLog, _lastWarning);
                                 });
                             }
 
@@ -480,7 +497,7 @@ namespace ProjectCryptoGains
                             insertCommand.ExecuteNonQuery();
                         }
                     }
-                    if (lastWarning != null)
+                    if (_lastWarning != null)
                     {
                         Application.Current.Dispatcher.Invoke(() =>
                         {
@@ -532,6 +549,8 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
+                mainWindow: _mainWindow,
+                caller: Caller.Rewards,
                 columnHeaders: new[] { "DATE", "REFID", "TYPE", "EXCHANGE", "ASSET", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
                 dataItems: rewards,
                 dataExtractor: item => new[]
@@ -547,7 +566,7 @@ namespace ProjectCryptoGains
                 printDlg: printDlg,
                 titlePage: true,
                 title: "Rewards",
-                subtitle: $"From\t{fromDate}\nTo\t{toDate}",
+                subtitle: $"From\t{_fromDate}\nTo\t{_toDate}",
                 maxColumnsPerRow: 7,
                 repeatHeadersPerItem: true,
                 itemsPerPage: 22
@@ -595,6 +614,8 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
+                mainWindow: _mainWindow,
+                caller: Caller.Rewards,
                 columnHeaders: new[] { "ASSET", "AMOUNT", $"AMOUNT_{fiatCurrency}" },
                 dataItems: rewardsSummary,
                 dataExtractor: item => new[]
@@ -605,7 +626,7 @@ namespace ProjectCryptoGains
                 },
                 printDlg: printDlg,
                 title: "Rewards Summary",
-                subtitle: $"From\t{fromDate}\nTo\t{toDate}",
+                subtitle: $"From\t{_fromDate}\nTo\t{_toDate}",
                 summaryText: $"Total rewards converted {totalAmountFiat}",
                 maxColumnsPerRow: 8,
                 repeatHeadersPerItem: true

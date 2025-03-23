@@ -28,8 +28,8 @@ namespace ProjectCryptoGains
     {
         private readonly MainWindow _mainWindow;
 
-        private string fromDate = "2009-01-03";
-        private string toDate = GetTodayAsIsoDate();
+        private string _fromDate = "2009-01-03";
+        private string _toDate = GetTodayAsIsoDate();
 
         public LedgersWindow(MainWindow mainWindow)
         {
@@ -38,8 +38,8 @@ namespace ProjectCryptoGains
 
             _mainWindow = mainWindow;
 
-            txtFromDate.Text = fromDate;
-            txtToDate.Text = toDate;
+            txtFromDate.Text = _fromDate;
+            txtToDate.Text = _toDate;
 
             BindGrid();
         }
@@ -100,8 +100,8 @@ namespace ProjectCryptoGains
                                                ORDER BY ""DATE"", REFID, AMOUNT ASC";
 
                 // Convert string dates to DateTime and add parameters
-                AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(fromDate));
-                AddParameterWithValue(selectCommand, "@TO_DATE", ConvertStringToIsoDate(toDate).AddDays(1));
+                AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(_fromDate));
+                AddParameterWithValue(selectCommand, "@TO_DATE", ConvertStringToIsoDate(_toDate).AddDays(1));
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
                 {
@@ -161,7 +161,7 @@ namespace ProjectCryptoGains
 
         private void SetFromDate()
         {
-            fromDate = txtFromDate.Text;
+            _fromDate = txtFromDate.Text;
         }
 
         private void TxtToDate_GotFocus(object sender, RoutedEventArgs e)
@@ -189,7 +189,7 @@ namespace ProjectCryptoGains
 
         private void SetToDate()
         {
-            toDate = txtToDate.Text;
+            _toDate = txtToDate.Text;
         }
 
         private void BtnRefresh_Click(object sender, RoutedEventArgs e)
@@ -309,6 +309,8 @@ namespace ProjectCryptoGains
             PrintDialog printDlg = new();
 
             await PrintUtils.PrintFlowDocumentAsync(
+                mainWindow: _mainWindow,
+                caller: Caller.Ledgers,
                 columnHeaders: new[]
                 {
                     "DATE", "REFID", "TYPE", "EXCHANGE", "AMOUNT", "ASSET",
@@ -331,7 +333,7 @@ namespace ProjectCryptoGains
                 printDlg: printDlg,
                 titlePage: true,
                 title: "Ledgers",
-                subtitle: $"From\t{fromDate}\nTo\t{toDate}",
+                subtitle: $"From\t{_fromDate}\nTo\t{_toDate}",
                 footerHeight: 20,
                 maxColumnsPerRow: 7,
                 repeatHeadersPerItem: true,
