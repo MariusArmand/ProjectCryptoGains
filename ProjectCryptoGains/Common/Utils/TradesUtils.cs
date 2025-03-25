@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
 using static ProjectCryptoGains.Common.Utils.DateUtils;
-using static ProjectCryptoGains.Common.Utils.SettingUtils;
+using static ProjectCryptoGains.Common.Utils.SettingsUtils;
 using static ProjectCryptoGains.Common.Utils.Utils;
 
 namespace ProjectCryptoGains.Common.Utils

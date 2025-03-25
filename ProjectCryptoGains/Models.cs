@@ -105,6 +105,13 @@ namespace ProjectCryptoGains
             public string? Notes { get; set; }
         }
 
+        public class ParametersWindowsModel
+        {
+            public required string Window { get; set; }
+            public required string Name { get; set; }
+            public required string Value { get; set; }
+        }
+
         public class LedgersModel
         {
             public required int Row_number { get; set; }

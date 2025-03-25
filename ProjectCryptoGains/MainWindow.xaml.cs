@@ -4,7 +4,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
-using static ProjectCryptoGains.Common.Utils.SettingUtils;
+using static ProjectCryptoGains.Common.Utils.ParametersWindowsUtils;
+using static ProjectCryptoGains.Common.Utils.SettingsUtils;
 using static ProjectCryptoGains.Common.Utils.Utils;
 using static ProjectCryptoGains.Common.Utils.WindowUtils;
 
@@ -74,9 +75,9 @@ namespace ProjectCryptoGains
                 Application.Current.Shutdown();
             }
 
-            ////////////////////
-            // Load Settings
-            ////////////////////
+            ////////////////////////////
+            // Load settings
+            ////////////////////////////
             string? lastError = null;
 
             // Fiat currency
@@ -150,8 +151,185 @@ namespace ProjectCryptoGains
                 ConsoleLog(txtLog, $"[Settings] {lastError}");
                 CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+
+            ////////////////////////////
+
+            ////////////////////////////
+            // Load parameters windows
+            ////////////////////////////
+
+            // Ledgers from date
+            try
+            {
+                LoadParWinLedgersFromDateFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Ledgers] {lastError}");
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Ledgers to date
+            try
+            {
+                LoadParWinLedgersToDateFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Ledgers] {lastError}");
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Trades from date
+            try
+            {
+                LoadParWinTradesFromDateFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Trades] {lastError}");
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Trades to date
+            try
+            {
+                LoadParWinTradesToDateFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Trades] {lastError}");
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Gains from date
+            try
+            {
+                LoadParWinGainsFromDateFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Gains] {lastError}");
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Gains to date
+            try
+            {
+                LoadParWinGainsToDateFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Gains] {lastError}");
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Gains base asset
+            try
+            {
+                LoadParWinGainsBaseAssetFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Gains] {lastError}");
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Rewards from date
+            try
+            {
+                LoadParWinRewardsFromDateFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Rewards] {lastError}");
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Rewards to date
+            try
+            {
+                LoadParWinRewardsToDateFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Rewards] {lastError}");
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Balances until date
+            try
+            {
+                LoadParWinBalancesUntilDateFromDB();
+            }
+            catch (InvalidOperationException ex)
+            {
+                lastError = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    lastError += Environment.NewLine + ex.InnerException.Message;
+                }
+
+                ConsoleLog(txtLog, $"[Balances] {lastError}");
+                CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            ////////////////////////////
         }
-        ////////////////////
 
         private void Minimize_Click(object sender, RoutedEventArgs e)
         {

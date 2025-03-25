@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Windows;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
 using static ProjectCryptoGains.Common.Utils.ExceptionUtils;
-using static ProjectCryptoGains.Common.Utils.SettingUtils;
+using static ProjectCryptoGains.Common.Utils.SettingsUtils;
 using static ProjectCryptoGains.Common.Utils.Utils;
 using static ProjectCryptoGains.Common.Utils.ValidationUtils;
 

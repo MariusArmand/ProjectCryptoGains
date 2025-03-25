@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
-using static ProjectCryptoGains.Common.Utils.SettingUtils;
+using static ProjectCryptoGains.Common.Utils.SettingsUtils;
 using static ProjectCryptoGains.Common.Utils.Utils;
 
 namespace ProjectCryptoGains
@@ -28,6 +28,25 @@ namespace ProjectCryptoGains
             Bind();
         }
 
+        protected override void SubwindowBase_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (this.IsVisible)
+            {
+                ReadSettings();
+            }
+        }
+
+        private void ReadSettings()
+        {
+            cmbFiatCurrency.Text = SettingFiatCurrency;
+
+            txtRewardsTaxPercentage.Text = SettingRewardsTaxPercentage.ToString();
+
+            txtCoinDeskDataApiKey.Text = SettingCoinDeskDataApiKey;
+
+            txtPrintoutTitlePrefix.Text = SettingPrintoutTitlePrefix;
+        }
+
         private void BlockUI()
         {
             btnSave.IsEnabled = false;
@@ -42,13 +61,7 @@ namespace ProjectCryptoGains
 
         private void Bind()
         {
-            cmbFiatCurrency.Text = SettingFiatCurrency;
-
-            txtRewardsTaxPercentage.Text = SettingRewardsTaxPercentage.ToString();
-
-            txtCoinDeskDataApiKey.Text = SettingCoinDeskDataApiKey;
-
-            txtPrintoutTitlePrefix.Text = SettingPrintoutTitlePrefix;
+            ReadSettings();
         }
 
         private void BtnSave_Click(object sender, RoutedEventArgs e)

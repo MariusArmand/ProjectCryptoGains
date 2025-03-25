@@ -14,6 +14,8 @@ namespace ProjectCryptoGains.Common
             Closing += Subwindow_Closing;
             // Hook up after XAML is loaded
             Loaded += SubwindowBase_Loaded;
+
+            IsVisibleChanged += SubwindowBase_IsVisibleChanged;
         }
 
         private void SubwindowBase_Loaded(object sender, RoutedEventArgs e)
@@ -53,6 +55,10 @@ namespace ProjectCryptoGains.Common
             sender = this;
             e.Cancel = true;
             Visibility = Visibility.Hidden;
+        }
+
+        protected virtual void SubwindowBase_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
         }
     }
 }

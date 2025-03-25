@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
 using static ProjectCryptoGains.Common.Utils.DateUtils;
 using static ProjectCryptoGains.Common.Utils.LedgersUtils;
+using static ProjectCryptoGains.Common.Utils.ParametersWindowsUtils;
 using static ProjectCryptoGains.Common.Utils.ReaderUtils;
 using static ProjectCryptoGains.Common.Utils.Utils;
 using static ProjectCryptoGains.Common.Utils.WindowUtils;
@@ -28,8 +29,8 @@ namespace ProjectCryptoGains
     {
         private readonly MainWindow _mainWindow;
 
-        private string _fromDate = "2009-01-03";
-        private string _toDate = GetTodayAsIsoDate();
+        private string _fromDate = "";
+        private string _toDate = "";
 
         public LedgersWindow(MainWindow mainWindow)
         {
@@ -38,10 +39,27 @@ namespace ProjectCryptoGains
 
             _mainWindow = mainWindow;
 
-            txtFromDate.Text = _fromDate;
-            txtToDate.Text = _toDate;
-
+            ReadParametersWindows();
             BindGrid();
+        }
+
+        protected override void SubwindowBase_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (this.IsVisible)
+            {
+                ReadParametersWindows();
+                txtFromDate.Foreground = Brushes.White;
+                txtToDate.Foreground = Brushes.White;
+            }
+        }
+
+        private void ReadParametersWindows()
+        {
+            _fromDate = ParWinLedgersFromDate;
+            txtFromDate.Text = _fromDate;
+
+            _toDate = ParWinLedgersToDate;
+            txtToDate.Text = _toDate;
         }
 
         private void BlockUI()
@@ -214,6 +232,10 @@ namespace ProjectCryptoGains
                 // Exit function early
                 return;
             }
+
+            // Save ledgers parameters
+            ParWinLedgersFromDate = txtFromDate.Text;
+            ParWinLedgersToDate = txtToDate.Text;
 
             BlockUI();
 

@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using static ProjectCryptoGains.Common.Utils.DatabaseUtils;
-using static ProjectCryptoGains.Common.Utils.SettingUtils;
+using static ProjectCryptoGains.Common.Utils.SettingsUtils;
 
 namespace ProjectCryptoGains.Common.Utils
 {
