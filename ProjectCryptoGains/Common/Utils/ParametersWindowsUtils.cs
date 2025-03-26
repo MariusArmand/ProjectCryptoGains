@@ -512,10 +512,7 @@ namespace ProjectCryptoGains.Common.Utils
             set
             {
                 _parWinGainsBaseAsset = value;
-                if (!string.IsNullOrEmpty(_parWinGainsBaseAsset))
-                {
-                    SaveParWinGainsBaseAssetToDB(_parWinGainsBaseAsset);
-                }
+                SaveParWinGainsBaseAssetToDB(_parWinGainsBaseAsset);
             }
         }
 
