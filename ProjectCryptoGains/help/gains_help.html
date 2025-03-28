@@ -13,10 +13,31 @@
 
     <main>
 		<section>
-			Gains are calculated from the data produced by Process => Trades, using the LIFO (Last In, First Out) method
+			<h2>Gains calculation in PCG</h2>
+			PCG calculates gains with the Last-In, First-Out (LIFO) method, combining trades and rewards
+			<ul>
+				<li><b>Trades:</b> 'BUY' transactions set the cost basis</li>
+				<li><b>Rewards:</b> Staking rewards are included as acquisitions</li>
+				<li>For a sale, we match the latest acquisitions, calculate the cost basis, and compute: <b>Gain = Sale Proceeds - Cost Basis</b></li>
+			</ul>
+			
+			<h3>Reward tax treatment</h3>			
+			The rewards tax percentage adjusts the cost basis
+			<ul>
+				<li><b>Non-zero tax rewards:</b> If taxed as income (e.g., 0.6 ETH at €2,000 = €1,200), Fair Market Value(FMV) is the cost basis;<br> 
+				    Sell 0.6 ETH at €3,000/ETH: proceeds = €1,800, cost = €1,200, gain = €600 (tax on profit only)</li>
+				<li><b>Zero tax rewards:</b> If untaxed, cost basis is €0; Sell at €3,000/ETH: proceeds = €1,800, cost = €0, gain = €1,800 (full tax)</li>
+				<li>FMV applies if tax > 0; €0 if tax = 0</li>
+			</ul>
+			
+			<h3>Order</h3>
+			<p>PCG processes SELL transactions in chronological order (ascending by date), aligning with how most tax authorities expect transaction histories 
+			to be reported for auditing; This ensures users can easily track their sales and acquisitions in the order they occurred; Meanwhile, the LIFO calculation 
+			processes acquisitions in descending order to match the newest ones first, as required by the LIFO method</p>
 		</section>
 		
 		<section>
+			<h2>Columns</h2>
 			<table>
 				<tr>
 					<td valign="top">
@@ -43,7 +64,7 @@
 						TYPE
 					</td>
 					<td valign="top">
-						Can be "BUY" or "SELL"
+						Can be "BUY", "SELL" or "STAKING"
 					</td>
 				</tr>
 				<tr><td></td></tr>
@@ -83,7 +104,8 @@
 						QUOTE_AMOUNT
 					</td>
 					<td valign="top">
-						Amount debited or credited to the quote asset's balance
+						<p><b>For trades:</b> Amount debited or credited to the quote asset's balance</p>
+						<p><b>For rewards:</b> If rewards tax percentage > 0, FMV (BASE_AMOUNT * BASE_UNIT_PRICE_FIAT); Set to 0 if rewards tax percentage = 0</p>
 					</td>
 				</tr>
 				<tr><td></td></tr>
@@ -93,7 +115,8 @@
 						BASE_UNIT_PRICE_FIAT
 					</td>
 					<td valign="top">
-						The cost of one unit of the base asset in terms of the quote asset, converted to fiat
+						<p><b>For trades:</b> The cost of one unit of the base asset in terms of the quote asset, converted to fiat</p>
+						<p><b>For rewards:</b> If rewards tax percentage > 0, FMV of one unit of the base asset (BASE_UNIT_PRICE_FIAT); Set to 0 if rewards tax percentage = 0</p>
 					</td>
 				</tr>
 				<tr><td></td></tr>
@@ -103,7 +126,8 @@
 						COSTS_PROCEEDS
 					</td>
 					<td valign="top">
-						The costs (in case of "BUY") or proceeds (in case of "SELL")
+						<p><b>For trades:</b> The costs (in case of "BUY") or proceeds (in case of "SELL")</p>
+						<p><b>For rewards:</b> If rewards tax percentage > 0, FMV (BASE_AMOUNT * BASE_UNIT_PRICE_FIAT); Set to 0 if rewards tax percentage = 0</p>
 					</td>
 				</tr>
 				<tr><td></td></tr>
@@ -113,7 +137,7 @@
 						TX_BALANCE_REMAINING
 					</td>
 					<td valign="top">
-						The buy transaction's base asset balance remaining after the LIFO processing
+						The acquisition transaction's base asset balance remaining after the LIFO processing
 					</td>
 				</tr>
 				<tr><td></td></tr>
@@ -124,7 +148,7 @@
 					</td>
 					<td valign="top">
 						<p>The gain of the sell transaction calculated via the LIFO method
-						   Calculation (simplified): sell.PROCEEDS - (sell.AMOUNT * previous buy.BASE_UNIT_PRICE_FIAT)</p>
+						   Calculation (simplified): sell.PROCEEDS - (sell.AMOUNT * previous acquisition.BASE_UNIT_PRICE_FIAT)</p>
 					</td>
 				</tr>
 			</table>

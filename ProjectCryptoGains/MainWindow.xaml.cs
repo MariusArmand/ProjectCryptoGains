@@ -25,8 +25,8 @@ namespace ProjectCryptoGains
         private KrakenAssetsWindow? _winKrakenAssets;
         private LedgersWindow? _winLedgers;
         private TradesWindow? _winTrades;
-        private GainsWindow? _winGains;
         private RewardsWindow? _winRewards;
+        private GainsWindow? _winGains;
         private BalancesWindow? _winBalances;
         private MetricsWindow? _winMetrics;
 
@@ -358,6 +358,27 @@ namespace ProjectCryptoGains
             window.Close();
         }
 
+        private void MenuManualLedgers_Click(object sender, RoutedEventArgs e)
+        {
+            // Create window if it doesn't exist yet
+            _winManualLedgers ??= new ManualLedgersWindow(this);
+            ShowAndFocusSubWindow(_winManualLedgers, this);
+        }
+
+        private void MenuKrakenLedgers_Click(object sender, RoutedEventArgs e)
+        {
+            // Create window if it doesn't exist yet
+            _winKrakenLedgers ??= new KrakenLedgersWindow(this);
+            ShowAndFocusSubWindow(_winKrakenLedgers, this);
+        }
+
+        private void MenuExchangeRates_Click(object sender, RoutedEventArgs e)
+        {
+            // Create window if it doesn't exist yet
+            _winExchangeRates ??= new ExchangeRatesWindow(this);
+            ShowAndFocusSubWindow(_winExchangeRates, this);
+        }
+
         private void MenuSettings_Click(object sender, RoutedEventArgs e)
         {
             // Create window if it doesn't exist yet
@@ -383,25 +404,11 @@ namespace ProjectCryptoGains
             ShowAndFocusSubWindow(_winKrakenAssets, this);
         }
 
-        private void MenuKrakenLedgers_Click(object sender, RoutedEventArgs e)
+        private void MenuLedgers_Click(object sender, RoutedEventArgs e)
         {
             // Create window if it doesn't exist yet
-            _winKrakenLedgers ??= new KrakenLedgersWindow(this);
-            ShowAndFocusSubWindow(_winKrakenLedgers, this);
-        }
-
-        private void MenuManualLedgers_Click(object sender, RoutedEventArgs e)
-        {
-            // Create window if it doesn't exist yet
-            _winManualLedgers ??= new ManualLedgersWindow(this);
-            ShowAndFocusSubWindow(_winManualLedgers, this);
-        }
-
-        private void MenuExchangeRates_Click(object sender, RoutedEventArgs e)
-        {
-            // Create window if it doesn't exist yet
-            _winExchangeRates ??= new ExchangeRatesWindow(this);
-            ShowAndFocusSubWindow(_winExchangeRates, this);
+            _winLedgers ??= new LedgersWindow(this);
+            ShowAndFocusSubWindow(_winLedgers, this);
         }
 
         private void MenuTrades_Click(object sender, RoutedEventArgs e)
@@ -411,25 +418,18 @@ namespace ProjectCryptoGains
             ShowAndFocusSubWindow(_winTrades, this);
         }
 
-        private void MenuGains_Click(object sender, RoutedEventArgs e)
-        {
-            // Create window if it doesn't exist yet
-            _winGains ??= new GainsWindow(this);
-            ShowAndFocusSubWindow(_winGains, this);
-        }
-
-        private void MenuLedgers_Click(object sender, RoutedEventArgs e)
-        {
-            // Create window if it doesn't exist yet
-            _winLedgers ??= new LedgersWindow(this);
-            ShowAndFocusSubWindow(_winLedgers, this);
-        }
-
         private void MenuRewards_Click(object sender, RoutedEventArgs e)
         {
             // Create window if it doesn't exist yet
             _winRewards ??= new RewardsWindow(this);
             ShowAndFocusSubWindow(_winRewards, this);
+        }
+
+        private void MenuGains_Click(object sender, RoutedEventArgs e)
+        {
+            // Create window if it doesn't exist yet
+            _winGains ??= new GainsWindow(this);
+            ShowAndFocusSubWindow(_winGains, this);
         }
 
         private void MenuBalances_Click(object sender, RoutedEventArgs e)

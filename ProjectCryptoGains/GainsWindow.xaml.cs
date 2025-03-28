@@ -18,6 +18,7 @@ using static ProjectCryptoGains.Common.Utils.ExceptionUtils;
 using static ProjectCryptoGains.Common.Utils.LedgersUtils;
 using static ProjectCryptoGains.Common.Utils.ParametersWindowsUtils;
 using static ProjectCryptoGains.Common.Utils.ReaderUtils;
+using static ProjectCryptoGains.Common.Utils.RewardsUtils;
 using static ProjectCryptoGains.Common.Utils.SettingsUtils;
 using static ProjectCryptoGains.Common.Utils.TradesUtils;
 using static ProjectCryptoGains.Common.Utils.Utils;
@@ -98,6 +99,7 @@ namespace ProjectCryptoGains
         private void BindGrid()
         {
             string fiatCurrency = SettingFiatCurrency;
+            decimal rewardsTaxPercentage = SettingRewardsTaxPercentage;
             dgGains.Columns[8].Header = $"BASE__UNIT__PRICE__{fiatCurrency}";
 
             ObservableCollection<GainsModel> GainsData = [];
@@ -120,28 +122,51 @@ namespace ProjectCryptoGains
                 }
 
                 using DbCommand selectCommand = connection.CreateCommand();
-                selectCommand.CommandText = $@"SELECT 
-                                                   trades.REFID,
-                                                   trades.""DATE"",
-                                                   trades.TYPE,
-                                                   trades.BASE_ASSET,
-                                                   trades.BASE_AMOUNT,
-                                                   trades.QUOTE_ASSET,
-                                                   trades.QUOTE_AMOUNT,
-                                                   trades.BASE_UNIT_PRICE_FIAT,
-                                                   trades.COSTS_PROCEEDS,
-                                                   CASE 
-                                                       WHEN trades.TYPE = 'SELL' THEN NULL
+                selectCommand.CommandText = $@"SELECT
+                                                   acquisitions.REFID,
+                                                   acquisitions.""DATE"",
+                                                   acquisitions.TYPE,
+                                                   acquisitions.BASE_ASSET,
+                                                   acquisitions.BASE_AMOUNT,
+                                                   acquisitions.QUOTE_ASSET,
+                                                   acquisitions.QUOTE_AMOUNT,
+                                                   acquisitions.BASE_UNIT_PRICE_FIAT,
+                                                   acquisitions.COSTS_PROCEEDS,
+                                                   CASE
+                                                       WHEN acquisitions.TYPE = 'SELL' THEN NULL
                                                        ELSE gains.TX_BALANCE_REMAINING
                                                    END AS TX_BALANCE_REMAINING,
-                                                   CASE 
-                                                       WHEN trades.TYPE = 'BUY' THEN NULL
+                                                   CASE
+                                                       WHEN acquisitions.TYPE IN ('BUY', 'STAKING') THEN NULL
                                                        ELSE gains.GAIN
                                                    END AS GAIN
                                                FROM TB_GAINS gains
-                                                   INNER JOIN TB_TRADES trades
-                                                       ON gains.REFID = trades.REFID
-                                               WHERE trades.BASE_ASSET LIKE '%{_baseAsset}%'
+                                                   INNER JOIN
+                                                       (SELECT
+                                                            REFID,
+                                                            ""DATE"",
+                                                            TYPE,
+                                                            BASE_ASSET,
+                                                            BASE_AMOUNT,
+                                                            QUOTE_ASSET,
+                                                            QUOTE_AMOUNT,
+                                                            BASE_UNIT_PRICE_FIAT,
+                                                            COSTS_PROCEEDS
+                                                        FROM TB_TRADES
+                                                        UNION ALL
+                                                        SELECT
+                                                            REFID,
+                                                            ""DATE"",
+                                                            TYPE,
+                                                            ASSET AS BASE_ASSET,
+                                                            AMOUNT AS BASE_AMOUNT,
+                                                            'EUR' AS QUOTE_ASSET,
+                                                            {(rewardsTaxPercentage > 0 ? "AMOUNT * UNIT_PRICE" : "0")} AS QUOTE_AMOUNT,
+                                                            {(rewardsTaxPercentage > 0 ? "UNIT_PRICE" : "0")} AS BASE_UNIT_PRICE_FIAT,
+                                                            {(rewardsTaxPercentage > 0 ? "AMOUNT * UNIT_PRICE" : "0")} AS COSTS_PROCEEDS
+                                                        FROM TB_REWARDS) acquisitions
+                                                        ON gains.REFID = acquisitions.REFID
+                                               WHERE acquisitions.BASE_ASSET LIKE '%{_baseAsset}%'
                                                ORDER BY ""DATE"" ASC";
 
                 using (DbDataReader reader = selectCommand.ExecuteReader())
@@ -174,19 +199,30 @@ namespace ProjectCryptoGains
                 /////////////////////////////////
 
                 selectCommand.CommandText = $@"SELECT 
-                                                   trades.BASE_ASSET,
+                                                   acquisitions.BASE_ASSET,
                                                    asset_catalog.LABEL,
                                                    ROUND(SUM(gains.GAIN), 10) AS GAIN
                                                FROM TB_GAINS gains
-                                                   INNER JOIN TB_TRADES trades
-                                                       ON gains.REFID = trades.REFID
+                                                   INNER JOIN
+                                                       (SELECT 
+                                                            REFID,
+                                                            ""DATE"",
+                                                            BASE_ASSET
+                                                        FROM TB_TRADES
+                                                        UNION ALL
+                                                        SELECT 
+                                                            REFID,
+                                                            ""DATE"",
+                                                            ASSET AS BASE_ASSET
+                                                        FROM TB_REWARDS) acquisitions
+                                                        ON gains.REFID = acquisitions.REFID
                                                    LEFT OUTER JOIN TB_ASSET_CATALOG asset_catalog
-                                                       ON trades.BASE_ASSET = asset_catalog.ASSET
+                                                        ON acquisitions.BASE_ASSET = asset_catalog.ASSET
                                                WHERE gains.GAIN IS NOT NULL
-                                                   AND trades.BASE_ASSET LIKE @BASE_ASSET
-                                                   AND trades.""DATE"" BETWEEN @FROM_DATE AND @TO_DATE
-                                               GROUP BY trades.BASE_ASSET, asset_catalog.LABEL
-                                               ORDER BY trades.BASE_ASSET";
+                                                   AND acquisitions.BASE_ASSET LIKE @BASE_ASSET
+                                                   AND acquisitions.""DATE"" BETWEEN @FROM_DATE AND @TO_DATE
+                                               GROUP BY acquisitions.BASE_ASSET, asset_catalog.LABEL
+                                               ORDER BY acquisitions.BASE_ASSET";
 
                 AddParameterWithValue(selectCommand, "@BASE_ASSET", $"%{_baseAsset}%");
                 AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(_fromDate));
@@ -320,7 +356,6 @@ namespace ProjectCryptoGains
 
             try
             {
-
                 ConsoleLog(_mainWindow.txtLog, $"[Gains] Refreshing gains");
 
                 bool ledgersRefreshFailed = false;
@@ -365,9 +400,35 @@ namespace ProjectCryptoGains
                     });
                 }
 
-                // LIFO processing
-                if (!ledgersRefreshWasBusy && !tradesRefreshWasBusy && tradesRefreshError == null && !ledgersRefreshFailed)
+                string? rewardsRefreshError = null;
+                string? rewardsRefreshWarning = null;
+                bool rewardsRefreshWasBusy = false;
+                if (chkRefreshRewards.IsChecked == true && !ledgersRefreshWasBusy && !tradesRefreshWasBusy && !ledgersRefreshFailed && tradesRefreshError == null)
                 {
+                    await Task.Run(async () =>
+                    {
+                        try
+                        {
+                            rewardsRefreshWarning = await RefreshRewards(_mainWindow, Caller.Gains, "2009-01-03", GetTodayAsIsoDate());
+                            rewardsRefreshWasBusy = RewardsRefreshBusy;
+                        }
+                        catch (Exception ex)
+                        {
+                            while (ex.InnerException != null)
+                            {
+                                ex = ex.InnerException;
+                            }
+                            rewardsRefreshError = ex.Message;
+                        }
+                    });
+                }
+
+                // LIFO processing
+                if (!ledgersRefreshWasBusy && !tradesRefreshWasBusy && !rewardsRefreshWasBusy && !ledgersRefreshFailed && tradesRefreshError == null && rewardsRefreshError == null)
+                {
+                    // Clear the table before inserting new data
+                    ClearTable();
+
                     await Task.Run(() =>
                     {
                         using (FbConnection connection = new(connectionString))
@@ -375,10 +436,6 @@ namespace ProjectCryptoGains
                             try
                             {
                                 connection.Open();
-                                // Clear the table before inserting new data
-                                using DbCommand deleteCommand = connection.CreateCommand();
-                                deleteCommand.CommandText = "DELETE FROM TB_GAINS";
-                                deleteCommand.ExecuteNonQuery();
 
                                 // Read the assets into a list
                                 using DbCommand selectCommand = connection.CreateCommand();
@@ -399,10 +456,10 @@ namespace ProjectCryptoGains
                                 // For each asset do LIFO processing
                                 foreach (string asset in assets)
                                 {
-                                    List<TransactionsModel> sellTransactions = ReadTransactionsFromDB(asset, "SELL", "ASC");
-                                    List<TransactionsModel> buyTransactions = ReadTransactionsFromDB(asset, "BUY");
-                                    CalculateLIFOGains(asset, sellTransactions, buyTransactions);
-                                    WriteTransactionsToDB(sellTransactions, buyTransactions, connectionString);
+                                    List<TransactionsModel> sellTransactions = ReadSellTransactionsFromDB(asset);
+                                    List<TransactionsModel> acquireTransactions = ReadAcquireTransactionsFromDB(asset);
+                                    CalculateLIFOGains(asset, sellTransactions, acquireTransactions);
+                                    WriteTransactionsToDB(sellTransactions, acquireTransactions, connectionString);
                                 }
                             }
                             catch (Exception ex)
@@ -446,12 +503,14 @@ namespace ProjectCryptoGains
                     }
                     else
                     {
+                        ClearTable();
                         UnbindGrid();
                         ConsoleLog(_mainWindow.txtLog, $"[Gains] Refresh unsuccessful");
                     }
                 }
                 else
                 {
+                    ClearTable();
                     UnbindGrid();
                     if (tradesRefreshError != null)
                     {
@@ -467,7 +526,7 @@ namespace ProjectCryptoGains
             }
         }
 
-        private static List<TransactionsModel> ReadTransactionsFromDB(String asset, String tx_type, string orderBy = "DESC")
+        private static List<TransactionsModel> ReadSellTransactionsFromDB(String asset)
         {
             List<TransactionsModel> transactions = [];
 
@@ -487,23 +546,13 @@ namespace ProjectCryptoGains
                                                        BASE_AMOUNT AS TX_BALANCE_REMAINING
                                                    FROM TB_TRADES
                                                    WHERE BASE_ASSET = '{asset}'
-                                                       AND TYPE = '{tx_type}'
-                                                   ORDER BY ""DATE"" {orderBy}";
+                                                       AND TYPE = 'SELL'
+                                                   ORDER BY ""DATE"" ASC";
 
                     using (DbDataReader reader = selectCommand.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            decimal? txBalanceRemaining;
-                            if (tx_type == "SELL")
-                            {
-                                txBalanceRemaining = null; // We don't need to keep track of remaining balances for sell transactions
-                            }
-                            else
-                            {
-                                txBalanceRemaining = reader.GetDecimal(5);
-                            }
-
                             transactions.Add(new TransactionsModel
                             {
                                 RefId = reader.GetStringOrEmpty(0),
@@ -511,7 +560,7 @@ namespace ProjectCryptoGains
                                 Amount = reader.GetDecimalOrDefault(2),
                                 Unit_price = reader.GetDecimal(3),
                                 Costs_Proceeds = reader.GetDecimal(4),
-                                Tx_Balance_Remaining = txBalanceRemaining
+                                Tx_Balance_Remaining = null
                             });
                         }
                     }
@@ -525,7 +574,70 @@ namespace ProjectCryptoGains
             return transactions;
         }
 
-        private void CalculateLIFOGains(String asset, List<TransactionsModel> sellTransactions, List<TransactionsModel> buyTransactions)
+        private static List<TransactionsModel> ReadAcquireTransactionsFromDB(String asset)
+        {
+            decimal rewardsTaxPercentage = SettingRewardsTaxPercentage;
+
+            List<TransactionsModel> transactions = [];
+
+            using (FbConnection connection = new(connectionString))
+            {
+                try
+                {
+                    connection.Open();
+
+                    using DbCommand selectCommand = connection.CreateCommand();
+                    // UNIT_PRICE (Fair Market Value) is used when rewards are taxed as income to set the cost basis,
+                    // preventing double taxation by offsetting the already-taxed FMV in the LIFO gain calculation;
+                    // Set to 0 when no income tax applies to ensure the full proceeds are taxed as capital gains
+                    selectCommand.CommandText = $@"SELECT 
+                                                       REFID,
+                                                       ""DATE"",
+                                                       BASE_AMOUNT AS AMOUNT,
+                                                       BASE_UNIT_PRICE_FIAT AS UNIT_PRICE,
+                                                       COSTS_PROCEEDS,
+                                                       BASE_AMOUNT AS TX_BALANCE_REMAINING
+                                                   FROM TB_TRADES
+                                                   WHERE BASE_ASSET = '{asset}'
+                                                       AND TYPE = 'BUY'
+                                                   UNION ALL
+                                                   SELECT
+                                                       REFID,
+                                                       ""DATE"",
+                                                       AMOUNT,
+                                                       {(rewardsTaxPercentage > 0 ? "UNIT_PRICE" : "0")} AS UNIT_PRICE,
+                                                       0 AS COSTS_PROCEEDS,
+                                                       AMOUNT AS TX_BALANCE_REMAINING
+                                                   FROM TB_REWARDS
+                                                   WHERE ASSET = '{asset}'
+                                                   ORDER BY 2 DESC";
+
+                    using (DbDataReader reader = selectCommand.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            transactions.Add(new TransactionsModel
+                            {
+                                RefId = reader.GetStringOrEmpty(0),
+                                Date = reader.GetDateTime(1),
+                                Amount = reader.GetDecimalOrDefault(2),
+                                Unit_price = reader.GetDecimal(3),
+                                Costs_Proceeds = reader.GetDecimal(4),
+                                Tx_Balance_Remaining = reader.GetDecimal(5)
+                            });
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new DatabaseReadException("Transaction could not be read.", ex);
+                }
+            }
+
+            return transactions;
+        }
+
+        private void CalculateLIFOGains(String asset, List<TransactionsModel> sellTransactions, List<TransactionsModel> acquireTransactions)
         {
             foreach (var stx in sellTransactions)
             {
@@ -538,13 +650,13 @@ namespace ProjectCryptoGains
                 // Parse the sell transaction date if it's not null
                 DateTime sellDate = stx.Date;
 
-                // Filter buy transactions to only those on or before the sell date
-                var relevantBuyTransactions = buyTransactions
-                    .Where(btx => btx.Date <= sellDate)
+                // Filter acquire transactions to only those on or before the sell date
+                var relevantAcquireTransactions = acquireTransactions
+                    .Where(atx => atx.Date <= sellDate)
                     .ToList();
 
-                // Calculate the sum of amounts in relevant buy transactions
-                decimal totalRelevantAmountBought = relevantBuyTransactions.Sum(btx => btx.Amount);
+                // Calculate the sum of amounts in relevant acquire transactions
+                decimal totalRelevantAmountBought = relevantAcquireTransactions.Sum(atx => atx.Amount);
 
                 if (totalRelevantAmountBought < amountToSell)
                 {
@@ -552,7 +664,7 @@ namespace ProjectCryptoGains
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         _errors += 1;
-                        string lastError = "Not enough buy transactions to cover this sell transaction" +
+                        string lastError = "Not enough acquire transactions to cover this sell transaction" +
                                            Environment.NewLine + $"RefId: {stx.RefId}" +
                                            Environment.NewLine + $"Base asset: {asset}" +
                                            Environment.NewLine + $"Amount missing: {amountToSell - totalRelevantAmountBought}";
@@ -563,31 +675,31 @@ namespace ProjectCryptoGains
                 }
 
                 // Continue selling until we've processed the entire amount to sell
-                while (amountToSell > 0 && relevantBuyTransactions.Count != 0)
+                while (amountToSell > 0 && relevantAcquireTransactions.Count != 0)
                 {
-                    // Iterate through each buy transaction in order (since they're ordered by date descending)
-                    foreach (var btx in relevantBuyTransactions)
+                    // Iterate through each acquire transaction in order (since they're ordered by date descending)
+                    foreach (var atx in relevantAcquireTransactions)
                     {
-                        if (btx.Tx_Balance_Remaining > 0)
+                        if (atx.Tx_Balance_Remaining > 0)
                         {
-                            decimal soldAmount = Math.Min((decimal)btx.Tx_Balance_Remaining, amountToSell);
+                            decimal soldAmount = Math.Min((decimal)atx.Tx_Balance_Remaining, amountToSell);
 
                             // Add the cost of the sold amount
-                            costs += btx.Unit_price * soldAmount;
+                            costs += atx.Unit_price * soldAmount;
 
-                            btx.Tx_Balance_Remaining -= soldAmount;
+                            atx.Tx_Balance_Remaining -= soldAmount;
                             amountToSell -= soldAmount;
 
                             if (amountToSell == 0) break;
                         }
                     }
                 }
-                // After processing all relevant buy transactions, set the gain for this sell transaction
+                // After processing all relevant acquire transactions, set the gain for this sell transaction
                 stx.Gain = proceeds - costs;
             }
         }
 
-        private static void WriteTransactionsToDB(List<TransactionsModel> sellTransactions, List<TransactionsModel> buyTransactions, string connectionString)
+        private static void WriteTransactionsToDB(List<TransactionsModel> sellTransactions, List<TransactionsModel> acquireTransactions, string connectionString)
         {
             using (FbConnection connection = new(connectionString))
             {
@@ -625,7 +737,7 @@ namespace ProjectCryptoGains
                         }
                     }
 
-                    foreach (var tx in buyTransactions)
+                    foreach (var tx in acquireTransactions)
                     {
                         if (tx.RefId != null) // Ensure REFID isn't null before adding
                         {
@@ -644,6 +756,25 @@ namespace ProjectCryptoGains
                 {
                     throw new DatabaseWriteException("Error writing to database.", ex);
                 }
+            }
+        }
+
+        private void ClearTable()
+        {
+            try
+            {
+                using (FbConnection connection = new(connectionString))
+                {
+                    connection.Open();
+                    // Clear the table before inserting new data
+                    using DbCommand deleteCommand = connection.CreateCommand();
+                    deleteCommand.CommandText = "DELETE FROM TB_GAINS";
+                    deleteCommand.ExecuteNonQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                ConsoleLog(_mainWindow.txtLog, $"[Gains] Clearing table failed: {ex.Message}");
             }
         }
 

@@ -16,6 +16,7 @@ using static ProjectCryptoGains.Common.Utils.DateUtils;
 using static ProjectCryptoGains.Common.Utils.LedgersUtils;
 using static ProjectCryptoGains.Common.Utils.ParametersWindowsUtils;
 using static ProjectCryptoGains.Common.Utils.ReaderUtils;
+using static ProjectCryptoGains.Common.Utils.RewardsUtils;
 using static ProjectCryptoGains.Common.Utils.SettingsUtils;
 using static ProjectCryptoGains.Common.Utils.Utils;
 using static ProjectCryptoGains.Common.Utils.WindowUtils;
@@ -32,8 +33,6 @@ namespace ProjectCryptoGains
 
         private string _fromDate = "";
         private string _toDate = "";
-
-        private string? _lastWarning = null;
 
         public RewardsWindow(MainWindow mainWindow)
         {
@@ -273,7 +272,6 @@ namespace ProjectCryptoGains
 
         private void BtnRefresh_Click(object sender, RoutedEventArgs e)
         {
-            _lastWarning = null;
             Refresh();
         }
 
@@ -326,37 +324,51 @@ namespace ProjectCryptoGains
 
                 if (!ledgersRefreshWasBusy && !ledgersRefreshFailed)
                 {
+                    // Refresh rewards
                     string? rewardsRefreshError = null;
-                    // Refresh Rewards
-                    try
+                    string? rewardsRefreshWarning = null;
+                    bool rewardsRefreshWasBusy = false;
+                    await Task.Run(async () =>
                     {
-                        await Task.Run(() => RefreshRewards());
-                    }
-                    catch (Exception ex)
-                    {
-                        while (ex.InnerException != null)
+                        try
                         {
-                            ex = ex.InnerException;
+                            rewardsRefreshWarning = await RefreshRewards(_mainWindow, Caller.Rewards, _fromDate, _toDate);
+                            rewardsRefreshWasBusy = RewardsRefreshBusy;
                         }
-                        rewardsRefreshError = ex.Message;
-                    }
-
-                    if (rewardsRefreshError == null)
-                    {
-                        BindGrid();
-                        if (ledgersRefreshWarning == null && _lastWarning == null)
+                        catch (Exception ex)
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh done");
+                            while (ex.InnerException != null)
+                            {
+                                ex = ex.InnerException;
+                            }
+                            rewardsRefreshError = ex.Message;
+                        }
+                    });
+
+                    if (!rewardsRefreshWasBusy)
+                    {
+                        if (rewardsRefreshError == null)
+                        {
+                            BindGrid();
+                            if (ledgersRefreshWarning == null && rewardsRefreshWarning == null)
+                            {
+                                ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh done");
+                            }
+                            else
+                            {
+                                ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh done with warnings");
+                            }
                         }
                         else
                         {
-                            ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh done with warnings");
+                            ConsoleLog(_mainWindow.txtLog, $"[Rewards] {rewardsRefreshError}");
+                            ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh unsuccessful");
                         }
                     }
                     else
                     {
                         UnbindGrid();
-                        ConsoleLog(_mainWindow.txtLog, $"[Rewards] {rewardsRefreshError}");
+                        ConsoleLog(_mainWindow.txtLog, $"[Rewards] There is already a rewards refresh in progress. Please Wait");
                         ConsoleLog(_mainWindow.txtLog, $"[Rewards] Refresh unsuccessful");
                     }
                 }
@@ -369,169 +381,6 @@ namespace ProjectCryptoGains
             finally
             {
                 UnblockUI();
-            }
-        }
-
-        private async Task RefreshRewards()
-        {
-            try
-            {
-                decimal rewardsTaxPercentage = SettingRewardsTaxPercentage;
-
-                using (FbConnection connection = new(connectionString))
-                {
-                    connection.Open();
-
-                    using DbCommand deleteCommand = connection.CreateCommand();
-
-                    // Truncate standard DB table
-                    deleteCommand.CommandText = "DELETE FROM TB_REWARDS";
-                    deleteCommand.ExecuteNonQuery();
-
-                    // Read rewards from Kraken ledgers and manual ledgers
-                    using DbCommand selectCommand = connection.CreateCommand();
-                    selectCommand.CommandText = $@"SELECT
-                                                       ledgers.REFID,
-                                                       ledgers.""DATE"",
-                                                       ledgers.TYPE,
-                                                       ledgers.EXCHANGE,
-                                                       asset_catalog.ASSET,
-                                                       ROUND(ledgers.AMOUNT - ledgers.FEE, 10) AS AMOUNT
-                                                   FROM TB_LEDGERS ledgers
-                                                       INNER JOIN TB_ASSET_CATALOG asset_catalog 
-                                                           ON ledgers.ASSET = asset_catalog .ASSET
-                                                   WHERE ledgers.TYPE IN ('EARN', 'STAKING', 'AIRDROP')
-                                                       AND ledgers.""DATE"" BETWEEN @FROM_DATE AND @TO_DATE
-                                                   ORDER BY ledgers.""DATE"" ASC";
-
-                    // Convert string dates to DateTime and add parameters
-                    AddParameterWithValue(selectCommand, "@FROM_DATE", ConvertStringToIsoDate(_fromDate));
-                    AddParameterWithValue(selectCommand, "@TO_DATE", ConvertStringToIsoDate(_toDate).AddDays(1));
-
-                    // Insert into rewards db table
-                    using (DbDataReader reader = selectCommand.ExecuteReader())
-                    {
-                        // Rate limiting mechanism    //
-                        DateTime lastCallTime = DateTime.Now;
-                        // Progress logging mechanism //
-                        DateTime lastLogTime = DateTime.Now;
-                        int recordsProcessed = 0;
-                        ////////////////////////////////
-                        while (reader.Read())
-                        {
-                            recordsProcessed++;
-
-                            // Progress logging mechanism //
-                            if ((DateTime.Now - lastLogTime).TotalSeconds >= 30)
-                            {
-                                string progressMessage = $"[Rewards] Processed {recordsProcessed} records...";
-                                Application.Current.Dispatcher.Invoke(() =>
-                                {
-                                    ConsoleLog(_mainWindow.txtLog, progressMessage);
-                                });
-                                lastLogTime = DateTime.Now;
-                            }
-                            ////////////////////////////////
-
-                            string refid = reader.GetStringOrEmpty(0);
-                            DateTime date = reader.GetDateTime(1);
-                            string type = reader.GetStringOrEmpty(2);
-                            string exchange = reader.GetStringOrEmpty(3);
-                            string asset = reader.GetStringOrEmpty(4);
-                            decimal amount = reader.GetDecimalOrDefault(5);
-
-                            var (fiatAmount, source) = ConvertXToFiat(asset, date.Date, connection);
-                            decimal exchangeRate = fiatAmount;
-
-                            // Rate limiting mechanism //
-                            if (source == "API")
-                            {
-                                if ((DateTime.Now - lastCallTime).TotalSeconds < 1)
-                                {
-                                    // Calculate delay to ensure at least 1 seconds have passed
-                                    int delay = Math.Max(0, (int)((lastCallTime.AddSeconds(1) - DateTime.Now).TotalMilliseconds));
-                                    await Task.Delay(delay);
-                                }
-                                lastCallTime = DateTime.Now;
-                            }
-                            /////////////////////////////
-                            decimal amount_fiat = 0.00m;
-                            decimal tax = 0.00m;
-                            decimal unit_price_break_even = 0.00m;
-                            decimal amount_sell_break_even = 0.00m;
-
-                            if (exchangeRate != 0m)
-                            {
-                                amount_fiat = exchangeRate * amount;
-                                tax = amount_fiat * (rewardsTaxPercentage / 100m);
-                                unit_price_break_even = exchangeRate * (1 + (rewardsTaxPercentage / 100m));
-                                amount_sell_break_even = tax / unit_price_break_even;
-                            }
-                            else
-                            {
-                                _lastWarning = $"[Rewards] Could not perform calculations for refid: {refid}" + Environment.NewLine + $"Retrieved 0.00 exchange rate for asset {asset} on {ConvertDateTimeToString(date, "yyyy-MM-dd")}";
-                                Application.Current.Dispatcher.Invoke(() =>
-                                {
-                                    ConsoleLog(_mainWindow.txtLog, _lastWarning);
-                                });
-                            }
-
-                            using DbCommand insertCommand = connection.CreateCommand();
-                            insertCommand.CommandText = $@"INSERT INTO TB_REWARDS (
-                                                                REFID,
-                                                                ""DATE"",
-                                                                TYPE,
-                                                                EXCHANGE,
-                                                                ASSET,
-                                                                AMOUNT,
-                                                                AMOUNT_FIAT,
-                                                                TAX,
-                                                                UNIT_PRICE,
-                                                                UNIT_PRICE_BREAK_EVEN,
-                                                                AMOUNT_SELL_BREAK_EVEN
-                                                            )
-                                                            VALUES (
-                                                                @REFID,
-                                                                @DATE,
-                                                                @TYPE,
-                                                                @EXCHANGE,
-                                                                @ASSET,
-                                                                @AMOUNT,
-                                                                ROUND(@AMOUNT_FIAT, 10),
-                                                                @TAX,
-                                                                @UNIT_PRICE,
-                                                                @UNIT_PRICE_BREAK_EVEN,
-                                                                @AMOUNT_SELL_BREAK_EVEN
-                                                            )";
-
-                            AddParameterWithValue(insertCommand, "@REFID", refid);
-                            AddParameterWithValue(insertCommand, "@DATE", date);
-                            AddParameterWithValue(insertCommand, "@TYPE", type);
-                            AddParameterWithValue(insertCommand, "@EXCHANGE", exchange);
-                            AddParameterWithValue(insertCommand, "@ASSET", asset);
-                            AddParameterWithValue(insertCommand, "@AMOUNT", amount);
-                            AddParameterWithValue(insertCommand, "@AMOUNT_FIAT", amount_fiat);
-                            AddParameterWithValue(insertCommand, "@TAX", tax);
-                            AddParameterWithValue(insertCommand, "@UNIT_PRICE", exchangeRate);
-                            AddParameterWithValue(insertCommand, "@UNIT_PRICE_BREAK_EVEN", unit_price_break_even);
-                            AddParameterWithValue(insertCommand, "@AMOUNT_SELL_BREAK_EVEN", amount_sell_break_even);
-
-                            insertCommand.ExecuteNonQuery();
-                        }
-                    }
-                    if (_lastWarning != null)
-                    {
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            CustomMessageBox.Show("There were issues with some calculations.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        });
-                    }
-
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Refreshing rewards failed", ex);
             }
         }
 

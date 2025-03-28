@@ -293,7 +293,7 @@ namespace ProjectCryptoGains
 
                 if (!ledgersRefreshWasBusy && !ledgersRefreshFailed)
                 {
-                    // Load the db table
+                    // Refresh trades
                     string? tradesRefreshError = null;
                     string? tradesRefreshWarning = null;
                     bool tradesRefreshWasBusy = false;

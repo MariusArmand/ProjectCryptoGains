@@ -66,8 +66,8 @@
                 <MenuItem Header="Process">
                     <MenuItem Style="{StaticResource CustomMenuItemStyle}" Click="MenuLedgers_Click" Header="Ledgers" />
                     <MenuItem Style="{StaticResource CustomMenuItemStyle}" Click="MenuTrades_Click" Header="Trades" />
-                    <MenuItem Style="{StaticResource CustomMenuItemStyle}" Click="MenuGains_Click" Header="Gains" />
                     <MenuItem Style="{StaticResource CustomMenuItemStyle}" Click="MenuRewards_Click" Header="Rewards" />
+                    <MenuItem Style="{StaticResource CustomMenuItemStyle}" Click="MenuGains_Click" Header="Gains" />                    
                     <MenuItem Style="{StaticResource CustomMenuItemStyle}" Click="MenuBalances_Click" Header="Balances" />
                     <MenuItem Style="{StaticResource CustomMenuItemStyle}" Click="MenuMetrics_Click" Header="Metrics" />
                 </MenuItem>

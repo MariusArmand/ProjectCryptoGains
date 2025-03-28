@@ -15,12 +15,12 @@ namespace ProjectCryptoGains.Common.Utils
     {
         // Parallel run prevention //
         public static bool LedgersRefreshBusy { get; private set; } = false;
-        private static readonly object _LedgerRefreshlock = new();
+        private static readonly object _LedgersRefreshLock = new();
         /////////////////////////////
 
         public static string? RefreshLedgers(MainWindow mainWindow, Caller caller)
         {
-            lock (_LedgerRefreshlock) // Only one thread can enter this block at a time
+            lock (_LedgersRefreshLock) // Only one thread can enter this block at a time
             {
                 if (LedgersRefreshBusy)
                 {
@@ -241,7 +241,7 @@ namespace ProjectCryptoGains.Common.Utils
             }
             finally
             {
-                lock (_LedgerRefreshlock) // Lock again to safely update LedgersRefreshBusy
+                lock (_LedgersRefreshLock) // Lock again to safely update LedgersRefreshBusy
                 {
                     LedgersRefreshBusy = false;
                 }

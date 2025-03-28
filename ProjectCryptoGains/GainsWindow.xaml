@@ -9,8 +9,8 @@
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:ctzex="clr-namespace:ControlzEx.Behaviors;assembly=ControlzEx"
         Title="Gains"
-        Height="768"
-        MinHeight="768"
+        Height="790"
+        MinHeight="790"
         Width="1400"
         MinWidth="950"
         WindowStyle="SingleBorderWindow">
@@ -70,7 +70,8 @@
                     </Button>
                     <CheckBox x:Name="chkRefreshLedgers" Width="150" Margin="30,100,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh ledgers" />
                     <CheckBox x:Name="chkRefreshTrades" Width="150" Margin="30,120,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh trades" />
-                    <DataGrid x:Name="dgGains" Margin="25,150,25,25" VerticalAlignment="Stretch" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
+                    <CheckBox x:Name="chkRefreshRewards" Width="150" Margin="30,140,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsChecked="True" Content="Refresh rewards" />
+                    <DataGrid x:Name="dgGains" Margin="25,170,25,25" VerticalAlignment="Stretch" AutoGenerateColumns="False" IsReadOnly="True" CanUserReorderColumns="False">
                         <DataGrid.Resources>
                             <Style x:Key="CellRightAlign">
                                 <Setter Property="Control.HorizontalAlignment" Value="Right" />

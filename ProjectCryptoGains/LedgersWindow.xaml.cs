@@ -243,7 +243,7 @@ namespace ProjectCryptoGains
             {
                 ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Refreshing ledgers");
 
-                // Load the db table
+                // Refresh ledgers
                 bool ledgersRefreshFailed = false;
                 string? ledgersRefreshWarning = null;
                 bool ledgersRefreshWasBusy = false;
