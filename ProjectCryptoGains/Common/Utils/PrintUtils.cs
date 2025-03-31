@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -62,6 +63,7 @@ namespace ProjectCryptoGains.Common.Utils
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
+                    ConsoleLog(mainWindow.txtLog, $"[{caller}] Printing {title.ToLower()}");
                     ConsoleLog(mainWindow.txtLog, $"[{caller}] Starting document preparation for PDF");
                 });
 
@@ -505,6 +507,18 @@ namespace ProjectCryptoGains.Common.Utils
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         ConsoleLog(mainWindow.txtLog, $"[{caller}] PDF generation and file writing complete; Took {(printEnd - printStart).TotalSeconds:F2} seconds");
+                        ConsoleLog(mainWindow.txtLog, $"[{caller}] Printing done");
+                    });
+                }
+                catch (RuntimeWrappedException)
+                {
+                    // Handle the case where the PDF file is locked or another printing error occurs
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        string lastError = "Failed to print to PDF." + Environment.NewLine +
+                                           "The file may be open or locked by another application.";
+                        ConsoleLog(mainWindow.txtLog, $"[{caller}] {lastError}");
+                        CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     });
                 }
                 catch (Exception ex)
@@ -513,8 +527,8 @@ namespace ProjectCryptoGains.Common.Utils
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         string lastError = "Error during printing to PDF." + Environment.NewLine + ex.Message;
-                        ConsoleLog(mainWindow.txtLog, lastError);
-                        CustomMessageBox.Show($"[{caller}] lastError", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ConsoleLog(mainWindow.txtLog, $"[{caller}] {lastError}");
+                        CustomMessageBox.Show(lastError, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     });
                 }
             });

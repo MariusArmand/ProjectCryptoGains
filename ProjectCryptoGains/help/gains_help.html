@@ -14,26 +14,125 @@
     <main>
 		<section>
 			<h2>Gains calculation in PCG</h2>
-			PCG calculates gains with the Last-In, First-Out (LIFO) method, combining trades and rewards
+			PCG calculates gains with the Last-In, First-Out (LIFO) method, combining trades and rewards (e.g., staking rewards)
 			<ul>
-				<li><b>Trades:</b> 'BUY' transactions set the cost basis</li>
-				<li><b>Rewards:</b> Staking rewards are included as acquisitions</li>
-				<li>For a sale, we match the latest acquisitions, calculate the cost basis, and compute: <b>Gain = Sale Proceeds - Cost Basis</b></li>
+				<li><b>BUY trades and rewards</b> are treated as acquisitions</li>
+				<li>For <b>SELL trades</b>, we match the latest acquisitions, calculate the costs, and compute: <b>Gain = Sale Proceeds - Acquisition Costs</b></li>
 			</ul>
 			
 			<h3>Reward tax treatment</h3>			
-			The rewards tax percentage adjusts the cost basis
+			<p>The tax treatment of rewards (defined by the rewards tax percentage setting) affects their cost basis:</p>
 			<ul>
-				<li><b>Non-zero tax rewards:</b> If taxed as income (e.g., 0.6 ETH at €2,000 = €1,200), Fair Market Value(FMV) is the cost basis;<br> 
-				    Sell 0.6 ETH at €3,000/ETH: proceeds = €1,800, cost = €1,200, gain = €600 (tax on profit only)</li>
-				<li><b>Zero tax rewards:</b> If untaxed, cost basis is €0; Sell at €3,000/ETH: proceeds = €1,800, cost = €0, gain = €1,800 (full tax)</li>
-				<li>FMV applies if tax > 0; €0 if tax = 0</li>
+				<li><b>Non-zero tax rewards:</b> If taxed as income, <b>Fair Market Value (FMV)</b>—the asset’s value at acquisition— is used for the costs; so only the profit is taxed as a gain
+					<table>
+						<tr>
+							<td>
+								Amount
+							</td>
+							<td>
+								0.6
+							</td>
+						</tr>
+						<tr>
+							<td>
+								Acquire price FMV
+							</td>
+							<td>
+								€2000
+							</td>
+						</tr>
+						<tr>
+							<td>
+								Costs FMV
+							</td>
+							<td>
+								0.6 x €2000 = €1200
+							</td>
+						</tr>
+						<tr>
+							<td>
+								Sell price
+							</td>
+							<td>
+								€3000
+							</td>
+						</tr>
+						<tr>
+							<td>
+								Proceeds
+							</td>
+							<td>
+								0.6 x €3000 = €1800
+							</td>
+						</tr>
+						<tr>
+							<td>
+								Gain
+							</td>
+							<td valign="top">
+								€1800 - €1200 = €600
+							</td>
+						</tr>
+					</table>
+				</li>			
+				<li><b>Zero tax rewards:</b> If untaxed, costs are €0; so the full proceeds are taxed as a gain
+					<table>
+						<tr>
+							<td>
+								Amount
+							</td>
+							<td>
+								0.6
+							</td>
+						</tr>
+						<tr>
+							<td>
+								Acquire price
+							</td>
+							<td>
+								€0
+							</td>
+						</tr>
+						<tr>
+							<td>
+								Costs
+							</td>
+							<td>
+								0.6 x €0 = €0
+							</td>
+						</tr>
+						<tr>
+							<td>
+								Sell price
+							</td>
+							<td>
+								€3000
+							</td>
+						</tr>
+						<tr>
+							<td>
+								Proceeds
+							</td>
+							<td>
+								0.6 x €3000 = €1800
+							</td>
+						</tr>
+						<tr>
+							<td>
+								Gain
+							</td>
+							<td valign="top">
+								€1800 - €0 = €1800
+							</td>
+						</tr>
+					</table>
+				</li>
 			</ul>
 			
 			<h3>Order</h3>
-			<p>PCG processes SELL transactions in chronological order (ascending by date), aligning with how most tax authorities expect transaction histories 
-			to be reported for auditing; This ensures users can easily track their sales and acquisitions in the order they occurred; Meanwhile, the LIFO calculation 
-			processes acquisitions in descending order to match the newest ones first, as required by the LIFO method</p>
+			<p>PCG processes SELL transactions in date order (earliest first), as required by most tax authorities;
+			This makes it easy to track sales and acquisitions; Meanwhile, the LIFO method matches the newest acquisitions 
+			first by processing them in reverse order</p>
 		</section>
 		
 		<section>

@@ -23,12 +23,6 @@ namespace ProjectCryptoGains.Common.Utils
         }
 
         // Enums //
-        public enum LedgerSource
-        {
-            Kraken,
-            Manual
-        }
-
         public enum Caller
         {
             Ledgers,
@@ -37,6 +31,12 @@ namespace ProjectCryptoGains.Common.Utils
             Rewards,
             Balances,
             Metrics
+        }
+
+        public enum LedgerSource
+        {
+            Kraken,
+            Manual
         }
         /////////////////////////////
 

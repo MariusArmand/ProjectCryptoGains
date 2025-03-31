@@ -786,14 +786,11 @@ namespace ProjectCryptoGains
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Gains] Printing gains");
-
             BlockUI();
 
             try
             {
                 await PrintGainsAsync();
-                ConsoleLog(_mainWindow.txtLog, "[Gains] Printing done");
             }
             catch (Exception ex)
             {
@@ -861,14 +858,11 @@ namespace ProjectCryptoGains
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Gains] Printing gains summary");
-
             BlockUI();
 
             try
             {
                 await PrintGainsSummaryAsync(lblTotalGainsData.Content?.ToString() ?? "");
-                ConsoleLog(_mainWindow.txtLog, "[Gains] Printing done");
             }
             catch (Exception ex)
             {

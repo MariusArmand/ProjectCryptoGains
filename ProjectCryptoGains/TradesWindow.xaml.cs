@@ -361,14 +361,11 @@ namespace ProjectCryptoGains
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Trades] Printing trades");
-
             BlockUI();
 
             try
             {
                 await PrintTradesAsync();
-                ConsoleLog(_mainWindow.txtLog, "[Trades] Printing done");
             }
             catch (Exception ex)
             {

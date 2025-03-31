@@ -304,14 +304,11 @@ namespace ProjectCryptoGains
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Ledgers] Printing ledgers");
-
             BlockUI();
 
             try
             {
                 await PrintLedgersAsync();
-                ConsoleLog(_mainWindow.txtLog, "[Ledgers] Printing done");
             }
             catch (Exception ex)
             {

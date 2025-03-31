@@ -523,14 +523,11 @@ namespace ProjectCryptoGains
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Balances] Printing balances");
-
             BlockUI();
 
             try
             {
                 await PrintBalancesAsync();
-                ConsoleLog(_mainWindow.txtLog, $"[Balances] Printing done");
             }
             catch (Exception ex)
             {

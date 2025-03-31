@@ -392,14 +392,11 @@ namespace ProjectCryptoGains
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Rewards] Printing rewards");
-
             BlockUI();
 
             try
             {
                 await PrintRewardsAsync();
-                ConsoleLog(_mainWindow.txtLog, "[Rewards] Printing done");
             }
             catch (Exception ex)
             {
@@ -457,14 +454,11 @@ namespace ProjectCryptoGains
                 return;
             }
 
-            ConsoleLog(_mainWindow.txtLog, $"[Rewards] Printing rewards summary");
-
             BlockUI();
 
             try
             {
                 await PrintRewardsSummaryAsync(lblTotalAmountFiatData.Content?.ToString() ?? "");
-                ConsoleLog(_mainWindow.txtLog, "[Rewards] Printing done");
             }
             catch (Exception ex)
             {
